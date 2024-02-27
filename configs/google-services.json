@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "637255430447",
+    "project_id": "fawaah-5c6cc",
+    "storage_bucket": "fawaah-5c6cc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:637255430447:android:fff230f006b1453ff831da",
+        "android_client_info": {
+          "package_name": "fawaah.android.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "637255430447-hfomoalktpdsevdm6g1vi6ejrjpoq225.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCekjtdFdn2F0lnvYslE4RCFoiLzK5Y-m8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "637255430447-hfomoalktpdsevdm6g1vi6ejrjpoq225.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
