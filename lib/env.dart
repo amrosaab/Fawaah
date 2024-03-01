@@ -912,10 +912,10 @@ Map<String, dynamic> environment = {
     "EnableAlphanumericZipCode": false,
 
     /// Enable the product review option
-    "EnableReview": true,
+    "EnableReview": false,
 
     /// Enable the Google Maps picker from Billing Address.
-    "allowSearchingAddress": true,
+    "allowSearchingAddress": false,
 
     "GuestCheckout": true,
 
