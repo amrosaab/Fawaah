@@ -1,18 +1,23 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:quiver/strings.dart';
 
 import '../../../common/config.dart'
-    show kAdvanceConfig, kLoadingWidget, kPaymentConfig;
+    show kAdvanceConfig, kEnableCustomerNote, kLoadingWidget, kPaymentConfig;
 import '../../../common/constants.dart';
 import '../../../common/tools.dart';
 import '../../../generated/l10n.dart';
+import '../../../models/app_model.dart';
 import '../../../models/cart/cart_model.dart';
 import '../../../models/entities/order_delivery_date.dart';
+import '../../../models/order/order.dart';
+import '../../../models/payment_method_model.dart';
 import '../../../models/shipping_method_model.dart';
+import '../../../models/user_model.dart';
 import '../../../services/index.dart';
 import '../../../widgets/common/common_safe_area.dart';
 import 'date_time_picker.dart';
@@ -21,8 +26,15 @@ import 'delivery_calendar.dart';
 class ShippingMethods extends StatefulWidget {
   final Function? onBack;
   final Function? onNext;
+  final Function? onFinish;
+  final Function(bool)? onLoading;
 
-  const ShippingMethods({this.onBack, this.onNext});
+  const ShippingMethods({
+    this.onBack,
+    this.onNext,
+    this.onFinish,
+    this.onLoading,
+  });
 
   @override
   State<ShippingMethods> createState() => _ShippingMethodsState();
@@ -30,6 +42,12 @@ class ShippingMethods extends StatefulWidget {
 
 class _ShippingMethodsState extends State<ShippingMethods> {
   int? selectedIndex = 0;
+
+  String? selectedId;
+
+  bool isPaying = false;
+
+  TextEditingController note = TextEditingController();
 
   ShippingMethodModel get shippingMethodModel =>
       Provider.of<ShippingMethodModel>(context, listen: false);
@@ -39,9 +57,10 @@ class _ShippingMethodsState extends State<ShippingMethods> {
   @override
   void initState() {
     super.initState();
+    note.text = cartModel.notes ?? '';
     Future.delayed(
       Duration.zero,
-      () async {
+          () async {
         final shippingMethod = cartModel.shippingMethod;
         final shippingMethods = shippingMethodModel.shippingMethods;
         if (shippingMethods != null &&
@@ -55,12 +74,31 @@ class _ShippingMethodsState extends State<ShippingMethods> {
             });
           }
         }
+        final langCode = Provider.of<AppModel>(context, listen: false).langCode;
+        final token = context.read<UserModel>().user?.cookie;
+        final model = Provider.of<PaymentMethodModel>(context, listen: false);
+        model
+            .getPaymentMethods(
+            cartModel: cartModel,
+            shippingMethod: cartModel.shippingMethod,
+            token: token,
+            langCode: langCode)
+            .then((value) {
+          selectedId = model.paymentMethods.firstWhereOrNull((item) {
+            if (true) {
+              return item.id != 'wallet' && item.enabled!;
+            } else {
+              return item.enabled!;
+            }
+          })?.id;
+        });
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final paymentMethodModel = Provider.of<PaymentMethodModel>(context);
     final shippingMethodModel = Provider.of<ShippingMethodModel>(context);
     return Column(
       children: [
@@ -111,12 +149,39 @@ class _ShippingMethodsState extends State<ShippingMethods> {
                       },
                     ),
                   ),
+                  if (kEnableCustomerNote) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      S.of(context).yourNote,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey,
+                          width: 0.2,
+                        ),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: TextField(
+                        maxLines: 5,
+                        controller: note,
+                        style: const TextStyle(fontSize: 13),
+                        decoration: InputDecoration(
+                            hintText: S.of(context).writeYourNote,
+                            hintStyle: const TextStyle(fontSize: 12),
+                            border: InputBorder.none),
+                      ),
+                    ),
+                  ]
                 ],
               ),
             ),
           ),
         ),
-        _buildBottom(),
+        _buildBottom(paymentMethodModel),
       ],
     );
   }
@@ -136,7 +201,7 @@ class _ShippingMethodsState extends State<ShippingMethods> {
                 ),
                 child: Padding(
                   padding:
-                      const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+                  const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
                   child: Row(
                     children: <Widget>[
                       Radio(
@@ -163,7 +228,7 @@ class _ShippingMethodsState extends State<ShippingMethods> {
                                 PriceTools.getCurrencyFormatted(
                                     model.shippingMethods![i].cost! +
                                         (model.shippingMethods![i]
-                                                .shippingTax ??
+                                            .shippingTax ??
                                             0),
                                     cartModel.currencyRates,
                                     currency: cartModel.currencyCode)!,
@@ -195,7 +260,7 @@ class _ShippingMethodsState extends State<ShippingMethods> {
     );
   }
 
-  Widget _buildBottom() {
+  Widget _buildBottom(PaymentMethodModel paymentMethodModel) {
     return CommonSafeArea(
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -234,7 +299,7 @@ class _ShippingMethodsState extends State<ShippingMethods> {
                 // Set selected shipping method
                 if (shippingMethodModel.shippingMethods?.isNotEmpty ?? false) {
                   final selectedShippingMethod =
-                      shippingMethodModel.shippingMethods![selectedIndex!];
+                  shippingMethodModel.shippingMethods![selectedIndex!];
 
                   await cartModel.setShippingMethod(selectedShippingMethod);
 
@@ -242,21 +307,121 @@ class _ShippingMethodsState extends State<ShippingMethods> {
 
                   unawaited(
                       Services().firebase.firebaseAnalytics?.logAddShippingInfo(
-                            coupon: cartModel.couponObj?.code,
-                            currency: cartModel.currencyCode,
-                            data: productList,
-                            price: cartModel.getSubTotal(),
-                            shippingTier: cartModel.shippingMethod?.methodTitle,
-                          ));
+                        coupon: cartModel.couponObj?.code,
+                        currency: cartModel.currencyCode,
+                        data: productList,
+                        price: cartModel.getSubTotal(),
+                        shippingTier: cartModel.shippingMethod?.methodTitle,
+                      ));
 
-                  widget.onNext!();
+                  //widget.onNext!();
+                  /*widget.onNext!(),*/
+                  if (note.text.isNotEmpty) {
+                    cartModel.setOrderNotes(note.text);
+                  }
+
+                  final currencyRate =
+                      Provider.of<AppModel>(context, listen: false)
+                          .currencyRate;
+
+                  widget.onLoading!(true);
+                  isPaying = true;
+                  if (paymentMethodModel.paymentMethods.isNotEmpty) {
+                    final paymentMethod = paymentMethodModel.paymentMethods
+                        .firstWhere((item) => item.id == selectedId);
+
+                    Services().widget.placeOrder(
+                      context,
+                      cartModel: cartModel,
+                      onLoading: widget.onLoading,
+                      paymentMethod: paymentMethod,
+                      success: (Order? order) async {
+                        if (order != null) {
+                          for (var item in order.lineItems) {
+                            var product =
+                            cartModel.getProductById(item.productId!);
+                            /*if (product?.bookingInfo != null) {
+                                      product!.bookingInfo!.idOrder = order.id;
+                                      var booking = await createBooking(product.bookingInfo)!;
+
+                                      Tools.showSnackBar(ScaffoldMessenger.of(context),
+                                          booking ? 'Booking success!' : 'Booking error!');
+                                    }*/
+                          }
+                          widget.onFinish!(order);
+                        }
+                        widget.onLoading?.call(false);
+                        isPaying = false;
+                      },
+                      error: (message) {
+                        widget.onLoading?.call(false);
+                        if (message != null) {
+                          Tools.showSnackBar(
+                              ScaffoldMessenger.of(context), message);
+                        }
+
+                        isPaying = false;
+                      },
+                    );
+                  }
                   return;
                 }
 
                 // If this order doesn't need ship, we can go to the next step
                 if ((shippingMethodModel.shippingMethods?.isEmpty ?? true) &&
                     (shippingMethodModel.message?.isEmpty ?? true)) {
-                  widget.onNext!();
+                  //widget.onNext!();
+                  final cartModel =
+                  Provider.of<CartModel>(context, listen: false);
+                  /*widget.onNext!(),*/
+                  if (note.text.isNotEmpty) {
+                    cartModel.setOrderNotes(note.text);
+                  }
+
+                  final currencyRate =
+                      Provider.of<AppModel>(context, listen: false)
+                          .currencyRate;
+
+                  widget.onLoading!(true);
+                  isPaying = true;
+                  if (paymentMethodModel.paymentMethods.isNotEmpty) {
+                    final paymentMethod = paymentMethodModel.paymentMethods
+                        .firstWhere((item) => item.id == selectedId);
+
+                    Services().widget.placeOrder(
+                      context,
+                      cartModel: cartModel,
+                      onLoading: widget.onLoading,
+                      paymentMethod: paymentMethod,
+                      success: (Order? order) async {
+                        if (order != null) {
+                          for (var item in order.lineItems) {
+                            var product =
+                            cartModel.getProductById(item.productId!);
+                            /*if (product?.bookingInfo != null) {
+                                      product!.bookingInfo!.idOrder = order.id;
+                                      var booking = await createBooking(product.bookingInfo)!;
+
+                                      Tools.showSnackBar(ScaffoldMessenger.of(context),
+                                          booking ? 'Booking success!' : 'Booking error!');
+                                    }*/
+                          }
+                          widget.onFinish!(order);
+                        }
+                        widget.onLoading?.call(false);
+                        isPaying = false;
+                      },
+                      error: (message) {
+                        widget.onLoading?.call(false);
+                        if (message != null) {
+                          Tools.showSnackBar(
+                              ScaffoldMessenger.of(context), message);
+                        }
+
+                        isPaying = false;
+                      },
+                    );
+                  }
                   return;
                 }
               },
@@ -265,8 +430,8 @@ class _ShippingMethodsState extends State<ShippingMethods> {
                 size: 18,
               ),
               label: Text((kPaymentConfig.enableReview
-                      ? S.of(context).continueToReview
-                      : S.of(context).continueToPayment)
+                  ? S.of(context).continueToReview
+                  : S.of(context).continueToPayment)
                   .toUpperCase()),
             ),
           ),

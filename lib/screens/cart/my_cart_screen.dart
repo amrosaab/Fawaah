@@ -535,11 +535,27 @@ class _MyCartState extends State<MyCart> with SingleTickerProviderStateMixin {
       context,
       success: () async {
         hideLoading('');
-        await FluxNavigate.pushNamed(
+        var manualClosed = await FluxNavigate.pushNamed(
           RouteList.checkout,
           arguments: CheckoutArgument(isModal: widget.isModal),
           forceRootNavigator: true,
         );
+
+        if (true == manualClosed) {
+          if (widget.isModal == true) {
+            try {
+              ExpandingBottomSheet.of(context)!.close();
+            } catch (e) {
+              if (ModalRoute.of(context)?.canPop ?? false) {
+                Navigator.of(context).pop();
+              } else {
+                await Navigator.of(context).pushNamed(RouteList.dashboard);
+              }
+            }
+          } else if (ModalRoute.of(context)?.canPop ?? false) {
+            Navigator.of(context).pop();
+          }
+        }
       },
       error: (message) async {
         if (message ==
