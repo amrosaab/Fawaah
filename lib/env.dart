@@ -920,7 +920,7 @@ Map<String, dynamic> environment = {
     "GuestCheckout": true,
 
     /// Enable Payment option
-    "EnableOnePageCheckout": true,
+    "EnableOnePageCheckout": false,
     "NativeOnePageCheckout": false,
 
     "ShowWebviewCheckoutSuccessScreen": true,

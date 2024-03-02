@@ -204,46 +204,6 @@ class _CheckoutState extends BaseScreen<Checkout> {
                 ),
               )
             : const SizedBox(),
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              // if (cartModel.shippingMethod != null) {
-              //   setState(() {
-              //     tabIndex = 3;
-              //   });
-              // }
-            },
-            child: Column(
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  child: Text(
-                    S.of(context).payment.toUpperCase(),
-                    style: TextStyle(
-                      color: tabIndex == 3
-                          ? Theme.of(context).primaryColor
-                          : Theme.of(context).colorScheme.secondary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                tabIndex >= 3
-                    ? ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(2.0),
-                            bottomRight: Radius.circular(2.0)),
-                        child: Container(
-                            height: 3.0, color: Theme.of(context).primaryColor),
-                      )
-                    : Divider(
-                        height: 2,
-                        color: Theme.of(context).colorScheme.secondary)
-              ],
-            ),
-          ),
-        )
       ],
     );
 
@@ -341,11 +301,39 @@ class _CheckoutState extends BaseScreen<Checkout> {
       case 1:
         return SizedBox(
           key: const ValueKey(1),
-          child: Services().widget.renderShippingMethods(context, onBack: () {
-            goToAddressTab(true);
-          }, onNext: () {
-            goToReviewTab();
-          }),
+          child: Services().widget.renderShippingMethods(context,
+              onBack: () {
+                goToAddressTab(true);
+              },
+              onNext: () {
+                goToReviewTab();
+              },
+              onLoading: setLoading,
+              onFinish: (order) async {
+                final cartModel =
+                Provider.of<CartModel>(context, listen: false);
+
+                setState(() {
+                  newOrder = order;
+                });
+
+                var productList = cartModel.getProductsInCart();
+                unawaited(Services().firebase.firebaseAnalytics?.logPurchase(
+                  orderId: newOrder?.id,
+                  price: cartModel.getSubTotal(),
+                  shipping: cartModel.getShippingCost(),
+                  tax: cartModel.taxesTotal,
+                  coupon: cartModel.couponObj?.code,
+                  currency: cartModel.currencyCode,
+                  data: productList,
+                ));
+
+                await Services()
+                    .widget
+                    .updateOrderAfterCheckout(context, order);
+                cartModel.clearCart();
+                unawaited(context.read<WalletModel>().refreshWallet());
+              }),
         );
       case 2:
         return SizedBox(

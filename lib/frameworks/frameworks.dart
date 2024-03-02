@@ -1,4 +1,5 @@
 import 'package:country_pickers/country_pickers.dart';
+
 // import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
 import 'package:inspireui/widgets/expandable/expansion_widget.dart';
@@ -39,9 +40,11 @@ abstract class BaseFrameworks {
   bool get isRequiredLogin => kLoginSetting.isRequiredLogin;
 
   bool get enableMembershipUltimate => false;
+
   bool get enableWooCommerceWholesalePrices => false;
 
   bool enableShoppingCart(Product? product) => kAdvanceConfig.enableCart;
+
   bool get enableInAppPurchase => false;
 
   bool get enableProductBackdrop => kAdvanceConfig.enableProductBackdrop;
@@ -368,8 +371,15 @@ abstract class BaseFrameworks {
     BuildContext context, {
     Function? onBack,
     Function? onNext,
+    Function? onFinish,
+    Function(bool)? onLoading,
   }) {
-    return ShippingMethods(onBack: onBack, onNext: onNext);
+    return ShippingMethods(
+      onBack: onBack,
+      onNext: onNext,
+      onFinish: onFinish,
+      onLoading: onLoading,
+    );
   }
 
   /// render screen for Category Vendor
