@@ -1,6 +1,7 @@
 class PaymentConfig {
   String? defaultCountryISOCode;
   String? defaultStateISOCode;
+  bool enableOrderDetailSuccessful = true;
   bool enableShipping = false;
   bool enableAddress = false;
   bool enableCustomerNote = false;
@@ -22,10 +23,12 @@ class PaymentConfig {
   num? refundPeriod;
   SmartCODConfig? smartCOD;
   List<String>? excludedPaymentIds;
+  bool showTransactionDetails = true;
 
   PaymentConfig.fromJson(dynamic json) {
     defaultCountryISOCode = json['DefaultCountryISOCode'];
     defaultStateISOCode = json['DefaultStateISOCode'];
+    enableOrderDetailSuccessful = json['enableOrderDetailSuccessful'] ?? true;
     enableShipping = json['EnableShipping'] ?? false;
     enableAddress = json['EnableAddress'] ?? false;
     enableCustomerNote = json['EnableCustomerNote'] ?? false;
@@ -51,12 +54,14 @@ class PaymentConfig {
     excludedPaymentIds = json['excludedPaymentIds'] is List
         ? <String>[...json['excludedPaymentIds']]
         : [];
+    showTransactionDetails = json['ShowTransactionDetails'] ?? true;
   }
 
   Map toJson() {
     var map = <String, dynamic>{};
     map['DefaultCountryISOCode'] = defaultCountryISOCode;
     map['DefaultStateISOCode'] = defaultStateISOCode;
+    map['enableOrderDetailSuccessful'] = enableOrderDetailSuccessful;
     map['EnableShipping'] = enableShipping;
     map['EnableAddress'] = enableAddress;
     map['EnableCustomerNote'] = enableCustomerNote;
@@ -78,6 +83,7 @@ class PaymentConfig {
     map['RefundPeriod'] = refundPeriod;
     map['SmartCOD'] = smartCOD?.toJson();
     map['excludedPaymentIds'] = excludedPaymentIds;
+    map['ShowTransactionDetails'] = showTransactionDetails;
     return map;
   }
 }

@@ -208,6 +208,7 @@ class MessageLookup extends MessageLookupByLibrary {
             "Bluetooth has not been enabled"),
         "bleState": m3,
         "blog": MessageLookupByLibrary.simpleMessage("Blog"),
+        "block2": MessageLookupByLibrary.simpleMessage("Block"),
         "booked": MessageLookupByLibrary.simpleMessage("Already booked"),
         "booking": MessageLookupByLibrary.simpleMessage("Booking"),
         "bookingCancelled":
@@ -303,9 +304,9 @@ class MessageLookup extends MessageLookupByLibrary {
         "chooseType": MessageLookupByLibrary.simpleMessage("Choose type"),
         "chooseYourPaymentMethod":
             MessageLookupByLibrary.simpleMessage("Choose your payment method"),
-        "city": MessageLookupByLibrary.simpleMessage("City"),
+        "city": MessageLookupByLibrary.simpleMessage("Area"),
         "cityIsRequired":
-            MessageLookupByLibrary.simpleMessage("The city field is required"),
+            MessageLookupByLibrary.simpleMessage("The area field is required"),
         "clear": MessageLookupByLibrary.simpleMessage("Clear"),
         "clearCart": MessageLookupByLibrary.simpleMessage("Clear Cart"),
         "clearConversation":
@@ -335,11 +336,11 @@ class MessageLookup extends MessageLookupByLibrary {
         "contact": MessageLookupByLibrary.simpleMessage("Contact"),
         "content": MessageLookupByLibrary.simpleMessage("Content"),
         "continueToPayment":
-            MessageLookupByLibrary.simpleMessage("Continue to Payment"),
+            MessageLookupByLibrary.simpleMessage("Continue"),
         "continueToReview":
-            MessageLookupByLibrary.simpleMessage("Continue to Preview"),
+            MessageLookupByLibrary.simpleMessage("Continue"),
         "continueToShipping":
-            MessageLookupByLibrary.simpleMessage("Continue to Shipping"),
+            MessageLookupByLibrary.simpleMessage("Continue"),
         "continues": MessageLookupByLibrary.simpleMessage("Continue"),
         "conversations": MessageLookupByLibrary.simpleMessage("Conversations"),
         "convertPoint": m38,
@@ -1186,14 +1187,13 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Store Static Banner"),
         "storeVacation": MessageLookupByLibrary.simpleMessage("Store vacation"),
         "stores": MessageLookupByLibrary.simpleMessage("Stores"),
-        "street": MessageLookupByLibrary.simpleMessage("Street"),
-        "street2": MessageLookupByLibrary.simpleMessage("Street 2"),
-        "streetIsRequired": MessageLookupByLibrary.simpleMessage(
-            "The street name field is required"),
-        "streetName": MessageLookupByLibrary.simpleMessage("Street Name"),
-        "streetNameApartment":
-            MessageLookupByLibrary.simpleMessage("Apartment"),
-        "streetNameBlock": MessageLookupByLibrary.simpleMessage("Block"),
+    "street": MessageLookupByLibrary.simpleMessage("Floor"),
+    "street2": MessageLookupByLibrary.simpleMessage("Street 2"),
+    "streetIsRequired":
+    MessageLookupByLibrary.simpleMessage("The floor field is required"),
+    "streetName": MessageLookupByLibrary.simpleMessage("Floor"),
+    "streetNameApartment": MessageLookupByLibrary.simpleMessage("Street"),
+    "streetNameBlock": MessageLookupByLibrary.simpleMessage("Building"),
         "submit": MessageLookupByLibrary.simpleMessage("Submit"),
         "submitYourPost":
             MessageLookupByLibrary.simpleMessage("Submit Your Post"),
@@ -1387,7 +1387,7 @@ class MessageLookup extends MessageLookupByLibrary {
             "Your product is under review"),
         "yourUsernameEmail":
             MessageLookupByLibrary.simpleMessage("Your username or email"),
-        "zipCode": MessageLookupByLibrary.simpleMessage("Zip-code"),
+        "zipCode": MessageLookupByLibrary.simpleMessage("Flat"),
         "zipCodeIsRequired": MessageLookupByLibrary.simpleMessage(
             "The zip code field is required"),
         "sureThatProductExists": MessageLookupByLibrary.simpleMessage(

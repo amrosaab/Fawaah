@@ -323,6 +323,13 @@ mixin ConfigMixin {
         child: SizedBox(),
       );
 
+  /// Thai PromptPay
+  Widget thaiPromptPayBuilder({
+    required bool showThankMsg,
+    Order? order,
+  }) =>
+      const SizedBox();
+
   /// get Empty Vendor app
   Widget getVendorAdminApp({languageCode, user, isFromMV}) => const SizedBox();
 
@@ -408,7 +415,7 @@ class RawFramework extends BaseFrameworks {
   }
 
   @override
-  Future<List<CountryState>> loadStates(Country country) {
+  Future<List<CountryState>> loadStates(Country country, String language) {
     throw UnimplementedError();
   }
 

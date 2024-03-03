@@ -158,7 +158,7 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
                       RenderTotalPrice(
                         isModal: widget.isModal ?? false,
                         isLoading: isLoading,
-                        onCheckout: () => onCheckout(cartModel),
+                        onCheckout: () => shouldShowLoginDialog(cartModel),
                       ),
                     ],
                   );
@@ -303,16 +303,8 @@ class RenderTotalPrice extends StatelessWidget {
                       selector: (_, cartModel) => cartModel.totalCartQuantity,
                       builder: (context, totalCartQuantity, child) {
                         return ElevatedButton.icon(
-                          onPressed: isReadyForCheckout
-                              ? () {
-                            if (kAdvanceConfig.alwaysShowTabBar) {
-                              MainTabControlDelegate.getInstance()
-                                  .changeTab(RouteList.cart,
-                                  allowPush: false);
-                            }
-                            onCheckout();
-                          }
-                              : null,
+                            onPressed:
+                            isReadyForCheckout ? () => onCheckout() : null,
                           icon: const Icon(Icons.login_outlined, size: 15),
                           style: ElevatedButton.styleFrom(
                               elevation: 8,

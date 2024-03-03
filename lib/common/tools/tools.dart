@@ -53,10 +53,10 @@ class Tools {
     return isMobile && !isTablet(query);
   }
 
-  static Future<List<dynamic>> loadStatesByCountry(String country) async {
+  static Future<List<dynamic>> loadStatesByCountry(String country, String language) async {
     try {
       // load local config
-      var path = 'lib/config/states/state_${country.toLowerCase()}.json';
+      var path = 'lib/config/states/state_${country.toLowerCase()}_${language.toLowerCase()}.json';
       //if use loadString can't catch file is not exists
       final data = await rootBundle.load(path);
       String? appJson;

@@ -242,7 +242,7 @@ abstract class BaseFrameworks {
   Future<List<Country>?> loadCountries();
 
   /// Load states for shipping address
-  Future<List<CountryState>> loadStates(Country country);
+  Future<List<CountryState>> loadStates(Country country, String language);
 
   /// Load cities for shipping address
   Future<List<City>>? loadCities(Country country, CountryState state) => null;

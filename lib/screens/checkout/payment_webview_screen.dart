@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../common/config.dart';
-import '../../frameworks/shopify/services/shopify_service.dart';
-import '../../models/cart/cart_model_shopify.dart';
 import '../../services/index.dart';
 import '../../widgets/common/webview.dart';
 import '../base_screen.dart';
@@ -12,16 +10,8 @@ class PaymentWebview extends StatefulWidget {
   final Function? onFinish;
   final Function? onClose;
   final String? token;
-  final ShopifyService? shopifyService;
-  final CartModelShopify? cartModel;
 
-  const PaymentWebview(
-      {this.onFinish,
-      this.onClose,
-      this.url,
-      this.token,
-      this.shopifyService,
-      this.cartModel});
+  const PaymentWebview({this.onFinish, this.onClose, this.url, this.token});
 
   @override
   State<StatefulWidget> createState() {
@@ -33,7 +23,7 @@ class PaymentWebviewState extends BaseScreen<PaymentWebview> with WebviewMixin {
   int selectedIndex = 1;
   String? orderId;
 
-  void handleUrlChanged(String url) async {
+  void handleUrlChanged(String url) {
     if (url.contains('/order-received/')) {
       final items = url.split('/order-received/');
       if (items.length > 1) {
@@ -52,10 +42,6 @@ class PaymentWebviewState extends BaseScreen<PaymentWebview> with WebviewMixin {
     // shopify url final checkout
     if (url.contains('thank_you')) {
       orderId = '0';
-      final order = await widget.shopifyService!.getLatestOrder(
-        cookie: widget.cartModel!.user?.cookie ?? '',
-      );
-      orderId = order?.number ?? '0';
     }
 
     /// BigCommerce.
@@ -104,7 +90,7 @@ class PaymentWebviewState extends BaseScreen<PaymentWebview> with WebviewMixin {
       checkoutMap['url'] = paymentInfo['url'];
       if (paymentInfo['headers'] != null) {
         checkoutMap['headers'] =
-            Map<String, String>.from(paymentInfo['headers']);
+        Map<String, String>.from(paymentInfo['headers']);
       }
     }
     if (widget.token != null) {
@@ -121,6 +107,7 @@ class PaymentWebviewState extends BaseScreen<PaymentWebview> with WebviewMixin {
     // );
 
     return WebView(
+
       url: checkoutMap['url'] ?? '',
       headers: checkoutMap['headers'],
       onPageFinished: handleUrlChanged,

@@ -4,29 +4,132 @@ import 'package:provider/provider.dart';
 import '../../../common/config.dart';
 import '../../../common/constants.dart';
 import '../../../generated/l10n.dart';
-import '../../../models/index.dart' show Order, UserModel, PointModel;
+import '../../../models/index.dart' show Order, PointModel, UserModel;
 import '../../../models/order/bank_account_item.dart';
 import '../../../services/index.dart';
+import '../../../widgets/common/expansion_info.dart';
 import '../../base_screen.dart';
+import 'price_row_item.dart';
+import 'product_review.dart';
 
 class OrderedSuccess extends StatefulWidget {
   final Order? order;
+  final String? orderNum;
 
-  const OrderedSuccess({this.order});
+  const OrderedSuccess({this.order, this.orderNum});
 
   @override
   BaseScreen<OrderedSuccess> createState() => _OrderedSuccessState();
 }
 
 class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
-  @override
-  void afterFirstLayout(BuildContext context) {
+  Order? order;
+  bool isLoading = false;
+
+  ThemeData get theme => Theme.of(context);
+
+  Color get secondaryColor => theme.colorScheme.secondary;
+
+  Future<void> _loadOrderByNumberOrder(String numberOrder) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final orderDetail =
+        await Services().api.getOrderByOrderId(orderId: numberOrder);
+
+    order = orderDetail ?? Order(number: numberOrder);
+
+    _handlePoint();
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  void _handlePoint() {
     final user = Provider.of<UserModel>(context, listen: false).user;
     if (user != null &&
         user.cookie != null &&
         kAdvanceConfig.enablePointReward) {
-      Services().api.updatePoints(user.cookie, widget.order);
+      Services().api.updatePoints(user.cookie, order);
       Provider.of<PointModel>(context, listen: false).getMyPoint(user.cookie);
+    }
+  }
+
+  Widget orderSummary() {
+    final lineItems = order?.lineItems;
+    final isWalletTopup =
+        lineItems?.any((e) => e.name == 'Wallet Topup') ?? false;
+    final subtotal = isWalletTopup
+        ? 0.0
+        : order?.subtotal ??
+            lineItems?.fold(0.0, (p, e) => p! + double.parse(e.total ?? '0.0'));
+
+    return ExpansionInfo(
+      title: S.of(context).orderDetail,
+      expand: true,
+      children: <Widget>[
+        if (order?.bacsInfo.isNotEmpty ?? false) const SizedBox(height: 20),
+        ...lineItems?.map(
+              (item) {
+                return ProductReviewWidget(
+                  item: item,
+                  isWalletTopup: isWalletTopup,
+                );
+              },
+            ).toList() ??
+            [],
+        const SizedBox(height: 16),
+        if (!isWalletTopup) ...[
+          PriceRowItemWidget(
+            title: S.of(context).subtotal,
+            total: subtotal,
+            style: theme.textTheme.bodyMedium!.copyWith(
+              color: secondaryColor,
+            ),
+            isWalletTopup: isWalletTopup,
+          ),
+          PriceRowItemWidget(
+            title: S.of(context).totalTax,
+            total: order?.totalTax,
+            style: theme.textTheme.bodyMedium!.copyWith(
+              color: secondaryColor,
+            ),
+            isWalletTopup: isWalletTopup,
+          ),
+          PriceRowItemWidget(
+            title: S.of(context).shipping,
+            total: order?.totalShipping,
+            style: theme.textTheme.bodyMedium!.copyWith(
+              color: secondaryColor,
+            ),
+            isWalletTopup: isWalletTopup,
+          ),
+        ],
+        PriceRowItemWidget(
+          title: S.of(context).total,
+          total: order?.total,
+          style: theme.textTheme.headlineSmall!.copyWith(
+            color: secondaryColor,
+            fontWeight: FontWeight.w600,
+            decoration: TextDecoration.underline,
+          ),
+          isWalletTopup: isWalletTopup,
+        ),
+      ],
+    );
+  }
+
+  @override
+  void afterFirstLayout(BuildContext context) {
+    if (widget.orderNum == null) {
+      setState(() {
+        order = widget.order;
+        _handlePoint();
+      });
+    } else {
+      _loadOrderByNumberOrder(widget.orderNum!);
     }
   }
 
@@ -39,69 +142,74 @@ class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
       children: <Widget>[
         Container(
           margin: const EdgeInsets.only(top: 20),
-          decoration: BoxDecoration(color: Theme.of(context).primaryColorLight),
+          decoration: BoxDecoration(color: theme.primaryColorLight),
           child: Padding(
             padding: const EdgeInsets.all(15.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
                   S.of(context).itsOrdered,
-                  style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.secondary),
+                  style: TextStyle(fontSize: 16, color: secondaryColor),
                 ),
                 const SizedBox(height: 5),
-                if (widget.order?.number != null)
+                if (order?.number != null)
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
                     children: <Widget>[
                       Text(
                         S.of(context).orderNo,
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(context).colorScheme.secondary),
+                        style: TextStyle(fontSize: 14, color: secondaryColor),
                       ),
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(
-                          '#${widget.order!.number}',
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context).colorScheme.secondary),
+                          '#${order!.number}',
+                          style: TextStyle(fontSize: 14, color: secondaryColor),
                         ),
                       )
                     ],
-                  )
+                  ),
               ],
             ),
           ),
         ),
-        if (widget.order?.bacsInfo.isNotEmpty ?? false)
-          const SizedBox(height: 30),
-        if (widget.order?.bacsInfo.isNotEmpty ?? false)
+
+        const SizedBox(height: 16),
+
+        /// Thai PromptPay
+        /// true: show Thank you message like on the web - https://tppr.me/xrNh1
+        Services().thaiPromptPayBuilder(showThankMsg: true, order: order),
+        const SizedBox(height: 15),
+
+        if (order?.bacsInfo.isNotEmpty ?? false) ...[
           Text(
             S.of(context).ourBankDetails,
-            style: TextStyle(
-                fontSize: 18, color: Theme.of(context).colorScheme.secondary),
+            style: TextStyle(fontSize: 18, color: secondaryColor),
           ),
-        ...?widget.order?.bacsInfo
-            .map((e) => BankAccountInfo(bankInfo: e))
-            .toList(),
-        const SizedBox(height: 15),
+          ...?order?.bacsInfo.map((e) => BankAccountInfo(bankInfo: e)).toList(),
+          const SizedBox(height: 15),
+        ],
+
+        if (isLoading)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 40),
+            child: kLoadingWidget(context),
+          )
+        else if (kPaymentConfig.enableOrderDetailSuccessful &&
+            order != null &&
+            order!.lineItems.isNotEmpty) ...[
+          orderSummary(),
+          const SizedBox(height: 16),
+        ],
+
         Text(
           S.of(context).orderSuccessTitle1,
-          style: TextStyle(
-              fontSize: 18, color: Theme.of(context).colorScheme.secondary),
+          style: TextStyle(fontSize: 18, color: secondaryColor),
         ),
         const SizedBox(height: 15),
         Text(
           S.of(context).orderSuccessMsg1,
-          style: TextStyle(
-              color: Theme.of(context).colorScheme.secondary,
-              height: 1.4,
-              fontSize: 14),
+          style: TextStyle(color: secondaryColor, height: 1.4, fontSize: 14),
         ),
         if (userModel.user != null)
           Padding(
@@ -113,7 +221,7 @@ class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
-                      backgroundColor: Theme.of(context).primaryColor,
+                      backgroundColor: theme.primaryColor,
                       elevation: 0,
                     ),
                     onPressed: () {
@@ -135,16 +243,12 @@ class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
         //const SizedBox(height: 40),
         Text(
           S.of(context).orderSuccessTitle2,
-          style: TextStyle(
-              fontSize: 18, color: Theme.of(context).colorScheme.secondary),
+          style: TextStyle(fontSize: 18, color: secondaryColor),
         ),
         const SizedBox(height: 10),
         Text(
           S.of(context).orderSuccessMsg2,
-          style: TextStyle(
-              color: Theme.of(context).colorScheme.secondary,
-              height: 1.4,
-              fontSize: 14),
+          style: TextStyle(color: secondaryColor, height: 1.4, fontSize: 14),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 30),
@@ -162,8 +266,7 @@ class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
                     },
                     child: Text(
                       S.of(context).backToShop.toUpperCase(),
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.secondary),
+                      style: TextStyle(color: secondaryColor),
                     ),
                   ),
                 ),

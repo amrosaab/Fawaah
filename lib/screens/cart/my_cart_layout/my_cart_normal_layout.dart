@@ -8,7 +8,6 @@ import '../../../common/config/models/index.dart';
 import '../../../common/constants.dart';
 import '../../../common/tools/tools.dart';
 import '../../../generated/l10n.dart';
-import '../../../menu/maintab_delegate.dart';
 import '../../../models/app_model.dart';
 import '../../../models/cart/cart_base.dart';
 import '../../../models/entities/product.dart';
@@ -54,8 +53,8 @@ class _MyCartNormalLayoutState extends State<MyCartNormalLayout>
     final canPop = parentRoute?.canPop ?? false;
 
     return Selector<CartModel, String?>(
-      selector: (_, carModel) => cartModel.productsInCart.keys
-          .firstOrNull, //add this Selector to reload cart screen when add product item to cart if the current cart has wallet item
+      selector: (_, carModel) => cartModel.productsInCart.keys.firstOrNull,
+      //add this Selector to reload cart screen when add product item to cart if the current cart has wallet item
       builder: (context, _, child) {
         return MediaQuery.removePadding(
           context: context,
@@ -79,16 +78,8 @@ class _MyCartNormalLayoutState extends State<MyCartNormalLayout>
 
                 return FloatingActionButton.extended(
                   heroTag: null,
-                  onPressed: isReadyForCheckout
-                      ? () {
-                    if (kAdvanceConfig.alwaysShowTabBar) {
-                      MainTabControlDelegate.getInstance()
-                          .changeTab(RouteList.cart, allowPush: false);
-                      // return;
-                    }
-                    onCheckout(cartModel);
-                  }
-                      : null,
+                  onPressed:
+                  isReadyForCheckout ? () => shouldShowLoginDialog(cartModel) : null,
                   elevation: 0,
                   isExtended: true,
                   extendedTextStyle: const TextStyle(
@@ -245,7 +236,8 @@ class _MyCartNormalLayoutState extends State<MyCartNormalLayout>
                                             widget.enabledTextBoxQuantity),
                                       ),
                                     const ShoppingCartSummary(),
-                                    if (totalCartQuantity == 0) const EmptyCart(),
+                                    if (totalCartQuantity == 0)
+                                      const EmptyCart(),
                                     if (errMsg.isNotEmpty)
                                       Padding(
                                         padding: const EdgeInsets.symmetric(

@@ -6,8 +6,9 @@ import 'widgets/success.dart';
 
 class WebviewCheckoutSuccessScreen extends StatelessWidget {
   final Order? order;
+  final String? orderNum;
 
-  const WebviewCheckoutSuccessScreen({this.order});
+  const WebviewCheckoutSuccessScreen({this.order, this.orderNum});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +24,10 @@ class WebviewCheckoutSuccessScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15),
-        child: OrderedSuccess(order: order),
+        child: OrderedSuccess(
+          order: order,
+          orderNum: orderNum,
+        ),
       ),
     );
   }
