@@ -181,7 +181,10 @@ class MenuBarState extends State<SideBarMenu> {
               S.of(context).cart,
               style: textStyle,
             ),
-            onTap: () => pushNavigator(name: RouteList.cart),
+            onTap: () {
+              eventBus.fire(const EventCloseNativeDrawer());
+              FluxNavigate.pushNamed(RouteList.cart);
+            },
           );
         }
       case 'profile':

@@ -85,4 +85,21 @@ class FluxNavigate {
     }
     return _navigator.push(route);
   }
+
+  static Future<T?> tryPushNamed<T extends Object?>(
+      NavigatorState? navigator, {
+        required String routeName,
+      }) async {
+    return navigator?.pushNamed<T>(routeName);
+  }
+
+  static Future<T?> pushNamedOnInnerNavigatorOfCurrentTab<T extends Object?>(
+      String routeName,
+      ) {
+    final navigator = MainTabControlDelegate.innerNavigatorOfCurrentTab;
+    return FluxNavigate.tryPushNamed<T>(
+      navigator,
+      routeName: routeName,
+    );
+  }
 }
