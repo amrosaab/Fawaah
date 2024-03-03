@@ -275,7 +275,12 @@ class ShopifyWidget extends BaseFrameworks
   }
 
   @override
-  Widget renderVariantCartItem(BuildContext context, variation, Map? options) {
+  Widget renderVariantCartItem(
+    BuildContext context,
+    variation,
+    Map? options, {
+    bool isShortStyle = false,
+  }) {
     var list = <Widget>[];
     for (var att in variation.attributes) {
       if (att.name == _defaultTitle && att.option == _defaultOptionTitle) {

@@ -5,6 +5,26 @@ import '../../models/user_model.dart';
 import '../enums/replaced_params.dart';
 
 extension StringExtension on String {
+  String? getPrivacyPolicies({bool isGetPageId = false}) {
+    final value = this;
+
+    if ((isGetPageId && int.tryParse(value) != null) ||
+        value.startsWith('https://') ||
+        value.startsWith('http://')) {
+      return value.toString();
+    }
+
+    return null;
+  }
+
+  String addUrlQuery(String query) {
+    if (query.isEmpty) {
+      return this;
+    }
+
+    return contains('?') ? '$this&$query' : '$this?$query';
+  }
+  
   String get paramSymbol {
     if (contains('?')) {
       return '&';

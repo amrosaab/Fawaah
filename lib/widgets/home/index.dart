@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
+import 'package:fstore/menu/maintab_delegate.dart';
 import 'package:inspireui/icons/constants.dart';
 import 'package:provider/provider.dart';
 
@@ -171,7 +172,8 @@ class _HomeLayoutState extends State<HomeLayout> with AppBarMixin {
                         FluxNavigate.pushNamed(RouteList.homeSearch);
                       },
                       onCheckout: () {
-                        FluxNavigate.pushNamed(RouteList.cart);
+                        MainTabControlDelegate.getInstance()
+                            .changeTab(RouteList.cart);
                       },
                       onTapNotifications: () {
                         FluxNavigate.pushNamed(RouteList.notify);

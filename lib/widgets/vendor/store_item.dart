@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quiver/strings.dart';
 
+import '../../common/config.dart';
 import '../../common/constants.dart';
 import '../../common/tools.dart';
 import '../../generated/l10n.dart';
@@ -117,6 +118,54 @@ class StoreItem extends StatelessWidget {
                   )
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class StoreCartItem extends StatelessWidget {
+  final Store? store;
+
+  const StoreCartItem({this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(context, RouteList.storeDetail,
+            arguments: StoreDetailArgument(store: store));
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8.0),
+        child: Row(
+          children: [
+            if (isNotBlank(store!.image))
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: ImageResize(
+                    url: store!.banner,
+                    size: kSize.medium,
+                    isResize: false,
+                    fit: ImageTools.boxFit(
+                      kVendorConfig.bannerFit,
+                      defaultValue: BoxFit.cover,
+                    ),
+                    height: 32,
+                    width: 32,
+                  ),
+                ),
+              ),
+            Text(
+              store!.name!,
+              style: TextStyle(
+                  fontSize: 15.0,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.primary),
             ),
           ],
         ),

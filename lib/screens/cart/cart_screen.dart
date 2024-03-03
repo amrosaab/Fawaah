@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inspireui/inspireui.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/constants.dart';
@@ -23,9 +24,14 @@ class CartScreen extends StatefulWidget {
   final bool? isModal;
   final bool isBuyNow;
   final bool hideNewAppBar;
+  final bool enabledTextBoxQuantity;
 
-  const CartScreen(
-      {this.isModal, this.isBuyNow = false, this.hideNewAppBar = false});
+  const CartScreen({
+    this.isModal,
+    this.isBuyNow = false,
+    this.hideNewAppBar = false,
+    this.enabledTextBoxQuantity = true,
+  });
 
   @override
   State<CartScreen> createState() => _CartScreenState();
@@ -37,28 +43,33 @@ class _CartScreenState extends State<CartScreen> with AppBarMixin {
   @override
   void initState() {
     super.initState();
+
     screenScrollController = _scrollController;
   }
 
   @override
   Widget build(BuildContext context) {
-    return renderScaffold(
-      routeName: RouteList.cart,
-      hideNewAppBar: widget.hideNewAppBar,
-      backgroundColor: Theme.of(context).colorScheme.background,
-      child: Selector<CartModel, bool>(
-        selector: (_, cartModel) => cartModel.calculatingDiscount,
-        builder: (context, calculatingDiscount, child) {
-          return LoadingBody(
-            isLoading: calculatingDiscount,
-            child: child!,
-          );
-        },
-        child: MyCart(
-          isBuyNow: widget.isBuyNow,
-          isModal: widget.isModal,
-          scrollController: _scrollController,
-          hasNewAppBar: showAppBar(RouteList.cart),
+    return AutoHideKeyboard(
+      child: renderScaffold(
+        routeName: RouteList.cart,
+        hideNewAppBar: widget.hideNewAppBar,
+        resizeToAvoidBottomInset: false,
+        backgroundColor: Theme.of(context).colorScheme.background,
+        child: Selector<CartModel, bool>(
+          selector: (_, cartModel) => cartModel.calculatingDiscount,
+          builder: (context, calculatingDiscount, child) {
+            return LoadingBody(
+              isLoading: calculatingDiscount,
+              child: child!,
+            );
+          },
+          child: MyCart(
+            isBuyNow: widget.isBuyNow,
+            enabledTextBoxQuantity: widget.enabledTextBoxQuantity,
+            isModal: widget.isModal,
+            scrollController: _scrollController,
+            hasNewAppBar: showAppBar(RouteList.cart),
+          ),
         ),
       ),
     );

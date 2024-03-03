@@ -9,6 +9,7 @@ import '../../common/config.dart';
 import '../../common/constants.dart';
 import '../../common/tools.dart';
 import '../../data/boxes.dart';
+import '../../modules/dynamic_layout/helper/helper.dart';
 import '../../services/service_config.dart';
 import '../../services/services.dart';
 import '../booking/booking_model.dart';
@@ -58,10 +59,12 @@ class Product {
   String? categoryId;
   String? videoUrl;
   List<dynamic>? groupedProducts;
+  List<String?>? fileNames;
   List<String?>? files;
   int? stockQuantity;
   int? minQuantity;
   int? maxQuantity;
+  int? quantityStep;
   bool manageStock = false;
   bool backOrdered = false;
   String? relatedIds;
@@ -89,6 +92,11 @@ class Product {
   String? type;
   String? affiliateUrl;
   List<ProductVariation>? variations;
+
+  /// only use with Woocomerce
+  bool get isVariableType => type == 'variable';
+  bool get isSimpleType => type == 'simple';
+  bool get isNofoundType => type == '';
 
   List<Map>? options; //for opencart
 
@@ -142,94 +150,100 @@ class Product {
   String? mVideoTitle;
   String? mVideoDesc;
 
+  List<String>? giftCardAmounts;
+
+  bool get availableRating => averageRating != null && averageRating != 0.0;
+
   ///----FLUXSTORE LISTING----///
-  Product({
-    this.id = _defaultId,
-    String? sku,
-    String? name,
-    String? status,
-    String? vendor,
-    String? description,
-    String? shortDescription,
-    String? permalink,
-    String? price,
-    String? regularPrice,
-    String? salePrice,
-    String? wholesalePrice,
-    String? maxPrice,
-    String? minPrice,
-    bool? onSale,
-    bool? inStock,
-    double? averageRating,
-    int? totalSales,
-    String? dateOnSaleFrom,
-    String? dateOnSaleTo,
-    int? ratingCount,
-    List<String>? images,
-    String? imageFeature,
-    List<ProductAttribute>? attributes,
-    List<Attribute>? defaultAttributes,
-    List<ProductAttribute>? infors,
-    String? categoryId,
-    String? videoUrl,
-    List<dynamic>? groupedProducts,
-    List<String?>? files,
-    int? stockQuantity,
-    int? minQuantity,
-    int? maxQuantity,
-    bool? manageStock,
-    bool? backOrdered,
-    String? relatedIds,
-    bool? backordersAllowed,
-    Store? store,
-    List<Tag>? tags,
-    List<Category>? categories,
-    List<Map>? metaData,
-    List<ProductAddons>? addOns,
-    List<AddonsOption>? selectedOptions,
-    List<VendorAdminVariation>? vendorAdminVariations,
-    List<ProductVariation>? variationProducts,
-    bool? isPurchased,
-    bool? isDownloadable,
-    String? type,
-    String? affiliateUrl,
-    List<ProductVariation>? variations,
-    List<Map>? options,
-    BookingModel? bookingInfo,
-    String? idShop,
-    bool? isFeatured,
-    String? vendorAdminImageFeature,
-    List<String>? categoryIds,
-    List<ProductAttribute>? vendorAdminProductAttributes,
-    String? distance,
-    Map? pureTaxonomies,
-    List? reviews,
-    String? featured,
-    bool? verified,
-    String? tagLine,
-    String? priceRange,
-    String? categoryName,
-    String? hours,
-    String? location,
-    String? phone,
-    String? facebook,
-    String? email,
-    String? website,
-    String? skype,
-    String? whatsapp,
-    String? youtube,
-    String? twitter,
-    String? instagram,
-    String? eventDate,
-    String? rating,
-    int? totalReview,
-    double? lat,
-    double? long,
-    List<dynamic>? listingMenu,
-    ListingSlots? slots,
-    bool? isRestricted,
-    bool? listingBookingStatus,
-  });
+  Product(
+      {this.id = _defaultId,
+        String? sku,
+        String? name,
+        String? status,
+        String? vendor,
+        String? description,
+        String? shortDescription,
+        String? permalink,
+        String? price,
+        String? regularPrice,
+        String? salePrice,
+        String? wholesalePrice,
+        String? maxPrice,
+        String? minPrice,
+        bool? onSale,
+        bool? inStock,
+        double? averageRating,
+        int? totalSales,
+        String? dateOnSaleFrom,
+        String? dateOnSaleTo,
+        int? ratingCount,
+        List<String>? images,
+        String? imageFeature,
+        List<ProductAttribute>? attributes,
+        List<Attribute>? defaultAttributes,
+        List<ProductAttribute>? infors,
+        String? categoryId,
+        String? videoUrl,
+        List<dynamic>? groupedProducts,
+        List<String>? fileNames,
+        List<String?>? files,
+        int? stockQuantity,
+        int? minQuantity,
+        int? maxQuantity,
+        int? quantityStep,
+        bool? manageStock,
+        bool? backOrdered,
+        String? relatedIds,
+        bool? backordersAllowed,
+        Store? store,
+        List<Tag>? tags,
+        List<Category>? categories,
+        List<Map>? metaData,
+        List<ProductAddons>? addOns,
+        List<AddonsOption>? selectedOptions,
+        List<VendorAdminVariation>? vendorAdminVariations,
+        List<ProductVariation>? variationProducts,
+        bool? isPurchased,
+        bool? isDownloadable,
+        String? type,
+        String? affiliateUrl,
+        List<ProductVariation>? variations,
+        List<Map>? options,
+        BookingModel? bookingInfo,
+        String? idShop,
+        bool? isFeatured,
+        String? vendorAdminImageFeature,
+        List<String>? categoryIds,
+        List<ProductAttribute>? vendorAdminProductAttributes,
+        String? distance,
+        Map? pureTaxonomies,
+        List? reviews,
+        String? featured,
+        bool? verified,
+        String? tagLine,
+        String? priceRange,
+        String? categoryName,
+        String? hours,
+        String? location,
+        String? phone,
+        String? facebook,
+        String? email,
+        String? website,
+        String? skype,
+        String? whatsapp,
+        String? youtube,
+        String? twitter,
+        String? instagram,
+        String? eventDate,
+        String? rating,
+        int? totalReview,
+        double? lat,
+        double? long,
+        List<dynamic>? listingMenu,
+        ListingSlots? slots,
+        bool? isRestricted,
+        bool? listingBookingStatus,
+        List<String>? giftCardAmounts});
 
   Product.empty(this.id) {
     name = '';
@@ -246,23 +260,27 @@ class Product {
   }
 
   bool canBeAddedToCartFromList({bool? enableBottomAddToCart}) {
-    if (enableBottomAddToCart ?? kAdvanceConfig.enableBottomAddToCart) {
-      return !isEmptyProduct() &&
-          ((inStock != null && inStock!) || backordersAllowed) &&
-          type != 'external' &&
-          type != 'booking' &&
-          type != 'grouped' &&
-          (addOns?.isEmpty ?? true);
-    } else {
-      return !isEmptyProduct() &&
-          ((inStock != null && inStock!) || backordersAllowed) &&
-          type != 'variable' &&
-          type != 'appointment' &&
-          type != 'external' &&
-          type != 'booking' &&
-          type != 'grouped' &&
-          (addOns?.isEmpty ?? true);
-    }
+    final isEnableBottomCard =
+        enableBottomAddToCart ?? kAdvanceConfig.enableBottomAddToCart;
+
+    final isPassedType = [
+      'external',
+      'booking',
+      'grouped',
+      if (isEnableBottomCard == false) ...[
+        'variable',
+        'appointment',
+      ],
+    ].contains(type) ==
+        false;
+
+    final isCanAdd = !isEmptyProduct() &&
+        ((inStock != null && inStock!) || backordersAllowed) &&
+        isPassedType &&
+        (addOns?.isEmpty ?? true) &&
+        (options?.isEmpty ?? true);
+
+    return isCanAdd;
   }
 
   bool get isVariableProduct => type == 'variable';
@@ -270,6 +288,8 @@ class Product {
   bool get isSimpleProduct => type == 'simple';
 
   bool get isGroupedProduct => type == 'grouped';
+
+  bool get isGiftCardProduct => type == 'gift-card';
 
   String? get displayPrice {
     return onSale == true
@@ -308,10 +328,12 @@ class Product {
     categoryId = p.categoryId;
     videoUrl = p.videoUrl;
     groupedProducts = p.groupedProducts?.toList();
+    fileNames = p.fileNames?.toList();
     files = p.files?.toList();
     stockQuantity = p.stockQuantity;
     minQuantity = p.minQuantity;
     maxQuantity = p.maxQuantity;
+    quantityStep = p.quantityStep;
     manageStock = p.manageStock;
     backOrdered = p.backOrdered;
     backordersAllowed = p.backordersAllowed;
@@ -337,6 +359,7 @@ class Product {
         defaultAddonsOptions[key] = <String, AddonsOption>{};
       }
     });
+    giftCardAmounts = p.giftCardAmounts;
   }
 
   Product.fromJson(Map parsedJson) : id = parsedJson['id'].toString() {
@@ -383,7 +406,7 @@ class Product {
       if (inStock == true && manageStock) {
         inStock =
             (int.tryParse(parsedJson['stock_quantity']?.toString() ?? '0') ??
-                    0) >
+                0) >
                 0;
       }
       backOrdered = parsedJson['backordered'] ?? false;
@@ -420,7 +443,7 @@ class Product {
       }
 
       categoryId = parsedJson['categories'] != null &&
-              parsedJson['categories'].length > 0
+          parsedJson['categories'].length > 0
           ? parsedJson['categories'][0]['id'].toString()
           : '0';
 
@@ -506,16 +529,16 @@ class Product {
               /// sometimes " " become "-" in json['attributes'] but not in json['attributeData'].
               attr.options!.addAll(
                 infors
-                        .firstWhereOrNull((ProductAttribute productAttribute) =>
-                            productAttribute.name != null &&
-                            attr.name != null &&
-                            (productAttribute.name == attr.name ||
-                                productAttribute.name!.toLowerCase() ==
-                                    attr.name!.toLowerCase() ||
-                                productAttribute.name!.replaceAll('-', ' ') ==
-                                    attr.name!.replaceAll('-', ' ')))
-                        ?.options
-                        ?.map((option) => {'name': option}) ??
+                    .firstWhereOrNull((ProductAttribute productAttribute) =>
+                productAttribute.name != null &&
+                    attr.name != null &&
+                    (productAttribute.name == attr.name ||
+                        productAttribute.name!.toLowerCase() ==
+                            attr.name!.toLowerCase() ||
+                        productAttribute.name!.replaceAll('-', ' ') ==
+                            attr.name!.replaceAll('-', ' ')))
+                    ?.options
+                    ?.map((option) => {'name': option}) ??
                     [],
               );
             }
@@ -569,7 +592,7 @@ class Product {
 
       /// Mapping the product meta data
       var metaImages = metaData.firstWhere(
-        (item) => item['key'] == kProductDetail.productMetaDataKey,
+            (item) => item['key'] == kProductDetail.productMetaDataKey,
         orElse: () => {},
       );
       if (metaImages.isNotEmpty && metaImages['value'] != null) {
@@ -616,13 +639,13 @@ class Product {
           var wholesalePriceKey = '${loggedInUser.role ?? ''}_wholesale_price';
 
           var haveWholesalePriceMeta = metaData.firstWhere(
-            (item) => item['key'] == haveWholesalePriceKey,
+                (item) => item['key'] == haveWholesalePriceKey,
             orElse: () => {},
           );
           if (haveWholesalePriceMeta.isNotEmpty &&
               haveWholesalePriceMeta['value'] == 'yes') {
             var wholesalePriceMeta = metaData.firstWhere(
-              (item) => item['key'] == wholesalePriceKey,
+                  (item) => item['key'] == wholesalePriceKey,
               orElse: () => {},
             );
             if (wholesalePriceMeta.isNotEmpty &&
@@ -635,7 +658,7 @@ class Product {
 
         var filterMetas = metaData
             .where((item) =>
-                item['key'] == 'wwpp_product_wholesale_visibility_filter')
+        item['key'] == 'wwpp_product_wholesale_visibility_filter')
             .toList();
         if (filterMetas.isNotEmpty &&
             filterMetas.firstWhereOrNull((e) => e['value'] == 'all') == null) {
@@ -671,8 +694,8 @@ class Product {
       /// - WooFeature Video: https://wordpress.org/plugins/woo-featured-video/
       ///- Yith Feature Video: https://wordpress.org/plugins/yith-woocommerce-featured-video/
       var video = metaData.firstWhere(
-        (item) =>
-            item['key'] == 'video_url' ||
+            (item) =>
+        item['key'] == 'video_url' ||
             item['key'] == '_video_url' ||
             item['key'] == '_woofv_video_embed',
         orElse: () => {},
@@ -685,7 +708,7 @@ class Product {
 
       /// get mstore video setting to support for videos list layout
       var mVideoUrlMeta = metaData.firstWhere(
-        (item) => item['key'] == '_mstore_video_url',
+            (item) => item['key'] == '_mstore_video_url',
         orElse: () => {},
       );
       if (mVideoUrlMeta.isNotEmpty && mVideoUrlMeta['value'] != null) {
@@ -693,7 +716,7 @@ class Product {
       }
 
       var mVideoTitleMeta = metaData.firstWhere(
-        (item) => item['key'] == '_mstore_video_title',
+            (item) => item['key'] == '_mstore_video_title',
         orElse: () => {},
       );
       if (mVideoTitleMeta.isNotEmpty && mVideoTitleMeta['value'] != null) {
@@ -701,7 +724,7 @@ class Product {
       }
 
       var mVideoDescMeta = metaData.firstWhere(
-        (item) => item['key'] == '_mstore_video_description',
+            (item) => item['key'] == '_mstore_video_description',
         orElse: () => {},
       );
       if (mVideoDescMeta.isNotEmpty && mVideoDescMeta['value'] != null) {
@@ -715,23 +738,31 @@ class Product {
         groupedProductList.add(item);
       });
       groupedProducts = groupedProductList;
+
+      var fileNames = <String?>[];
       var files = <String?>[];
-      final rawFiles = parsedJson['downloads'];
-      if (rawFiles is List) {
+
+      final rawDownloads = parsedJson['downloads'];
+      if (rawDownloads is List) {
         for (var item in List.from(parsedJson['downloads'] ?? [])) {
+          fileNames.add(item['name']);
           files.add(item['file']);
         }
-      } else if (rawFiles is Map) {
+      } else if (rawDownloads is Map) {
         for (var item in Map.from(parsedJson['downloads'] ?? {}).values) {
+          fileNames.add(item['name']);
           files.add(item['file']);
         }
       }
+
+      this.fileNames = fileNames;
       this.files = files;
 
       if (parsedJson['meta_data'] != null) {
         for (var item in parsedJson['meta_data']) {
           try {
-            if (item['key'] == '_wc_min_max_quantities_max_qty') {
+            if (item['key'] == '_wc_min_max_quantities_max_qty' ||
+                item['key'] == '_wcmmq_max_qty') {
               var quantity = int.parse(item['value']);
               quantity == 0 ? maxQuantity = null : maxQuantity = quantity;
             }
@@ -740,12 +771,23 @@ class Product {
           }
 
           try {
-            if (item['key'] == '_wc_min_max_quantities_min_qty') {
+            if (item['key'] == '_wc_min_max_quantities_min_qty' ||
+                item['key'] == '_wcmmq_min_qty') {
               var quantity = int.parse(item['value']);
               quantity == 0 ? minQuantity = null : minQuantity = quantity;
             }
           } catch (e) {
             printLog('minQuantity $e');
+          }
+
+          try {
+            if (item['key'] == '_wc_min_max_quantities_step' ||
+                item['key'] == '_wcmmq_step') {
+              var step = int.parse(item['value']);
+              step == 0 ? quantityStep = null : quantityStep = step;
+            }
+          } catch (e) {
+            printLog('quantityStep $e');
           }
 
           try {
@@ -760,8 +802,8 @@ class Product {
               for (var value in values) {
                 /// Customer Defined Price (custom_price) doesn't have any options.
                 if ((value['options'] != null ||
-                        value['type'] == 'custom_text' ||
-                        value['type'] == 'custom_price') &&
+                    value['type'] == 'custom_text' ||
+                    value['type'] == 'custom_price') &&
                     value['field_name'] != null) {
                   final item = ProductAddons.fromJson(value);
                   if (item.name != null && !addOnNames.contains(item.name)) {
@@ -785,6 +827,14 @@ class Product {
             } catch (e) {
               printLog('maxQuantity $e');
             }
+          }
+
+          try {
+            if (item['key'] == '_gift_card_amounts' && item['value'] is List) {
+              giftCardAmounts = List.from(item['value']);
+            }
+          } catch (e) {
+            printLog('giftCardAmounts $e');
           }
         }
       }
@@ -812,7 +862,7 @@ class Product {
       name = HtmlUnescape().convert(parsedJson['name']);
       description = parsedJson['description'];
       permalink =
-          '${ServerConfig().url}/index.php?route=product/product&product_id=$id';
+      '${ServerConfig().url}/index.php?route=product/product&product_id=$id';
       regularPrice = parsedJson['price'];
       salePrice = parsedJson['special'];
       price = salePrice ?? regularPrice;
@@ -867,13 +917,13 @@ class Product {
     try {
       var priceData = json['variants']['edges'][0]['node']['price'];
       var compareAtPriceData =
-          json['variants']['edges'][0]['node']['compareAtPrice'];
+      json['variants']['edges'][0]['node']['compareAtPrice'];
       var compareAtPrice =
-          compareAtPriceData != null ? compareAtPriceData['amount'] : null;
+      compareAtPriceData != null ? compareAtPriceData['amount'] : null;
       var collections =
-          json['collections'] != null ? json['collections']['edges'] : null;
+      json['collections'] != null ? json['collections']['edges'] : null;
       var defaultCategory =
-          (collections?.isNotEmpty ?? false) ? collections[0]['node'] : null;
+      (collections?.isNotEmpty ?? false) ? collections[0]['node'] : null;
       if (collections is List) {
         for (var item in collections) {
           categories.add(Category.fromJsonShopify(item['node']));
@@ -928,7 +978,7 @@ class Product {
               node['sources'] is List) {
             final listVideoResponse = node['sources'] as List;
             Map mVideo = listVideoResponse.firstWhere(
-              (item) =>
+                  (item) =>
                   kProductVideoSupportTypes.contains(item['format'].toString()),
               orElse: () => {},
             );
@@ -936,6 +986,7 @@ class Product {
               mVideoUrl = mVideo['url'].toString();
               mVideoDesc = json['description'];
               mVideoTitle = name;
+              videoUrl = mVideoUrl;
               break;
             }
           }
@@ -968,15 +1019,18 @@ class Product {
 
   Product.fromPresta(Map parsedJson, apiLink)
       : id = parsedJson['id'] != null
-            ? parsedJson['id'].toString()
-            : _defaultId {
+      ? parsedJson['id'].toString()
+      : _defaultId {
     try {
       var productName = parsedJson['name'];
       name = (productName is List && productName.isNotEmpty)
           ? '${productName[0]?['value']}'
           : '$productName';
       description =
-          parsedJson['description'] is String ? parsedJson['description'] : '';
+      parsedJson['description'] is String ? parsedJson['description'] : '';
+      shortDescription = parsedJson['description_short'] is String
+          ? parsedJson['description_short']
+          : '';
       var linkRewrite = parsedJson['link_rewrite'];
       permalink = (linkRewrite is List && linkRewrite.isNotEmpty)
           ? '${linkRewrite[0]?['value']}'
@@ -989,10 +1043,9 @@ class Product {
               .toStringAsFixed(2);
       price = (double.parse((parsedJson['wholesale_price'] ?? 0.0).toString()))
           .toStringAsFixed(2);
-      idShop = parsedJson['id_shop_default'] ??
-          parsedJson['id_shop_default'].toString();
+      idShop = parsedJson['id_shop_default']?.toString();
 
-      categoryId = parsedJson['id_category_default'];
+      categoryId = parsedJson['id_category_default']?.toString();
       ratingCount = 0;
       averageRating = 0.0;
       if (salePrice != regularPrice) {
@@ -1016,7 +1069,8 @@ class Product {
       }
       if (parsedJson['associations'] != null &&
           parsedJson['associations']['stock_availables'] != null) {
-        sku = parsedJson['associations']['stock_availables'][0]['id'];
+        sku =
+            parsedJson['associations']['stock_availables'][0]['id']?.toString();
       }
       type = parsedJson['type'];
       if (type == 'simple' &&
@@ -1064,7 +1118,7 @@ class Product {
         }
       }
       imageFeature =
-          images.isNotEmpty ? images[0] : apiLink(model.thumbnail!.url);
+      images.isNotEmpty ? images[0] : apiLink(model.thumbnail!.url);
 
       averageRating = model.review == null ? 0 : model.review!.toDouble();
       ratingCount = 0;
@@ -1113,19 +1167,20 @@ class Product {
       'sale_price': salePrice ?? '',
       'stock_quantity': stockQuantity?.toString() ?? '',
       'stock_status':
-          inStock == null || inStock == false ? 'outofstock' : 'instock',
+      inStock == null || inStock == false ? 'outofstock' : 'instock',
       'manage_stock': manageStock.toString(),
       'category_ids': categoryIds,
       'product_attributes':
-          jsonEncode(listAttr.map((e) => e.toJson()).toList()),
+      jsonEncode(listAttr.map((e) => e.toJson()).toList()),
       'variation_products':
-          jsonEncode(variationProducts?.map((e) => e.toManagerJson()).toList()),
+      jsonEncode(variationProducts?.map((e) => e.toManagerJson()).toList()),
       'tags': tags.map((e) => e.name).join(','),
     };
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'listingType': listingType,
       'id': id,
       'sku': sku,
       'name': name,
@@ -1195,6 +1250,7 @@ class Product {
 
   Product.fromLocalJson(Map json) : id = json['id'].toString() {
     try {
+      listingType = json['listingType'] == true;
       sku = json['sku'];
       name = json['name'];
       description = json['description'];
@@ -1316,8 +1372,8 @@ class Product {
           .removeWhere((element) => element.isEmpty || element == '\n');
       description = dataDescription.join('');
       regularPrice = (double.parse(
-              ('${NotionDataTools.fromNumber(properties['RegularPrice']) ?? 0.0}')
-                  .toString()))
+          ('${NotionDataTools.fromNumber(properties['RegularPrice']) ?? 0.0}')
+              .toString()))
           .toStringAsFixed(2);
       price = (NotionDataTools.fromNumber(properties['Price']) ?? 0.0)
           .toStringAsFixed(2);
@@ -1391,8 +1447,8 @@ class Product {
       price = '${json['price'] ?? '0.0'}';
       salePrice = json['sale_price'] != null
           ? (double.tryParse('${json['sale_price']}') == 0
-              ? null
-              : '${json['sale_price']}')
+          ? null
+          : '${json['sale_price']}')
           : null;
       onSale = (int.tryParse('$salePrice') ?? 0) > 0;
       inStock = json['availability'] == 'available';
@@ -1459,7 +1515,7 @@ class Product {
     try {
       name = HtmlUnescape().convert(json['title']);
       description =
-          isNotBlank(json['post_title']) ? json['post_title'] : json['excerpt'];
+      isNotBlank(json['post_title']) ? json['post_title'] : json['excerpt'];
       shortDescription = json['content'];
       permalink = json['link'];
 
@@ -1510,7 +1566,7 @@ class Product {
   ///----FLUXSTORE LISTING----////
   Product.fromListingJson(Map<String, dynamic> json)
       : id = Tools.getValueByKey(json, DataMapping().kProductDataMapping['id'])
-            .toString() {
+      .toString() {
     try {
       listingType = true;
       name = HtmlUnescape().convert(Tools.getValueByKey(
@@ -1524,9 +1580,9 @@ class Product {
           json, DataMapping().kProductDataMapping['distance']);
 
       pureTaxonomies = Tools.getValueByKey(
-              json, DataMapping().kProductDataMapping['pureTaxonomies']) is Map
+          json, DataMapping().kProductDataMapping['pureTaxonomies']) is Map
           ? Tools.getValueByKey(
-              json, DataMapping().kProductDataMapping['pureTaxonomies'])
+          json, DataMapping().kProductDataMapping['pureTaxonomies'])
           : null;
 
       final rate = Tools.getValueByKey(
@@ -1534,7 +1590,7 @@ class Product {
 
       averageRating = rate != null
           ? double.parse(double.parse(double.parse(rate.toString()).toString())
-              .toStringAsFixed(1))
+          .toStringAsFixed(1))
           : 0.0;
 
       regularPrice = Tools.getValueByKey(
@@ -1545,6 +1601,11 @@ class Product {
       type =
           Tools.getValueByKey(json, DataMapping().kProductDataMapping['type']);
       categoryName = type;
+      var categories =
+      Tools.getValueByKey(json, DataMapping().kTaxonomies['category']);
+      if (categories is List && List.from(categories).isNotEmpty) {
+        categoryId = '${List.from(categories).first}';
+      }
       averageRating = double.tryParse(
           '${Tools.getValueByKey(json, DataMapping().kProductDataMapping['rating'])}');
       averageRating = averageRating ?? 0.0;
@@ -1559,11 +1620,11 @@ class Product {
       location = Tools.getValueByKey(
           json, DataMapping().kProductDataMapping['address']);
       final la =
-          Tools.getValueByKey(json, DataMapping().kProductDataMapping['lat']);
+      Tools.getValueByKey(json, DataMapping().kProductDataMapping['lat']);
       final lo =
-          Tools.getValueByKey(json, DataMapping().kProductDataMapping['lng']);
-      lat = la != null && la.isNotEmpty ? double.parse(la.toString()) : null;
-      long = lo != null && lo.isNotEmpty ? double.parse(lo.toString()) : null;
+      Tools.getValueByKey(json, DataMapping().kProductDataMapping['lng']);
+      lat = Helper.formatDouble(la);
+      long = Helper.formatDouble(lo);
 
       phone =
           Tools.getValueByKey(json, DataMapping().kProductDataMapping['phone']);
@@ -1637,7 +1698,7 @@ class Product {
         if (imgJson != null) {
           if (imgJson['media_details']?['sizes']?['large'] != null) {
             imageFeature =
-                imgJson['media_details']?['sizes']?['large']?['source_url'];
+            imgJson['media_details']?['sizes']?['large']?['source_url'];
             if (images.isEmpty) {
               images.add(imageFeature!);
             }
@@ -1646,7 +1707,7 @@ class Product {
       }
 
       final items =
-          Tools.getValueByKey(json, DataMapping().kProductDataMapping['menu']);
+      Tools.getValueByKey(json, DataMapping().kProductDataMapping['menu']);
       if (items != null && items.length > 0) {
         for (var i = 0; i < items.length; i++) {
           var item = ListingMenu.fromJson(items[i]);
@@ -1680,87 +1741,89 @@ class Product {
 
   Product copyWith(
       {String? id,
-      String? sku,
-      String? name,
-      String? status,
-      String? vendor,
-      String? description,
-      String? shortDescription,
-      String? permalink,
-      String? price,
-      String? regularPrice,
-      String? salePrice,
-      String? maxPrice,
-      String? minPrice,
-      bool? onSale,
-      bool? inStock,
-      double? averageRating,
-      int? totalSales,
-      String? dateOnSaleFrom,
-      String? dateOnSaleTo,
-      int? ratingCount,
-      List<String>? images,
-      String? imageFeature,
-      List<ProductAttribute>? attributes,
-      List<Attribute>? defaultAttributes,
-      List<ProductAttribute>? infors,
-      String? categoryId,
-      String? videoUrl,
-      List<dynamic>? groupedProducts,
-      List<String?>? files,
-      int? stockQuantity,
-      int? minQuantity,
-      int? maxQuantity,
-      bool? manageStock,
-      bool? backOrdered,
-      String? relatedIds,
-      bool? backordersAllowed,
-      Store? store,
-      List<Tag>? tags,
-      List<Category>? categories,
-      List<Map>? metaData,
-      List<ProductAddons>? addOns,
-      List<AddonsOption>? selectedOptions,
-      List<VendorAdminVariation>? vendorAdminVariations,
-      List<ProductVariation>? variationProducts,
-      bool? isPurchased,
-      bool? isDownloadable,
-      String? type,
-      String? affiliateUrl,
-      List<ProductVariation>? variations,
-      List<Map>? options,
-      BookingModel? bookingInfo,
-      String? idShop,
-      bool? isFeatured,
-      String? vendorAdminImageFeature,
-      List<String>? categoryIds,
-      List<ProductAttribute>? vendorAdminProductAttributes,
-      String? distance,
-      Map? pureTaxonomies,
-      List? reviews,
-      String? featured,
-      bool? verified,
-      String? tagLine,
-      String? priceRange,
-      String? categoryName,
-      String? hours,
-      String? location,
-      String? phone,
-      String? facebook,
-      String? email,
-      String? website,
-      String? skype,
-      String? whatsapp,
-      String? youtube,
-      String? twitter,
-      String? instagram,
-      String? eventDate,
-      int? totalReview,
-      double? lat,
-      double? long,
-      List<dynamic>? listingMenu,
-      ListingSlots? slots,
-      bool? isRestricted}) {
+        String? sku,
+        String? name,
+        String? status,
+        String? vendor,
+        String? description,
+        String? shortDescription,
+        String? permalink,
+        String? price,
+        String? regularPrice,
+        String? salePrice,
+        String? maxPrice,
+        String? minPrice,
+        bool? onSale,
+        bool? inStock,
+        double? averageRating,
+        int? totalSales,
+        String? dateOnSaleFrom,
+        String? dateOnSaleTo,
+        int? ratingCount,
+        List<String>? images,
+        String? imageFeature,
+        List<ProductAttribute>? attributes,
+        List<Attribute>? defaultAttributes,
+        List<ProductAttribute>? infors,
+        String? categoryId,
+        String? videoUrl,
+        List<dynamic>? groupedProducts,
+        List<String?>? files,
+        int? stockQuantity,
+        int? minQuantity,
+        int? maxQuantity,
+        int? quantityStep,
+        bool? manageStock,
+        bool? backOrdered,
+        String? relatedIds,
+        bool? backordersAllowed,
+        Store? store,
+        List<Tag>? tags,
+        List<Category>? categories,
+        List<Map>? metaData,
+        List<ProductAddons>? addOns,
+        List<AddonsOption>? selectedOptions,
+        List<VendorAdminVariation>? vendorAdminVariations,
+        List<ProductVariation>? variationProducts,
+        bool? isPurchased,
+        bool? isDownloadable,
+        String? type,
+        String? affiliateUrl,
+        List<ProductVariation>? variations,
+        List<Map>? options,
+        BookingModel? bookingInfo,
+        String? idShop,
+        bool? isFeatured,
+        String? vendorAdminImageFeature,
+        List<String>? categoryIds,
+        List<ProductAttribute>? vendorAdminProductAttributes,
+        String? distance,
+        Map? pureTaxonomies,
+        List? reviews,
+        String? featured,
+        bool? verified,
+        String? tagLine,
+        String? priceRange,
+        String? categoryName,
+        String? hours,
+        String? location,
+        String? phone,
+        String? facebook,
+        String? email,
+        String? website,
+        String? skype,
+        String? whatsapp,
+        String? youtube,
+        String? twitter,
+        String? instagram,
+        String? eventDate,
+        int? totalReview,
+        double? lat,
+        double? long,
+        List<dynamic>? listingMenu,
+        ListingSlots? slots,
+        bool? isRestricted,
+        List<String>? giftCardAmounts}) {
     return Product(
         id: id ?? this.id,
         sku: sku ?? this.sku,
@@ -1794,6 +1857,7 @@ class Product {
         stockQuantity: stockQuantity ?? this.stockQuantity,
         minQuantity: minQuantity ?? this.minQuantity,
         maxQuantity: maxQuantity ?? this.maxQuantity,
+        quantityStep: quantityStep ?? this.quantityStep,
         manageStock: manageStock ?? this.manageStock,
         backOrdered: backOrdered ?? this.backOrdered,
         relatedIds: relatedIds ?? this.relatedIds,
@@ -1805,7 +1869,7 @@ class Product {
         addOns: addOns ?? this.addOns,
         selectedOptions: selectedOptions ?? this.selectedOptions,
         vendorAdminVariations:
-            vendorAdminVariations ?? this.vendorAdminVariations,
+        vendorAdminVariations ?? this.vendorAdminVariations,
         variationProducts: variationProducts ?? this.variationProducts,
         isPurchased: isPurchased ?? this.isPurchased,
         isDownloadable: isDownloadable ?? this.isDownloadable,
@@ -1817,10 +1881,10 @@ class Product {
         idShop: idShop ?? this.idShop,
         isFeatured: isFeatured ?? this.isFeatured,
         vendorAdminImageFeature:
-            vendorAdminImageFeature ?? this.vendorAdminImageFeature,
+        vendorAdminImageFeature ?? this.vendorAdminImageFeature,
         categoryIds: categoryIds ?? this.categoryIds,
         vendorAdminProductAttributes:
-            vendorAdminProductAttributes ?? this.vendorAdminProductAttributes,
+        vendorAdminProductAttributes ?? this.vendorAdminProductAttributes,
         distance: distance ?? this.distance,
         pureTaxonomies: pureTaxonomies ?? this.pureTaxonomies,
         reviews: reviews ?? this.reviews,
@@ -1846,7 +1910,8 @@ class Product {
         long: long ?? this.long,
         listingMenu: listingMenu ?? this.listingMenu,
         slots: slots ?? this.slots,
-        isRestricted: isRestricted ?? this.isRestricted);
+        isRestricted: isRestricted ?? this.isRestricted,
+        giftCardAmounts: giftCardAmounts);
   }
 
   factory Product.jsonParser(item) {

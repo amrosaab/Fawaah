@@ -106,6 +106,8 @@ class ServerConfig {
 
   bool get isOpencart => typeName == 'opencart';
 
+  bool get isMagento => typeName == 'magento';
+
   /// Another framework use the UI of Wordpress blog
   bool get isUseWordPressBlog {
     return typeName != 'wordpress' && typeName != 'gpt' && blog != null;
@@ -137,6 +139,8 @@ class ServerConfig {
   bool get isSupportDeleteAccount {
     return true;
   }
+
+  bool get isSupportCouponList => !(isShopify || isMagento);
 
   bool get isWooPluginSupported {
     return [

@@ -89,7 +89,7 @@ class MainTabsState extends CustomOverlayState<MainTabs>
     // In App Update For Android will have higher priority than Enable Version Check
     if (isAndroid && kAdvanceConfig.inAppUpdateForAndroid.enable) {
       unawaited(InAppUpdateForAndroid().checkForUpdate());
-    } else if (kAdvanceConfig.enableVersionCheck) {
+    } else if (kAdvanceConfig.versionCheck.enable) {
       final newVersionPlus = NewVersionPlus();
       final status = await newVersionPlus.getVersionStatus();
 

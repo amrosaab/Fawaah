@@ -1201,7 +1201,13 @@ Map<String, dynamic> environment = {
     /// Set the file size limit (in MB) for upload. Recommended: <15MB.
     "fileUploadSizeLimit": 5.0
   },
-  "cartDetail": {"minAllowTotalCartValue": 1, "maxAllowQuantity": 10},
+  "cartDetail": {
+    "minAllowTotalCartValue": 1,
+    "maxAllowQuantity": 10,
+
+    /// Cart Style: normal, style01
+    "style": "style01"
+  },
 
   /// Translate the product variant by languages
   /// As it could be limited with the REST API when request variant

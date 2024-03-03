@@ -290,6 +290,16 @@ class S {
     );
   }
 
+  /// `Pay {amount}`
+  String payWithAmount(Object amount) {
+    return Intl.message(
+      'Pay $amount',
+      name: 'payWithAmount',
+      desc: '',
+      args: [amount],
+    );
+  }
+
   /// `Clear Cart`
   String get clearCart {
     return Intl.message(
@@ -6530,6 +6540,16 @@ class S {
     );
   }
 
+  /// `Are you sure you want to remove this product?`
+  String get confirmRemoveProductInCart {
+    return Intl.message(
+      'Are you sure you want to remove this product?',
+      name: 'confirmRemoveProductInCart',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `The currently selected currency is not available for the Wallet feature, please change it to {defaultCurrency}`
   String warningCurrencyMessageForWallet(Object defaultCurrency) {
     return Intl.message(
@@ -6639,6 +6659,47 @@ class S {
       args: [],
     );
   }
+
+  /// `Select Store`
+  String get selectStore {
+    return Intl.message(
+      'Select Store',
+      name: 'selectStore',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Name On Card`
+  String get nameOnCard {
+    return Intl.message(
+      'Name On Card',
+      name: 'nameOnCard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{country} country is not supported`
+  String countryIsNotSupported(Object country) {
+    return Intl.message(
+      '$country country is not supported',
+      name: 'countryIsNotSupported',
+      desc: '',
+      args: [country],
+    );
+  }
+
+  /// `Sorry, this video cannot be played.`
+  String get canNotPlayVideo {
+    return Intl.message(
+      'Sorry, this video cannot be played.',
+      name: 'canNotPlayVideo',
+      desc: '',
+      args: [],
+    );
+  }
+
 
   /// `Shop Email`
   String get storeEmail {
