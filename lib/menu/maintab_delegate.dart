@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-typedef TabKey = GlobalKey<NavigatorState>? Function();
+typedef TabInnerNavigator = GlobalKey<NavigatorState>? Function();
 typedef TabName = String? Function();
 
 class MainTabControlDelegate {
@@ -9,7 +9,7 @@ class MainTabControlDelegate {
   late Function(String? nameTab, {bool allowPush}) changeTab;
   late Function(int index) tabAnimateTo;
   late Function() changeToDefaultTab;
-  late TabKey tabKey;
+  late TabInnerNavigator tabKey;
   late TabName currentTabName;
 
   static MainTabControlDelegate? _instance;
@@ -17,6 +17,9 @@ class MainTabControlDelegate {
   static MainTabControlDelegate getInstance() {
     return _instance ??= MainTabControlDelegate._();
   }
+
+  static NavigatorState? get innerNavigatorOfCurrentTab =>
+      MainTabControlDelegate.getInstance().tabKey()?.currentState;
 
   MainTabControlDelegate._();
 }
