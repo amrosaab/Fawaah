@@ -6,9 +6,11 @@ import '../../../models/entities/currency.dart';
 import '../../../models/entities/social_connect_url.dart';
 import '../../config.dart';
 import '../../constants.dart';
+import '../../extensions/string_ext.dart';
 import 'category_config.dart';
 import 'gdpr_config.dart';
 import 'in_app_update_for_android_config.dart';
+import 'version_check_config.dart';
 
 enum ButtonLocation {
   startTop,
@@ -52,8 +54,7 @@ class AdvancedConfig {
   final bool showAllCoupons;
   final bool showExpiredCoupons;
   final bool alwaysShowTabBar;
-  final int? privacyPoliciesPageId;
-  final String privacyPoliciesPageUrl;
+  final String privacyPoliciesPageUrlOrId;
   final String supportPageUrl;
   final String downloadPageUrl;
   final List<SocialConnectUrl> socialConnectUrls;
@@ -63,6 +64,7 @@ class AdvancedConfig {
   final num maxQueryRadiusDistance;
   final bool enableMembershipUltimate;
   final bool enableWooCommerceWholesalePrices;
+  final bool isRequiredSiteSelection;
   final bool enablePaidMembershipPro;
   final bool enableDeliveryDateOnCheckout;
   final bool enableNewSMSLogin;
@@ -76,9 +78,10 @@ class AdvancedConfig {
   final bool enableDigitsMobileWhatsApp;
   final bool onBoardOnlyShowFirstTime;
   final String webViewScript;
-  final bool enableVersionCheck;
+  final VersionCheckConfig versionCheck;
   final String ajaxSearchURL;
   final bool alwaysClearWebViewCache;
+  final bool alwaysClearWebViewCookie;
   final bool alwaysRefreshBlog;
   final GdprConfig gdprConfig;
   final bool orderNotesWithPrivateNote;
@@ -88,6 +91,7 @@ class AdvancedConfig {
   final CategoryAdvanceConfig categoryConfig;
   final List<String> pinnedProductTags;
   final ButtonLocation cartCheckoutButtonLocation;
+  final int? timeShowToastMessage;
 
   AdvancedConfig({
     required this.defaultLanguage,
@@ -122,8 +126,7 @@ class AdvancedConfig {
     required this.showAllCoupons,
     required this.showExpiredCoupons,
     required this.alwaysShowTabBar,
-    this.privacyPoliciesPageId,
-    required this.privacyPoliciesPageUrl,
+    required this.privacyPoliciesPageUrlOrId,
     required this.supportPageUrl,
     required this.downloadPageUrl,
     required this.socialConnectUrls,
@@ -133,6 +136,7 @@ class AdvancedConfig {
     required this.maxQueryRadiusDistance,
     required this.enableMembershipUltimate,
     required this.enableWooCommerceWholesalePrices,
+    required this.isRequiredSiteSelection,
     required this.enablePaidMembershipPro,
     required this.enableDeliveryDateOnCheckout,
     required this.enableNewSMSLogin,
@@ -146,9 +150,10 @@ class AdvancedConfig {
     required this.enableDigitsMobileWhatsApp,
     required this.onBoardOnlyShowFirstTime,
     required this.webViewScript,
-    required this.enableVersionCheck,
+    required this.versionCheck,
     required this.ajaxSearchURL,
     required this.alwaysClearWebViewCache,
+    required this.alwaysClearWebViewCookie,
     required this.alwaysRefreshBlog,
     required this.gdprConfig,
     required this.orderNotesWithPrivateNote,
@@ -158,16 +163,22 @@ class AdvancedConfig {
     required this.categoryConfig,
     required this.pinnedProductTags,
     required this.cartCheckoutButtonLocation,
+    this.timeShowToastMessage,
   });
+  int? get privacyPoliciesPageId => int.tryParse(
+      privacyPoliciesPageUrlOrId.getPrivacyPolicies(isGetPageId: true) ?? '');
+  String get privacyPoliciesPageUrl =>
+      privacyPoliciesPageUrlOrId.getPrivacyPolicies() ?? '';
 
   factory AdvancedConfig.fromJson(Map<dynamic, dynamic> json) {
     final blogLayout = json['DetailedBlogLayout'] ??
         DefaultConfig.advanceConfig['DetailedBlogLayout'];
     final defaultCurrency = json['DefaultCurrency'];
     final buttonLocation = ButtonLocation.values.firstWhere(
-      (element) => element.name == '${json['cartCheckoutButtonLocation']}',
+          (element) => element.name == '${json['cartCheckoutButtonLocation']}',
       orElse: () => ButtonLocation.endTop,
     );
+
     return AdvancedConfig(
       defaultLanguage: json['DefaultLanguage'] ??
           DefaultConfig.advanceConfig['DefaultLanguage'],
@@ -179,15 +190,15 @@ class AdvancedConfig {
       hideOutOfStock: json['hideOutOfStock'] ??
           DefaultConfig.advanceConfig['hideOutOfStock'],
       hideEmptyTags:
-          json['HideEmptyTags'] ?? DefaultConfig.advanceConfig['HideEmptyTags'],
+      json['HideEmptyTags'] ?? DefaultConfig.advanceConfig['HideEmptyTags'],
       hideEmptyCategories: json['HideEmptyCategories'] ??
           DefaultConfig.advanceConfig['HideEmptyCategories'],
       enableRating:
-          json['EnableRating'] ?? DefaultConfig.advanceConfig['EnableRating'],
+      json['EnableRating'] ?? DefaultConfig.advanceConfig['EnableRating'],
       hideEmptyProductListRating: json['hideEmptyProductListRating'] ??
           DefaultConfig.advanceConfig['hideEmptyProductListRating'],
       enableCart:
-          json['EnableCart'] ?? DefaultConfig.advanceConfig['EnableCart'],
+      json['EnableCart'] ?? DefaultConfig.advanceConfig['EnableCart'],
       showBottomCornerCart: json['ShowBottomCornerCart'] ??
           DefaultConfig.advanceConfig['ShowBottomCornerCart'],
       enableSkuSearch: json['EnableSkuSearch'] ??
@@ -204,8 +215,8 @@ class AdvancedConfig {
           : null,
       currencies: <Currency>[
         ...((json['Currencies'] is List
-                ? json['Currencies']
-                : DefaultConfig.advanceConfig['Currencies'] ?? []) as List)
+            ? json['Currencies']
+            : DefaultConfig.advanceConfig['Currencies'] ?? []) as List)
             .map((e) => Currency.fromJson(e)),
       ],
       defaultStoreViewCode: json['DefaultStoreViewCode'] ??
@@ -214,15 +225,15 @@ class AdvancedConfig {
         ...(json['EnableAttributesConfigurableProduct'] is List
             ? json['EnableAttributesConfigurableProduct']
             : DefaultConfig
-                    .advanceConfig['EnableAttributesConfigurableProduct'] ??
-                []),
+            .advanceConfig['EnableAttributesConfigurableProduct'] ??
+            []),
       ],
       enableAttributesLabelConfigurableProduct: <String>[
         ...((json['EnableAttributesLabelConfigurableProduct'] is List
             ? json['EnableAttributesLabelConfigurableProduct']
             : DefaultConfig.advanceConfig[
-                    'EnableAttributesLabelConfigurableProduct'] ??
-                [])),
+        'EnableAttributesLabelConfigurableProduct'] ??
+            [])),
       ],
       isMultiLanguages: json['isMultiLanguages'] ??
           DefaultConfig.advanceConfig['isMultiLanguages'],
@@ -246,21 +257,20 @@ class AdvancedConfig {
           DefaultConfig.advanceConfig['ShowExpiredCoupons'],
       alwaysShowTabBar: json['AlwaysShowTabBar'] ??
           DefaultConfig.advanceConfig['AlwaysShowTabBar'],
-      privacyPoliciesPageId: int.tryParse(
+      privacyPoliciesPageUrlOrId:
+      json['PrivacyPoliciesPageUrlOrId']?.toString() ??
           json['PrivacyPoliciesPageId']?.toString() ??
-              DefaultConfig.advanceConfig['PrivacyPoliciesPageId'] ??
-              ''),
-      privacyPoliciesPageUrl: json['PrivacyPoliciesPageUrl'] ??
-          DefaultConfig.advanceConfig['PrivacyPoliciesPageUrl'],
+          json['PrivacyPoliciesPageUrl']?.toString() ??
+          DefaultConfig.advanceConfig['PrivacyPoliciesPageUrlOrId'],
       supportPageUrl: json['SupportPageUrl'] ??
           DefaultConfig.advanceConfig['SupportPageUrl'],
       downloadPageUrl: json['DownloadPageUrl'] ??
           DefaultConfig.advanceConfig['DownloadPageUrl'],
       socialConnectUrls: <SocialConnectUrl>[
         ...((json['SocialConnectUrl'] is List
-                    ? json['SocialConnectUrl']
-                    : DefaultConfig.advanceConfig['SocialConnectUrl'] ?? [])
-                as List)
+            ? json['SocialConnectUrl']
+            : DefaultConfig.advanceConfig['SocialConnectUrl'] ?? [])
+        as List)
             .map((e) => SocialConnectUrl.fromJson(e)),
       ],
       autoDetectLanguage: json['AutoDetectLanguage'] ??
@@ -274,8 +284,10 @@ class AdvancedConfig {
       enableMembershipUltimate: json['EnableMembershipUltimate'] ??
           DefaultConfig.advanceConfig['EnableMembershipUltimate'],
       enableWooCommerceWholesalePrices:
-          json['EnableWooCommerceWholesalePrices'] ??
-              DefaultConfig.advanceConfig['EnableWooCommerceWholesalePrices'],
+      json['EnableWooCommerceWholesalePrices'] ??
+          DefaultConfig.advanceConfig['EnableWooCommerceWholesalePrices'],
+      isRequiredSiteSelection: json['IsRequiredSiteSelection'] ??
+          DefaultConfig.advanceConfig['IsRequiredSiteSelection'],
       enablePaidMembershipPro: json['EnablePaidMembershipPro'] ??
           DefaultConfig.advanceConfig['EnablePaidMembershipPro'],
       enableDeliveryDateOnCheckout: json['EnableDeliveryDateOnCheckout'] ??
@@ -285,7 +297,7 @@ class AdvancedConfig {
       enableBottomAddToCart: json['EnableBottomAddToCart'] ??
           DefaultConfig.advanceConfig['EnableBottomAddToCart'],
       inAppWebView:
-          json['inAppWebView'] ?? DefaultConfig.advanceConfig['inAppWebView'],
+      json['inAppWebView'] ?? DefaultConfig.advanceConfig['inAppWebView'],
       enableWOOCSCurrencySwitcher: json['EnableWOOCSCurrencySwitcher'] ??
           DefaultConfig.advanceConfig['EnableWOOCSCurrencySwitcher'],
       enableProductBackdrop: json['enableProductBackdrop'] ??
@@ -301,13 +313,19 @@ class AdvancedConfig {
       onBoardOnlyShowFirstTime: json['OnBoardOnlyShowFirstTime'] ??
           DefaultConfig.advanceConfig['OnBoardOnlyShowFirstTime'],
       webViewScript:
-          json['WebViewScript'] ?? DefaultConfig.advanceConfig['WebViewScript'],
-      enableVersionCheck: json['EnableVersionCheck'] ??
-          DefaultConfig.advanceConfig['EnableVersionCheck'],
+      json['WebViewScript'] ?? DefaultConfig.advanceConfig['WebViewScript'],
+      versionCheck: json['versionCheck'] != null
+          ? VersionCheckConfig.fromJson(json['versionCheck'])
+          : VersionCheckConfig(
+        // To compatible with old version
+        enable: json['enableVersionCheck'] == true,
+      ),
       ajaxSearchURL:
-          json['AjaxSearchURL'] ?? DefaultConfig.advanceConfig['AjaxSearchURL'],
+      json['AjaxSearchURL'] ?? DefaultConfig.advanceConfig['AjaxSearchURL'],
       alwaysClearWebViewCache: json['AlwaysClearWebViewCache'] ??
           DefaultConfig.advanceConfig['AlwaysClearWebViewCache'],
+      alwaysClearWebViewCookie: json['AlwaysClearWebViewCookie'] ??
+          DefaultConfig.advanceConfig['AlwaysClearWebViewCookie'],
       alwaysRefreshBlog: json['AlwaysRefreshBlog'] ??
           DefaultConfig.advanceConfig['AlwaysRefreshBlog'],
       gdprConfig: GdprConfig.fromMap(json['gdpr'] ?? {}),
@@ -320,13 +338,16 @@ class AdvancedConfig {
       inAppUpdateForAndroid: InAppUpdateForAndroidConfig.fromJson(
           json['inAppUpdateForAndroid'] ?? {}),
       categoryConfig:
-          CategoryAdvanceConfig.fromJson(json['categoryConfig'] ?? {}),
+      CategoryAdvanceConfig.fromJson(json['categoryConfig'] ?? {}),
       pinnedProductTags: <String>[
         ...(json['pinnedProductTags'] is List
             ? json['pinnedProductTags']
             : DefaultConfig.advanceConfig['pinnedProductTags'] ?? []),
       ],
       cartCheckoutButtonLocation: buttonLocation,
+      timeShowToastMessage:
+      int.tryParse(json['TimeShowToastMessage']?.toString() ?? '') ??
+          DefaultConfig.advanceConfig['TimeShowToastMessage'],
     );
   }
 
@@ -368,8 +389,7 @@ class AdvancedConfig {
     data['ShowAllCoupons'] = showAllCoupons;
     data['ShowExpiredCoupons'] = showExpiredCoupons;
     data['AlwaysShowTabBar'] = alwaysShowTabBar;
-    data['PrivacyPoliciesPageId'] = privacyPoliciesPageId;
-    data['PrivacyPoliciesPageUrl'] = privacyPoliciesPageUrl;
+    data['PrivacyPoliciesPageUrlOrId'] = privacyPoliciesPageUrlOrId;
     data['SupportPageUrl'] = supportPageUrl;
     data['DownloadPageUrl'] = downloadPageUrl;
     data['SocialConnectUrl'] =
@@ -380,6 +400,7 @@ class AdvancedConfig {
     data['MaxQueryRadiusDistance'] = maxQueryRadiusDistance;
     data['EnableMembershipUltimate'] = enableMembershipUltimate;
     data['EnableWooCommerceWholesalePrices'] = enableWooCommerceWholesalePrices;
+    data['IsRequiredSiteSelection'] = isRequiredSiteSelection;
     data['EnablePaidMembershipPro'] = enablePaidMembershipPro;
     data['EnableDeliveryDateOnCheckout'] = enableDeliveryDateOnCheckout;
     data['EnableNewSMSLogin'] = enableNewSMSLogin;
@@ -393,15 +414,17 @@ class AdvancedConfig {
     data['EnableDigitsMobileWhatsApp'] = enableDigitsMobileWhatsApp;
     data['OnBoardOnlyShowFirstTime'] = onBoardOnlyShowFirstTime;
     data['WebViewScript'] = webViewScript;
-    data['EnableVersionCheck'] = enableVersionCheck;
+    data['versionCheck'] = versionCheck.toJson();
     data['AjaxSearchURL'] = ajaxSearchURL;
     data['AlwaysClearWebViewCache'] = alwaysClearWebViewCache;
+    data['AlwaysClearWebViewCookie'] = alwaysClearWebViewCookie;
     data['AlwaysRefreshBlog'] = alwaysRefreshBlog;
     data['OrderNotesWithPrivateNote'] = orderNotesWithPrivateNote;
     data['OrderNotesLinkSupport'] = orderNotesLinkSupport;
     data['inAppUpdateForAndroid'] = inAppUpdateForAndroid.toJson();
     data['categoryConfig'] = categoryConfig.toJson();
     data['pinnedProductTags'] = List<String>.from(pinnedProductTags);
+    data['TimeShowToastMessage'] = timeShowToastMessage;
     return data;
   }
 }

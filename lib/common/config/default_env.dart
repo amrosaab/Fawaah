@@ -213,6 +213,7 @@ class DefaultConfig {
     /// Useful for webview checkout which need to handle payment in another app.
     'inAppWebView': false,
     'AlwaysClearWebViewCache': false,
+    'AlwaysClearWebViewCookie': false,
     'WebViewScript': '',
 
     'AlwaysRefreshBlog': false,

@@ -8,6 +8,7 @@ class MainTabControlDelegate {
   int? index;
   late Function(String? nameTab, {bool allowPush}) changeTab;
   late Function(int index) tabAnimateTo;
+  late Function() changeToDefaultTab;
   late TabKey tabKey;
   late TabName currentTabName;
 

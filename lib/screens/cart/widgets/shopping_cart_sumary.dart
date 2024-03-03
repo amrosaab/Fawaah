@@ -11,13 +11,22 @@ import '../../../common/tools.dart';
 import '../../../generated/l10n.dart';
 import '../../../models/index.dart' show AppModel, CartModel, Coupons, Discount;
 import '../../../services/index.dart';
+import '../../../widgets/product/cart_item/cart_item_state_ui.dart';
 import 'coupon_list.dart';
 import 'point_reward.dart';
 
 class ShoppingCartSummary extends StatefulWidget {
+  final bool showCoupon;
   final bool showPrice;
+  final bool showRecurringTotals;
+  final CartStyle cartStyle;
 
-  const ShoppingCartSummary({this.showPrice = true});
+  const ShoppingCartSummary({
+    this.showCoupon = true,
+    this.showPrice = true,
+    this.showRecurringTotals = true,
+    this.cartStyle = CartStyle.normal,
+  });
 
   @override
   State<ShoppingCartSummary> createState() => _ShoppingCartSummaryState();
@@ -35,8 +44,8 @@ class _ShoppingCartSummaryState extends State<ShoppingCartSummary> {
 
   final couponController = TextEditingController();
 
-  final bool _showCouponList = kAdvanceConfig.showCouponList &&
-      ServerConfig().type != ConfigType.magento;
+  final bool _showCouponList =
+      kAdvanceConfig.showCouponList && ServerConfig().isSupportCouponList;
 
   @override
   void initState() {
@@ -49,7 +58,7 @@ class _ShoppingCartSummaryState extends State<ShoppingCartSummary> {
         //   couponController.text = savedCoupon ?? '';
         // }
         final savedCoupon = cartModel.savedCoupon;
-        couponController.text = savedCoupon ?? '';
+        couponController.text = couponController.text.isEmpty ? savedCoupon ?? '' : '';
         _productsInCartJson = jsonEncode(cartModel.productsInCart);
       }
     });
@@ -136,7 +145,7 @@ class _ShoppingCartSummaryState extends State<ShoppingCartSummary> {
     final currency = Provider.of<AppModel>(context).currency;
     final currencyRate = Provider.of<AppModel>(context).currencyRate;
     final smallAmountStyle =
-        TextStyle(color: Theme.of(context).colorScheme.secondary);
+    TextStyle(color: Theme.of(context).colorScheme.secondary);
     final largeAmountStyle = TextStyle(
       color: Theme.of(context).colorScheme.secondary,
       fontSize: 20,
@@ -163,7 +172,7 @@ class _ShoppingCartSummaryState extends State<ShoppingCartSummary> {
           couponMsg += ' - ${formatter.format(cartModel.couponObj!.amount)}';
         }
       } else {
-        couponController.clear();
+        //couponController.clear();
       }
       if (cartModel.productsInCart.isEmpty) {
         return const SizedBox();
@@ -176,112 +185,18 @@ class _ShoppingCartSummaryState extends State<ShoppingCartSummary> {
         width: screenSize.width,
         child: SizedBox(
           width:
-              screenSize.width / (2 / (screenSize.height / screenSize.width)),
+          screenSize.width / (2 / (screenSize.height / screenSize.width)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              if (enableCoupon)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.only(
-                            top: 20.0,
-                            bottom: 20.0,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          decoration: !isApplyCouponSuccess
-                              ? BoxDecoration(
-                                  color: Theme.of(context).colorScheme.background)
-                              : BoxDecoration(
-                                  color: Theme.of(context).primaryColorLight),
-                          child: GestureDetector(
-                            onTap: _showCouponList
-                                ? () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        fullscreenDialog: true,
-                                        builder: (context) => CouponList(
-                                          isFromCart: true,
-                                          coupons: coupons,
-                                          onSelect: (String couponCode) {
-                                            Future.delayed(
-                                                const Duration(
-                                                    milliseconds: 250), () {
-                                              couponController.text =
-                                                  couponCode;
-                                              checkCoupon(couponController.text,
-                                                  cartModel);
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                : null,
-                            child: AbsorbPointer(
-                              absorbing: _showCouponList,
-                              child: TextField(
-                                controller: couponController,
-                                autocorrect: false,
-                                enabled: !isApplyCouponSuccess &&
-                                    !cartModel.calculatingDiscount,
-                                decoration: InputDecoration(
-                                  prefixIcon: _showCouponList
-                                      ? Icon(
-                                          CupertinoIcons.search,
-                                          color: Theme.of(context).primaryColor,
-                                        )
-                                      : null,
-                                  labelText: S.of(context).couponCode,
-                                  //hintStyle: TextStyle(color: _enable ? Colors.grey : Colors.black),
-                                  contentPadding: const EdgeInsets.all(2),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Theme.of(context).primaryColor,
-                          backgroundColor: Theme.of(context).primaryColorLight,
-                          elevation: 0.0,
-                        ),
-                        label: Text(
-                          cartModel.calculatingDiscount
-                              ? S.of(context).loading
-                              : !isApplyCouponSuccess
-                                  ? S.of(context).apply
-                                  : S.of(context).remove,
-                        ),
-                        icon: const Icon(
-                          CupertinoIcons.checkmark_seal_fill,
-                          size: 18,
-                        ),
-                        onPressed: !cartModel.calculatingDiscount
-                            ? () {
-                                if (!isApplyCouponSuccess) {
-                                  checkCoupon(couponController.text, cartModel);
-                                } else {
-                                  removeCoupon(cartModel);
-                                }
-                              }
-                            : null,
-                      )
-                    ],
-                  ),
-                ),
+              if (enableCoupon && widget.showCoupon) _renderCouponCode(isApplyCouponSuccess),
               if (isApplyCouponSuccess)
                 Padding(
                   padding: const EdgeInsets.only(
                     left: 40,
                     right: 40,
                     bottom: 15,
+                    top: 10,
                   ),
                   child: Text(
                     couponMsg,
@@ -348,22 +263,22 @@ class _ShoppingCartSummaryState extends State<ShoppingCartSummary> {
                               ),
                               cartModel.calculatingDiscount
                                   ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.0,
-                                      ),
-                                    )
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.0,
+                                ),
+                              )
                                   : Text(
-                                      PriceTools.getCurrencyFormatted(
-                                          cartModel.getTotal()! -
-                                              cartModel.getShippingCost()!,
-                                          currencyRate,
-                                          currency: cartModel.isWalletCart()
-                                              ? defaultCurrency?.currencyCode
-                                              : currency)!,
-                                      style: largeAmountStyle,
-                                    ),
+                                PriceTools.getCurrencyFormatted(
+                                    cartModel.getTotal()! -
+                                        cartModel.getShippingCost()!,
+                                    currencyRate,
+                                    currency: cartModel.isWalletCart()
+                                        ? defaultCurrency?.currencyCode
+                                        : currency)!,
+                                style: largeAmountStyle,
+                              ),
                             ],
                           ),
                         ],
@@ -371,11 +286,118 @@ class _ShoppingCartSummaryState extends State<ShoppingCartSummary> {
                     ),
                   ),
                 ),
-              Services().widget.renderRecurringTotals(context)
+              if (widget.showRecurringTotals)
+                Services().widget.renderRecurringTotals(context)
             ],
           ),
         ),
       );
     });
+  }
+
+  Widget _renderCouponCode(bool isApplyCouponSuccess) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 15.0),
+      decoration: widget.cartStyle.isStyle01
+          ? BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(5),
+      )
+          : null,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(
+                top: 20.0,
+                bottom: 20.0,
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              decoration: !isApplyCouponSuccess
+                  ? BoxDecoration(color: Theme.of(context).cardColor)
+                  : BoxDecoration(color: Theme.of(context).primaryColorLight),
+              child: GestureDetector(
+                onTap: _showCouponList
+                    ? () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      fullscreenDialog: true,
+                      builder: (context) => CouponList(
+                        isFromCart: true,
+                        coupons: coupons,
+                        onSelect: (String couponCode) {
+                          Future.delayed(
+                              const Duration(milliseconds: 250), () {
+                            couponController.text = couponCode;
+                            checkCoupon(couponController.text, cartModel);
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                }
+                    : null,
+                child: AbsorbPointer(
+                  absorbing: _showCouponList,
+                  child: TextField(
+                    controller: couponController,
+                    autocorrect: false,
+                    enabled:
+                    !isApplyCouponSuccess && !cartModel.calculatingDiscount,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      prefixIcon: _showCouponList
+                          ? Icon(
+                        CupertinoIcons.search,
+                        color: Theme.of(context).primaryColor,
+                      )
+                          : null,
+                      labelText: S.of(context).couponCode,
+                      //hintStyle: TextStyle(color: _enable ? Colors.grey : Colors.black),
+                      contentPadding: const EdgeInsets.all(2),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Theme.of(context).primaryColor,
+              backgroundColor: Theme.of(context).primaryColorLight,
+              elevation: 0.0,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+              ),
+            ),
+            label: Text(
+              cartModel.calculatingDiscount
+                  ? S.of(context).loading
+                  : !isApplyCouponSuccess
+                  ? S.of(context).apply
+                  : S.of(context).remove,
+            ),
+            icon: const Icon(
+              CupertinoIcons.checkmark_seal_fill,
+              size: 18,
+            ),
+            onPressed: !cartModel.calculatingDiscount
+                ? () {
+              if (!isApplyCouponSuccess) {
+                checkCoupon(couponController.text, cartModel);
+              } else {
+                removeCoupon(cartModel);
+              }
+            }
+                : null,
+          )
+        ],
+      ),
+    );
   }
 }

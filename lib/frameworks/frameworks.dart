@@ -98,8 +98,9 @@ abstract class BaseFrameworks {
   Widget renderVariantCartItem(
     BuildContext context,
     ProductVariation variation,
-    Map? options,
-  ) =>
+    Map? options, {
+    bool isShortStyle = false,
+  }) =>
       const SizedBox();
 
   String? getPriceItemInCart(
