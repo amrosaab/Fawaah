@@ -242,6 +242,9 @@ class DefaultConfig {
 
     /// Enable WooCommerce Wholesale Prices
     'EnableWooCommerceWholesalePrices': false,
+
+    /// Enable Multi-Site configuration
+    'IsRequiredSiteSelection': false
   };
   static Map storeIdentifier = {};
   static Map defaultDrawer = {};
@@ -429,6 +432,14 @@ class DefaultConfig {
       'defaultValue': '',
     },
     {
+      'type': 'block2',
+      'visible': true,
+      'position': 9,
+      'editable': true,
+      'required': false,
+      'defaultValue': '',
+    },
+    {
       'type': 'apartment',
       'visible': true,
       'position': 10,
@@ -448,7 +459,7 @@ class DefaultConfig {
       'visible': true,
       'position': 12,
       'editable': true,
-      'required': true,
+      'required': false,
       'defaultValue': '',
     },
     {
@@ -456,7 +467,7 @@ class DefaultConfig {
       'visible': true,
       'position': 13,
       'editable': true,
-      'required': true,
+      'required': false,
       'defaultValue': '',
     },
   ].map<AddressFieldConfig>(AddressFieldConfig.fromMap).toList();

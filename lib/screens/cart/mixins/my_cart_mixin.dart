@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,7 +11,6 @@ import '../../../common/tools/navigate_tools.dart';
 import '../../../common/tools/price_tools.dart';
 import '../../../common/tools/tools.dart';
 import '../../../generated/l10n.dart';
-import '../../../main.dart';
 import '../../../menu/maintab_delegate.dart';
 import '../../../models/index.dart';
 import '../../../routes/flux_navigate.dart';
@@ -59,6 +60,84 @@ mixin MyCartMixin<T extends StatefulWidget> on State<T> {
               },
               child: Text(
                 S.of(context).clear,
+                style: const TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> shouldShowLoginDialog(CartModel model) async {
+    if (kAdvanceConfig.alwaysShowTabBar) {
+      MainTabControlDelegate.getInstance()
+          .changeTab(RouteList.cart, allowPush: false);
+      // return;
+    }
+
+    if (model.totalCartQuantity == 0) {
+      if (isModal == true) {
+        try {
+          ExpandingBottomSheet.of(context)!.close();
+        } catch (e) {
+          unawaited(Navigator.of(context).pushNamed(RouteList.dashboard));
+        }
+      } else {
+        final modalRoute = ModalRoute.of(context);
+        if (modalRoute?.canPop ?? false) {
+          Navigator.of(context).pop();
+        }
+
+        MainTabControlDelegate.getInstance().changeToDefaultTab();
+      }
+
+      return;
+    }
+
+    var isLoggedIn = Provider.of<UserModel>(context, listen: false).loggedIn;
+
+    if (isLoggedIn) {
+      onCheckout(cartModel);
+    } else {
+      final forceLogin = await showLoginDialog(context);
+      if (forceLogin != null) {
+        if (forceLogin) {
+          await FluxNavigate.pushNamed(
+            RouteList.login,
+            forceRootNavigator: true,
+          );
+        }
+
+        if (!forceLogin) {
+          onCheckout(cartModel);
+        }
+      }
+    }
+  }
+
+  Future<bool?> showLoginDialog(context) async {
+    return await showDialog<bool>(
+      context: context,
+      useRootNavigator: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Text(S.of(context).loginToContinue),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: Text(S.of(context).checkout),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: Text(
+                S.of(context).login,
                 style: const TextStyle(
                   color: Colors.white,
                 ),
@@ -121,7 +200,12 @@ mixin MyCartMixin<T extends StatefulWidget> on State<T> {
 
         MainTabControlDelegate.getInstance().changeToDefaultTab();
       }
-    } else if (isLoggedIn || kPaymentConfig.guestCheckout) {
+
+      return;
+    }
+
+
+    if (isLoggedIn || kPaymentConfig.guestCheckout) {
       doCheckout();
     } else {
       _loginWithResult(context);

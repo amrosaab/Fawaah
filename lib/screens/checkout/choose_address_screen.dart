@@ -61,7 +61,7 @@ class _StateChooseAddress extends BaseScreen<ChooseAddressScreen> {
   }
 
   void getDataFromLocal() {
-    var list = List<Address>.from(UserBox().addresses ?? <Address>[]);
+    var list = List<Address>.from(UserBox().addresses);
     listAddress = list;
     setState(() {});
   }
@@ -80,7 +80,7 @@ class _StateChooseAddress extends BaseScreen<ChooseAddressScreen> {
 
   void removeData(int index) {
     var data = UserBox().addresses;
-    if (data != null) {
+    if (data.isNotEmpty) {
       data.removeAt(index);
       UserBox().addresses = data;
     }
@@ -177,8 +177,8 @@ class _StateChooseAddress extends BaseScreen<ChooseAddressScreen> {
       return const SizedBox();
     }
     final userFullName =
-        '${user!.billing!.firstName ?? ''} ${user!.billing!.lastName ?? ''}'
-            .trim();
+    '${user!.billing!.firstName ?? ''} ${user!.billing!.lastName ?? ''}'
+        .trim();
     return GestureDetector(
       onTap: () {
         final add = Address(
@@ -231,8 +231,8 @@ class _StateChooseAddress extends BaseScreen<ChooseAddressScreen> {
   Widget _renderShippingAddress() {
     if (user == null || user!.shipping == null) return const SizedBox();
     final userFullName =
-        '${user!.billing!.firstName ?? ''} ${user!.billing!.lastName ?? ''}'
-            .trim();
+    '${user!.billing!.firstName ?? ''} ${user!.billing!.lastName ?? ''}'
+        .trim();
     return GestureDetector(
       onTap: () {
         final add = Address(
@@ -304,11 +304,14 @@ class _StateChooseAddress extends BaseScreen<ChooseAddressScreen> {
             Column(
               children: [
                 if (listAddress.isEmpty && !isLoading)
-                  Center(
-                    child: Image.asset(
-                      kEmptySearch,
-                      width: 120,
-                      height: 120,
+                  Container(
+                    margin: const EdgeInsets.only(top: 200),
+                    child: Center(
+                      child: Image.asset(
+                        kEmptySearch,
+                        width: 120,
+                        height: 120,
+                      ),
                     ),
                   ),
                 if (listAddress.isEmpty && isLoading)

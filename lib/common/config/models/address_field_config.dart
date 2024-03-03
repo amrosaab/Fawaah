@@ -33,6 +33,10 @@ enum AddressFieldType {
     autofillHint: AutofillHints.addressCity,
     keyboardType: TextInputType.streetAddress,
   ),
+  block2(
+    autofillHint: AutofillHints.addressCity,
+    keyboardType: TextInputType.streetAddress,
+  ),
   apartment(
     keyboardType: TextInputType.streetAddress,
   ),

@@ -13,7 +13,7 @@ import '../../../common/tools/flash.dart';
 import '../../../data/boxes.dart';
 import '../../../generated/l10n.dart';
 import '../../../models/index.dart'
-    show Address, CartModel, City, Country, CountryState, UserModel;
+    show Address, AppModel, CartModel, City, Country, CountryState, UserModel;
 import '../../../services/index.dart';
 import '../../../widgets/common/common_safe_area.dart';
 import '../../../widgets/common/flux_image.dart';
@@ -32,6 +32,8 @@ class ShippingAddress extends StatefulWidget {
 }
 
 class _ShippingAddressState extends State<ShippingAddress> {
+  String get langCode => Provider.of<AppModel>(context, listen: false).langCode;
+
   final _formKey = GlobalKey<FormState>();
 
   final Map<int, AddressFieldType> _fieldPosition = {};
@@ -46,6 +48,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
     AddressFieldType.country: TextEditingController(),
     AddressFieldType.state: TextEditingController(),
     AddressFieldType.city: TextEditingController(),
+    AddressFieldType.block2: TextEditingController(),
     AddressFieldType.apartment: TextEditingController(),
     AddressFieldType.block: TextEditingController(),
     AddressFieldType.street: TextEditingController(),
@@ -61,6 +64,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
     AddressFieldType.city: FocusNode(),
     AddressFieldType.apartment: FocusNode(),
     AddressFieldType.block: FocusNode(),
+    AddressFieldType.block2: FocusNode(),
     AddressFieldType.street: FocusNode(),
     AddressFieldType.zipCode: FocusNode(),
   };
@@ -69,6 +73,8 @@ class _ShippingAddressState extends State<ShippingAddress> {
   List<Country>? countries = [];
   List<CountryState>? states = [];
   List<City>? cities = [];
+
+  PhoneNumber? initialPhoneNumber;
 
   @override
   void dispose() {
@@ -94,10 +100,10 @@ class _ShippingAddressState extends State<ShippingAddress> {
 
     /// Pre-fill the address fields.
     WidgetsBinding.instance.endOfFrame.then(
-      (_) async {
+          (_) async {
         /// Load saved addresses.
         final addressValue =
-            await Provider.of<CartModel>(context, listen: false).getAddress();
+        await Provider.of<CartModel>(context, listen: false).getAddress();
         if (addressValue != null) {
           updateAddress(addressValue);
         } else {
@@ -108,7 +114,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
               address!.state = kPaymentConfig.defaultStateISOCode;
             }
             _textControllers[AddressFieldType.country]?.text =
-                address!.country!;
+            address!.country!;
             _textControllers[AddressFieldType.state]?.text = address!.state!;
             if (user != null) {
               address!.firstName = user.firstName;
@@ -147,10 +153,29 @@ class _ShippingAddressState extends State<ShippingAddress> {
           }
         }
 
+        if (kPhoneNumberConfig.enablePhoneNumberValidation) {
+          /// Load phone number.
+          try {
+            final phoneNumber =
+            _textControllers[AddressFieldType.phoneNumber]?.text.trim();
+            if (phoneNumber?.isNotEmpty ?? false) {
+              initialPhoneNumber = await PhoneNumber.getParsablePhoneNumber(
+                PhoneNumber(
+                  dialCode: kPhoneNumberConfig.dialCodeDefault,
+                  isoCode: kPhoneNumberConfig.countryCodeDefault,
+                  phoneNumber: phoneNumber,
+                ),
+              );
+            }
+          } catch (e, trace) {
+            printError(e, trace);
+          }
+        }
+
         /// Load country list.
-        countries = await Services().widget.loadCountries();
-        var country = countries!.firstWhereOrNull((element) =>
-            element.id == address?.country || element.code == address?.country);
+        // countries = await Services().widget.loadCountries();
+        var country = countries!
+            .firstWhereOrNull((element) => element.code!.toUpperCase() == 'KW');
         if (country == null) {
           if (countries!.isNotEmpty) {
             country = countries![0];
@@ -166,24 +191,24 @@ class _ShippingAddressState extends State<ShippingAddress> {
         refresh();
 
         /// Load states.
-        states = await Services().widget.loadStates(country);
+        states = await Services().widget.loadStates(country, langCode);
         refresh();
 
         /// Load cities.
         var state = states?.firstWhereOrNull(
-          (element) =>
-              element.id == address?.state || element.code == address?.state,
+              (element) =>
+          element.id == address?.state || element.code == address?.state,
         );
         if (state != null) {
           cities = await Services().widget.loadCities(country, state);
           var city = cities?.firstWhereOrNull(
-            (element) => element.name == address?.city,
+                (element) => element.name == address?.city,
           );
 
           /// Load zipCode
           if (city != null) {
             var zipCode =
-                await Services().widget.loadZipCode(country, state, city);
+            await Services().widget.loadZipCode(country, state, city);
             if (zipCode != null) {
               /// Override the default value with this value
               address!.zipCode = zipCode;
@@ -236,331 +261,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
                 child: AutofillGroup(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: List.generate(
-                      _fieldPosition.length,
-                      (index) {
-                        final isVisible = _configs[index]?.visible ?? true;
-                        if (!isVisible) {
-                          return const SizedBox();
-                        }
-
-                        final currentFieldType =
-                            _fieldPosition[index] ?? AddressFieldType.unknown;
-
-                        if (currentFieldType == AddressFieldType.country) {
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 10),
-                              Text(
-                                S.of(context).country,
-                                style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w300,
-                                    color: Colors.grey),
-                              ),
-                              (countries!.length == 1)
-                                  ? Text(
-                                      countryName,
-                                      style: const TextStyle(fontSize: 18),
-                                    )
-                                  : GestureDetector(
-                                      onTap: _openCountryPickerDialog,
-                                      child: Column(
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 20),
-                                            child: Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: <Widget>[
-                                                Expanded(
-                                                  child: Text(countryName,
-                                                      style: const TextStyle(
-                                                          fontSize: 17.0)),
-                                                ),
-                                                const Icon(
-                                                    Icons.arrow_drop_down)
-                                              ],
-                                            ),
-                                          ),
-                                          const Divider(
-                                            height: 1,
-                                            color: kGrey900,
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                            ],
-                          );
-                        }
-
-                        if (currentFieldType == AddressFieldType.state &&
-                            (states?.isNotEmpty ?? false)) {
-                          return renderStateInput();
-                        }
-
-                        if (currentFieldType == AddressFieldType.city &&
-                            (cities?.isNotEmpty ?? false)) {
-                          return renderCityInput(index);
-                        }
-
-                        if (currentFieldType ==
-                            AddressFieldType.searchAddress) {
-                          if (kPaymentConfig.allowSearchingAddress &&
-                              kGoogleApiKey.isNotEmpty) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 10.0),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: ButtonTheme(
-                                      height: 60,
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          foregroundColor: Theme.of(context)
-                                              .colorScheme
-                                              .secondary,
-                                          backgroundColor: Theme.of(context)
-                                              .primaryColorLight,
-                                          elevation: 0.0,
-                                        ),
-                                        onPressed: () async {
-                                          final result =
-                                              await Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (context) => PlacePicker(
-                                                kIsWeb
-                                                    ? kGoogleApiKey.web
-                                                    : isIos
-                                                        ? kGoogleApiKey.ios
-                                                        : kGoogleApiKey.android,
-                                              ),
-                                            ),
-                                          );
-
-                                          if (result is LocationResult) {
-                                            address!.country = result.country;
-                                            address!.street = result.street;
-                                            address!.state = result.state;
-                                            address!.city = result.city;
-                                            address!.zipCode = result.zip;
-                                            if (result.latLng?.latitude !=
-                                                    null &&
-                                                result.latLng?.latitude !=
-                                                    null) {
-                                              address!.mapUrl =
-                                                  'https://maps.google.com/maps?q=${result.latLng?.latitude},${result.latLng?.longitude}&output=embed';
-                                              address!.latitude = result
-                                                  .latLng?.latitude
-                                                  .toString();
-                                              address!.longitude = result
-                                                  .latLng?.longitude
-                                                  .toString();
-                                            }
-
-                                            loadAddressFields(address);
-                                            final c = Country(
-                                                id: result.country,
-                                                name: result.country);
-                                            states = await Services()
-                                                .widget
-                                                .loadStates(c);
-                                            setState(() {});
-                                          }
-                                        },
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: <Widget>[
-                                            const Icon(
-                                              CupertinoIcons
-                                                  .arrow_up_right_diamond,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 10.0),
-                                            Text(S
-                                                .of(context)
-                                                .searchingAddress
-                                                .toUpperCase()),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          return const SizedBox();
-                        }
-
-                        if (currentFieldType ==
-                            AddressFieldType.selectAddress) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 10.0),
-                            child: ButtonTheme(
-                              height: 60,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor:
-                                      Theme.of(context).colorScheme.secondary,
-                                  backgroundColor:
-                                      Theme.of(context).primaryColorLight,
-                                  elevation: 0.0,
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          ChooseAddressScreen(updateAddress),
-                                    ),
-                                  );
-                                },
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: <Widget>[
-                                    const Icon(
-                                      CupertinoIcons.person_crop_square,
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 10.0),
-                                    Text(
-                                      S.of(context).selectAddress.toUpperCase(),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-
-                        final currentFieldController =
-                            _textControllers[currentFieldType];
-                        final currentFieldFocusNode =
-                            _focusNodes[currentFieldType];
-
-                        var hasNext = false;
-                        var nextFieldIndex = index + 1;
-                        late var nextFieldType;
-                        late var nextFieldFocus;
-                        while (nextFieldIndex < _fieldPosition.length) {
-                          nextFieldType = _fieldPosition[nextFieldIndex];
-                          nextFieldFocus = _focusNodes[nextFieldType];
-                          if (nextFieldType == AddressFieldType.country ||
-                              (nextFieldType == AddressFieldType.state &&
-                                  (states?.isNotEmpty ?? false)) ||
-                              (nextFieldType == AddressFieldType.city &&
-                                  (cities?.isNotEmpty ?? false))) {
-                            hasNext = false;
-                            break;
-                          }
-                          if (nextFieldFocus != null) {
-                            hasNext = true;
-                            break;
-                          }
-                          nextFieldIndex++;
-                        }
-
-                        if (currentFieldType == AddressFieldType.phoneNumber &&
-                            kPhoneNumberConfig.enablePhoneNumberValidation) {
-                          return InternationalPhoneNumberInput(
-                            /// Auto focus first field if it's empty.
-                            autoFocus: index == 0 &&
-                                (currentFieldController?.text.isEmpty ?? false),
-                            textFieldController: currentFieldController,
-                            focusNode: currentFieldFocusNode,
-                            isReadOnly: isFieldReadOnly(index),
-                            autofillHints: currentFieldType.autofillHint != null
-                                ? ['${currentFieldType.autofillHint}']
-                                : null,
-                            inputDecoration: InputDecoration(
-                              labelText: getFieldLabel(currentFieldType),
-                            ),
-                            keyboardType: getKeyboardType(currentFieldType),
-                            keyboardAction: hasNext
-                                ? TextInputAction.next
-                                : TextInputAction.done,
-                            onFieldSubmitted: (_) {
-                              if (hasNext) {
-                                nextFieldFocus?.requestFocus();
-                              }
-                            },
-                            onSaved: (value) {
-                              onTextFieldSaved(
-                                value.phoneNumber,
-                                currentFieldType,
-                              );
-                            },
-                            onInputChanged: (PhoneNumber number) {},
-                            onInputValidated: (value) => {},
-                            spaceBetweenSelectorAndTextField: 0,
-                            selectorConfig: SelectorConfig(
-                              enable: kPhoneNumberConfig.useInternationalFormat,
-                              showFlags: kPhoneNumberConfig.showCountryFlag,
-                              selectorType: kPhoneNumberConfig.selectorType,
-                              setSelectorButtonAsPrefixIcon:
-                                  kPhoneNumberConfig.selectorFlagAsPrefixIcon,
-                              leadingPadding: 0,
-                              trailingSpace: false,
-                            ),
-                            selectorTextStyle:
-                                Theme.of(context).textTheme.titleMedium,
-                            ignoreBlank: !(_configs[index]?.required ?? true),
-                            initialValue: PhoneNumber(
-                              dialCode: kPhoneNumberConfig.dialCodeDefault,
-                              isoCode: kPhoneNumberConfig.countryCodeDefault,
-                              phoneNumber: currentFieldController?.text,
-                            ),
-                            formatInput: kPhoneNumberConfig.formatInput,
-                            countries: kPhoneNumberConfig.customCountryList,
-                          );
-                        }
-
-                        return TextFormField(
-                          /// Auto focus first field if it's empty.
-                          autofocus: index == 0 &&
-                              (currentFieldController?.text.isEmpty ?? false),
-                          autocorrect: false,
-                          controller: currentFieldController,
-                          focusNode: currentFieldFocusNode,
-                          readOnly: isFieldReadOnly(index),
-                          autofillHints: currentFieldType.autofillHint != null
-                              ? ['${currentFieldType.autofillHint}']
-                              : null,
-                          decoration: InputDecoration(
-                            labelText: getFieldLabel(currentFieldType),
-                          ),
-                          keyboardType: getKeyboardType(currentFieldType),
-                          textCapitalization: TextCapitalization.words,
-                          textInputAction: hasNext
-                              ? TextInputAction.next
-                              : TextInputAction.done,
-                          validator: (val) {
-                            final config = _configs[index];
-                            if (config == null) {
-                              return null;
-                            }
-                            return validateField(val, config, currentFieldType);
-                          },
-                          onFieldSubmitted: (_) {
-                            if (hasNext) {
-                              nextFieldFocus?.requestFocus();
-                            }
-                          },
-                          onSaved: (value) => onTextFieldSaved(
-                            value,
-                            currentFieldType,
-                          ),
-                        );
-                      },
-                    ),
+                    children: buildTextFields(countryName),
                   ),
                 ),
               ),
@@ -569,6 +270,260 @@ class _ShippingAddressState extends State<ShippingAddress> {
         ),
         _buildBottom(),
       ],
+    );
+  }
+
+  List<Widget> buildTextFields(String countryName) {
+    return List.generate(
+      _fieldPosition.length,
+          (index) {
+        final isVisible = _configs[index]?.visible ?? true;
+        if (!isVisible) {
+          return const SizedBox();
+        }
+
+        final currentFieldType =
+            _fieldPosition[index] ?? AddressFieldType.unknown;
+
+        if (currentFieldType == AddressFieldType.country) {
+          return const SizedBox();
+        }
+
+        if (currentFieldType == AddressFieldType.state &&
+            (states?.isNotEmpty ?? false)) {
+          return renderStateInput();
+        }
+
+        if (currentFieldType == AddressFieldType.city &&
+            (cities?.isNotEmpty ?? false)) {
+          return renderCityInput(index);
+        }
+
+        if (currentFieldType == AddressFieldType.searchAddress) {
+          if (kPaymentConfig.allowSearchingAddress &&
+              kGoogleApiKey.isNotEmpty) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 10.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ButtonTheme(
+                      height: 60,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor:
+                          Theme.of(context).colorScheme.secondary,
+                          backgroundColor: Theme.of(context).primaryColorLight,
+                          elevation: 0.0,
+                        ),
+                        onPressed: () async {
+                          final result = await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => PlacePicker(
+                                kIsWeb
+                                    ? kGoogleApiKey.web
+                                    : isIos
+                                    ? kGoogleApiKey.ios
+                                    : kGoogleApiKey.android,
+                              ),
+                            ),
+                          );
+
+                          if (result is LocationResult) {
+                            address!.country = result.country;
+                            address!.street = result.street;
+                            address!.state = result.state;
+                            address!.city = result.city;
+                            address!.zipCode = result.zip;
+                            if (result.latLng?.latitude != null &&
+                                result.latLng?.latitude != null) {
+                              address!.mapUrl =
+                              'https://maps.google.com/maps?q=${result.latLng?.latitude},${result.latLng?.longitude}&output=embed';
+                              address!.latitude =
+                                  result.latLng?.latitude.toString();
+                              address!.longitude =
+                                  result.latLng?.longitude.toString();
+                            }
+
+                            loadAddressFields(address);
+                            final c = Country(
+                                id: result.country, name: result.country);
+                            states =
+                            await Services().widget.loadStates(c, langCode);
+                            setState(() {});
+                          }
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            const Icon(
+                              CupertinoIcons.arrow_up_right_diamond,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 10.0),
+                            Text(S.of(context).searchingAddress.toUpperCase()),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          return const SizedBox();
+        }
+
+        if (currentFieldType == AddressFieldType.selectAddress) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 10.0),
+            child: ButtonTheme(
+              height: 60,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.secondary,
+                  backgroundColor: Theme.of(context).primaryColorLight,
+                  elevation: 0.0,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChooseAddressScreen(updateAddress),
+                    ),
+                  );
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    const Icon(
+                      CupertinoIcons.person_crop_square,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 10.0),
+                    Text(
+                      S.of(context).selectAddress.toUpperCase(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        final currentFieldController = _textControllers[currentFieldType];
+        final currentFieldFocusNode = _focusNodes[currentFieldType];
+
+        var hasNext = false;
+        var nextFieldIndex = index + 1;
+        late var nextFieldType;
+        late var nextFieldFocus;
+        while (nextFieldIndex < _fieldPosition.length) {
+          nextFieldType = _fieldPosition[nextFieldIndex];
+          nextFieldFocus = _focusNodes[nextFieldType];
+          if (nextFieldType == AddressFieldType.country ||
+              (nextFieldType == AddressFieldType.state &&
+                  (states?.isNotEmpty ?? false)) ||
+              (nextFieldType == AddressFieldType.city &&
+                  (cities?.isNotEmpty ?? false))) {
+            hasNext = false;
+            break;
+          }
+          if (nextFieldFocus != null) {
+            hasNext = true;
+            break;
+          }
+          nextFieldIndex++;
+        }
+
+        if (currentFieldType == AddressFieldType.phoneNumber &&
+            kPhoneNumberConfig.enablePhoneNumberValidation) {
+          return InternationalPhoneNumberInput(
+            /// Auto focus first field if it's empty.
+            autoFocus:
+            index == 0 && (currentFieldController?.text.isEmpty ?? false),
+            textFieldController: currentFieldController,
+            focusNode: currentFieldFocusNode,
+            isReadOnly: isFieldReadOnly(index),
+            autofillHints: currentFieldType.autofillHint != null
+                ? ['${currentFieldType.autofillHint}']
+                : null,
+            inputDecoration: InputDecoration(
+              labelText: getFieldLabel(currentFieldType),
+            ),
+            keyboardType: getKeyboardType(currentFieldType),
+            keyboardAction:
+            hasNext ? TextInputAction.next : TextInputAction.done,
+            onFieldSubmitted: (_) {
+              if (hasNext) {
+                nextFieldFocus?.requestFocus();
+              }
+            },
+            onSaved: (value) {
+              onTextFieldSaved(
+                value.phoneNumber,
+                currentFieldType,
+              );
+            },
+            onInputChanged: (PhoneNumber number) {},
+            onInputValidated: (value) => {},
+            spaceBetweenSelectorAndTextField: 0,
+            selectorConfig: SelectorConfig(
+              enable: kPhoneNumberConfig.useInternationalFormat,
+              showFlags: kPhoneNumberConfig.showCountryFlag,
+              selectorType: kPhoneNumberConfig.selectorType,
+              setSelectorButtonAsPrefixIcon:
+              kPhoneNumberConfig.selectorFlagAsPrefixIcon,
+              leadingPadding: 0,
+              trailingSpace: false,
+            ),
+            selectorTextStyle: Theme.of(context).textTheme.titleMedium,
+            ignoreBlank: !(_configs[index]?.required ?? true),
+            initialValue: initialPhoneNumber,
+            formatInput: kPhoneNumberConfig.formatInput,
+            countries: kPhoneNumberConfig.customCountryList,
+            locale: langCode,
+            searchBoxDecoration: InputDecoration(
+                labelText: S.of(context).searchByCountryNameOrDialCode),
+          );
+        }
+
+        return TextFormField(
+          /// Auto focus first field if it's empty.
+          autofocus:
+          index == 0 && (currentFieldController?.text.isEmpty ?? false),
+          autocorrect: false,
+          controller: currentFieldController,
+          focusNode: currentFieldFocusNode,
+          readOnly: isFieldReadOnly(index),
+          autofillHints: currentFieldType.autofillHint != null
+              ? ['${currentFieldType.autofillHint}']
+              : null,
+          decoration: InputDecoration(
+            labelText: getFieldLabel(currentFieldType),
+          ),
+          keyboardType: getKeyboardType(currentFieldType),
+          textCapitalization: TextCapitalization.words,
+          textInputAction:
+          hasNext ? TextInputAction.next : TextInputAction.done,
+          validator: (val) {
+            final config = _configs[index];
+            if (config == null) {
+              return null;
+            }
+            return validateField(val, config, currentFieldType);
+          },
+          onFieldSubmitted: (_) {
+            if (hasNext) {
+              nextFieldFocus?.requestFocus();
+            }
+          },
+          onSaved: (value) => onTextFieldSaved(
+            value,
+            currentFieldType,
+          ),
+        );
+      },
     );
   }
 

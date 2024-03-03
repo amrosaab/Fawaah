@@ -139,8 +139,6 @@ class ShopifyWidget extends BaseFrameworks
               builder: (context) => PaymentWebview(
                 url: cartModel.checkout!.webUrl,
                 token: cartModel.user?.cookie,
-                shopifyService: shopifyService,
-                cartModel: cartModel,
                 onFinish: (number) async {
                   orderNum = number;
                 },
@@ -372,8 +370,8 @@ class ShopifyWidget extends BaseFrameworks
   }
 
   @override
-  Future<List<CountryState>> loadStates(Country country) async {
-    final items = await Tools.loadStatesByCountry(country.id!);
+  Future<List<CountryState>> loadStates(Country country, String language) async {
+    final items = await Tools.loadStatesByCountry(country.id!, language);
     var states = <CountryState>[];
     if (items.isNotEmpty) {
       for (var item in items) {

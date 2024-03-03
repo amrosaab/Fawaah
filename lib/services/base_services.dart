@@ -931,4 +931,8 @@ abstract class BaseServices {
   Future<List<Currency>?> getAvailableCurrencies() async {
     return <Currency>[];
   }
+
+  Future<Order?> getOrderByOrderId({required String orderId}) async {
+    return null;
+  }
 }

@@ -1,3 +1,5 @@
+import 'package:country_pickers/utils/utils.dart';
+
 import '../../common/constants.dart';
 
 class Address {
@@ -7,6 +9,7 @@ class Address {
   String? street;
   String? apartment;
   String? block;
+  String? block2;
   String? city;
   String? state;
   String? country;
@@ -19,19 +22,20 @@ class Address {
 
   Address(
       {this.firstName,
-      this.lastName,
-      this.email,
-      this.street,
-      this.apartment,
-      this.block,
-      this.city,
-      this.state,
-      this.country,
-      this.phoneNumber,
-      this.zipCode,
-      this.mapUrl,
-      this.latitude,
-      this.longitude});
+        this.lastName,
+        this.email,
+        this.street,
+        this.apartment,
+        this.block,
+        this.block2,
+        this.city,
+        this.state,
+        this.country,
+        this.phoneNumber,
+        this.zipCode,
+        this.mapUrl,
+        this.latitude,
+        this.longitude});
 
   Address.fromJson(Map parsedJson) {
     firstName = parsedJson['first_name'] ?? '';
@@ -97,6 +101,7 @@ class Address {
       'last_name': lastName,
       'address_1': street ?? '',
       'address_2': block ?? '',
+      'block2': block2 ?? '',
       'company': apartment ?? '',
       'city': city,
       'state': state,
@@ -131,6 +136,7 @@ class Address {
       lastName = json['last_name'];
       street = json['address_1'];
       block = json['address_2'];
+      block2 = json['block2'];
       apartment = json['company'];
       city = json['city'];
       state = json['state'];
@@ -234,11 +240,11 @@ class Address {
       'address': {
         'province': state,
         'country': country,
-        'address1': street,
-        'address2': block,
+        'address1': 'Area: $city, Block: $block2, Street: $apartment, Building: $block, ${(street ?? '') == '' ? '' : 'Floor: $street, '} ${(street ?? '') == '' ? '' : 'Flat: $zipCode'}',
+        'address2': '${block!}, ${block2 ?? ''}',
         'company': apartment,
-        'zip': zipCode,
-        'city': city,
+        'zip': '00000',
+        'city': 'KW',
         'firstName': firstName,
         'lastName': lastName,
         'phone': phoneNumber,
@@ -319,14 +325,52 @@ class Address {
   String get fullName => [firstName ?? '', lastName ?? ''].join(' ').trim();
 
   String get fullAddress => [
-        block ?? '',
-        apartment ?? '',
-        street ?? '',
-        city ?? '',
-        state ?? '',
-        zipCode ?? '',
-        country ?? '',
-      ].join(' ').trim();
+    block ?? '',
+    apartment ?? '',
+    street ?? '',
+    city ?? '',
+    state ?? '',
+    zipCode ?? '',
+    country ?? '',
+  ].join(' ').trim();
+
+  String get fullInfoAddress {
+    var info = [];
+    if (street?.isNotEmpty ?? false) {
+      info.add(street);
+    }
+
+    if (block?.isNotEmpty ?? false) {
+      info.add(block);
+    }
+
+    if (apartment?.isNotEmpty ?? false) {
+      info.add(apartment);
+    }
+
+    if (city?.isNotEmpty ?? false) {
+      info.add(city);
+    }
+
+    if (country?.isNotEmpty ?? false) {
+      info.add(_getCountryName(country));
+    }
+
+    var address = info.join(', ');
+    if (zipCode?.isNotEmpty ?? false) {
+      address = '$address - $zipCode';
+    }
+
+    return address;
+  }
+
+  String _getCountryName(country) {
+    try {
+      return CountryPickerUtils.getCountryByIsoCode(country).name;
+    } catch (err) {
+      return country;
+    }
+  }
 }
 
 class ListAddress {

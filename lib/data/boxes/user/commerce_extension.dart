@@ -137,16 +137,29 @@ extension UserCommerceSettingsExtension on UserBox {
     box.put(BoxKeys.shippingAddress, rawData);
   }
 
-  List<Address>? get addresses {
+  List<Address> get addresses {
     final rawData = box.get(
       BoxKeys.addresses,
       defaultValue: null,
     );
-    return rawData != null && rawData is List<Map>
-        ? List<Address>.from(
-            rawData.map((e) => Address.fromLocalJson(e)),
-          )
-        : null;
+    final listAddress = <Address>[];
+    if (rawData != null && rawData is List) {
+      for (var item in rawData) {
+        Address? address;
+
+        try {
+          address = Address.fromLocalJson(item);
+        } catch (err, trace) {
+          printError(err, trace);
+        }
+
+        if (address != null) {
+          listAddress.add(address);
+        }
+      }
+    }
+
+    return listAddress;
   }
 
   set addresses(List<Address>? value) {
