@@ -731,7 +731,10 @@ class ShopifyQuery {
   ''';
 
   static String getCollectionByHandle = '''
-    query(\$handle: String) @inContext(language: \$langCode) {
+    query(
+    \$handle: String,
+    \$langCode: LanguageCode
+    ) @inContext(language: \$langCode) {
         collection(handle: \$handle) {
           ...collectionInformation
         }
