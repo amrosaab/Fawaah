@@ -1588,6 +1588,7 @@ class ShopifyService extends BaseServices {
         variables: <String, dynamic>{
           'nRepositories': nRepositories,
           'handle': collectionHandle,
+          'langCode': languageCode,
         },
       );
       final result = await client.query(options);
