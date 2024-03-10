@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_single_quotes, lines_longer_than_80_chars final
 Map<String, dynamic> environment = {
   "appConfig": "https://shopify.empowerkw.com/shops/fawaah.com/config_ar.json",
+  "cartBannerConfig": "https://gist.githubusercontent.com/fighter888N/f64b8b049101027159af38e10745f896/raw/63b9465ac3495094213283a1de7d733f1017c89a/cart_banner_config.json",
 
   "serverConfig": {
     'type': 'shopify',

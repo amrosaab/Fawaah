@@ -1,15 +1,16 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:inspireui/inspireui.dart';
 import 'package:provider/provider.dart';
 
 import '../../../common/config.dart';
-import '../../../common/constants.dart';
 import '../../../common/tools/price_tools.dart';
 import '../../../generated/l10n.dart';
-import '../../../menu/maintab_delegate.dart';
 import '../../../models/app_model.dart';
 import '../../../models/cart/cart_base.dart';
 import '../../../models/entities/product.dart';
+import '../../../modules/dynamic_layout/config/cart_banner_config.dart';
+import '../../../widgets/animation/scaled_height_widget.dart';
 import '../../../widgets/product/cart_item/cart_item_state_ui.dart';
 import '../helpers/cart_items_helper.dart';
 import '../mixins/my_cart_mixin.dart';
@@ -41,12 +42,39 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
   @override
   bool? get isModal => widget.isModal;
 
+  Widget buildCartBanner(CartBannerConfig? cartBannerConfig) {
+    if (cartBannerConfig == null || cartBannerConfig.show == false) {
+      return const SizedBox();
+    }
+
+    return ScaledHeightWidget(
+      delay: Duration(milliseconds: cartBannerConfig.delayInMilliseconds),
+      duration: Duration(milliseconds: cartBannerConfig.durationInMilliseconds),
+      child: Padding(
+        padding: const EdgeInsets.only(
+          left: 16,
+          top: 10,
+          right: 16,
+          bottom: 20,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(cartBannerConfig.borderRadius),
+          child: CachedNetworkImage(
+            imageUrl: cartBannerConfig.imageUrl,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     printLog('[Cart] build');
-    var layoutType = Provider.of<AppModel>(context).productDetailLayout;
+    final appModel = Provider.of<AppModel>(context);
+    var layoutType = appModel.productDetailLayout;
     final ModalRoute<dynamic>? parentRoute = ModalRoute.of(context);
     final canPop = parentRoute?.canPop ?? false;
+    final cartBannerConfig = appModel.cartBannerConfig;
 
     return Selector<CartModel, String?>(
       selector: (_, cartModel) => cartModel.productsInCart.keys.firstOrNull,
@@ -73,14 +101,14 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
                               elevation: 1,
                               leading: widget.isModal == true
                                   ? CloseButton(
-                                onPressed: () => onPressedClose(
-                                    layoutType, widget.isBuyNow),
-                              )
+                                      onPressed: () => onPressedClose(
+                                          layoutType, widget.isBuyNow),
+                                    )
                                   : canPop
-                                  ? const BackButton()
-                                  : null,
+                                      ? const BackButton()
+                                      : null,
                               backgroundColor:
-                              Theme.of(context).colorScheme.background,
+                                  Theme.of(context).colorScheme.background,
                               actions: [
                                 Container(
                                   margin: const EdgeInsets.only(
@@ -111,18 +139,27 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
                                 child: SingleChildScrollView(
                                   child: Padding(
                                     padding:
-                                    const EdgeInsets.only(bottom: 80.0),
+                                        const EdgeInsets.only(bottom: 80.0),
                                     child: Column(
                                       crossAxisAlignment:
-                                      CrossAxisAlignment.center,
+                                          CrossAxisAlignment.center,
                                       children: <Widget>[
                                         const SizedBox(height: 16.0),
                                         if (totalCartQuantity > 0)
                                           Column(
-                                            children: createShoppingCartRows(
-                                                cartModel,
-                                                context,
-                                                widget.enabledTextBoxQuantity),
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
+                                            children: [
+                                              buildCartBanner(cartBannerConfig),
+                                              Column(
+                                                children:
+                                                    createShoppingCartRows(
+                                                  cartModel,
+                                                  context,
+                                                  widget.enabledTextBoxQuantity,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         const SizedBox(
                                           height: 10.0,
@@ -131,7 +168,8 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
                                           showPrice: false,
                                           cartStyle: CartStyle.style01,
                                         ),
-                                        if (totalCartQuantity == 0) const EmptyCart(),
+                                        if (totalCartQuantity == 0)
+                                          const EmptyCart(),
                                         if (errMsg.isNotEmpty)
                                           Padding(
                                             padding: const EdgeInsets.symmetric(
@@ -187,7 +225,7 @@ class RenderTotalPrice extends StatelessWidget {
     final currency = Provider.of<AppModel>(context).currency;
     final currencyRate = Provider.of<AppModel>(context).currencyRate;
     final smallAmountStyle =
-    TextStyle(color: Theme.of(context).colorScheme.secondary);
+        TextStyle(color: Theme.of(context).colorScheme.secondary);
     final defaultCurrency = kAdvanceConfig.defaultCurrency;
     final modelCart = Provider.of<CartModel>(context);
 
@@ -260,34 +298,34 @@ class RenderTotalPrice extends StatelessWidget {
                 Expanded(
                   child: modelCart.calculatingDiscount
                       ? const Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.0,
-                      ),
-                    ),
-                  )
+                          alignment: AlignmentDirectional.centerStart,
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.0,
+                            ),
+                          ),
+                        )
                       : Text(
-                    PriceTools.getCurrencyFormatted(
-                        modelCart.getTotal()! -
-                            modelCart.getShippingCost()!,
-                        currencyRate,
-                        currency: modelCart.isWalletCart()
-                            ? defaultCurrency?.currencyCode
-                            : currency)!,
-                    style: largeAmountStyle.copyWith(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 25,
-                    ),
-                  ),
+                          PriceTools.getCurrencyFormatted(
+                              modelCart.getTotal()! -
+                                  modelCart.getShippingCost()!,
+                              currencyRate,
+                              currency: modelCart.isWalletCart()
+                                  ? defaultCurrency?.currencyCode
+                                  : currency)!,
+                          style: largeAmountStyle.copyWith(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 25,
+                          ),
+                        ),
                 ),
                 Selector<CartModel, (bool, Map<String?, Product?>, bool)>(
                   selector: (_, cartModel) => (
-                  cartModel.calculatingDiscount,
-                  cartModel.item,
-                  cartModel.enableCheckoutButton
+                    cartModel.calculatingDiscount,
+                    cartModel.item,
+                    cartModel.enableCheckoutButton
                   ),
                   builder: (context, value, child) {
                     var calculatingDiscount = value.$1;
@@ -303,33 +341,33 @@ class RenderTotalPrice extends StatelessWidget {
                       selector: (_, cartModel) => cartModel.totalCartQuantity,
                       builder: (context, totalCartQuantity, child) {
                         return ElevatedButton.icon(
-                            onPressed:
-                            isReadyForCheckout ? () => onCheckout() : null,
+                          onPressed:
+                              isReadyForCheckout ? () => onCheckout() : null,
                           icon: const Icon(Icons.login_outlined, size: 15),
                           style: ElevatedButton.styleFrom(
                               elevation: 8,
                               shadowColor:
-                              Theme.of(context).scaffoldBackgroundColor,
+                                  Theme.of(context).scaffoldBackgroundColor,
                               shape: const RoundedRectangleBorder(
                                 borderRadius:
-                                BorderRadius.all(Radius.circular(30.0)),
+                                    BorderRadius.all(Radius.circular(30.0)),
                               ),
                               padding:
-                              const EdgeInsets.symmetric(horizontal: 8)),
+                                  const EdgeInsets.symmetric(horizontal: 8)),
                           label: totalCartQuantity > 0
                               ? (isLoading
-                              ? Text(
-                            S.of(context).loading.toUpperCase(),
-                            style: style,
-                          )
+                                  ? Text(
+                                      S.of(context).loading.toUpperCase(),
+                                      style: style,
+                                    )
+                                  : Text(
+                                      S.of(context).checkout,
+                                      style: style,
+                                    ))
                               : Text(
-                            S.of(context).checkout,
-                            style: style,
-                          ))
-                              : Text(
-                            S.of(context).startShopping.toUpperCase(),
-                            style: style,
-                          ),
+                                  S.of(context).startShopping.toUpperCase(),
+                                  style: style,
+                                ),
                         );
                       },
                     );

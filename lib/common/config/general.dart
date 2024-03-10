@@ -3,6 +3,8 @@ part of '../config.dart';
 /// Default app config, it's possible to set as URL
 String get kAppConfig => Configurations.appConfig;
 
+String get kCartBannerConfig => Configurations.cartBannerConfig;
+
 /// use Firebase Remote Config when appConfig is not URL
 Map<String, dynamic>? get kLayoutConfig =>
     !(Uri.tryParse(kAppConfig)?.hasAbsolutePath ?? false)

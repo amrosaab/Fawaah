@@ -10,6 +10,7 @@ class DefaultConfig {
   static String baseUrl = '';
   static Map serverConfig = {};
   static String appConfig = '';
+  static String cartBannerConfig = '';
   static bool defaultDarkTheme = false;
   static String countryCodeDefault = 'VN';
   static String dialCodeDefault = '+84';
