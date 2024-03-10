@@ -160,13 +160,13 @@ class _BrandsScreenState extends State<BrandsScreen> {
                   color: const Color(0xff0e203d),
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   alignment: Alignment.centerLeft,
-                  child: Center(
+                  child: Center (
                     child: Text(
                       letter,
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
-                ),
+                ) ,
                 content: ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -175,7 +175,11 @@ class _BrandsScreenState extends State<BrandsScreen> {
                     return ListTile(
                       dense: true,
                       // splashColor: Colors.white,
-                      title: Center(child: Text(brand,)),
+                      title: Center(
+                        child: Text(
+                          brand,
+                        ),
+                      ),
                       onTap: () => gotoSearch(brand),
                       // trailing: const Icon(Icons.arrow_forward_ios),
                     );
