@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 // ignore: depend_on_referenced_packages
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:inspireui/inspireui.dart';
+
 // import 'package:openai/localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -323,10 +324,14 @@ class AppState extends State<App>
     printLog(notification.toJson());
     _notificationModel.saveMessage(notification);
     if (App.fluxStoreNavigatorKey.currentContext != null) {
-      FlashHelper.message(App.fluxStoreNavigatorKey.currentContext!,
-          title: notification.title, message: notification.body, onTap: () {
-        onMessageOpenedApp(notification);
-      });
+      FlashHelper.message(
+        App.fluxStoreNavigatorKey.currentContext!,
+        title: notification.title,
+        message: notification.body,
+        onTap: () {
+          onMessageOpenedApp(notification);
+        },
+      );
     }
   }
 

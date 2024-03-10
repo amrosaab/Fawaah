@@ -5,6 +5,7 @@ class DynamicLinkService {
   void shareProductLink({required String productUrl}) {}
 
   Future<void> handleDynamicLink(Uri uri, BuildContext context) async {}
+
   Future<String?> generateProductCategoryUrl(dynamic productCategoryId) =>
       Future.value('');
   Future<String?> generateProductTagUrl(dynamic productTagId) =>
