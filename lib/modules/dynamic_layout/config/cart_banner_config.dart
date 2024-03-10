@@ -3,6 +3,7 @@
 /// delayInMilliseconds: 0
 /// durationInMilliseconds: 0
 /// borderRadius: 0.0
+/// destination: null
 
 class CartBannerConfig {
   final bool show;
@@ -10,6 +11,7 @@ class CartBannerConfig {
   final int delayInMilliseconds;
   final int durationInMilliseconds;
   final double borderRadius;
+  final String? destination;
   final dynamic jsonData;
 
   CartBannerConfig({
@@ -18,6 +20,7 @@ class CartBannerConfig {
     required this.delayInMilliseconds,
     required this.durationInMilliseconds,
     required this.borderRadius,
+    this.destination,
     this.jsonData,
   });
 
@@ -30,6 +33,7 @@ class CartBannerConfig {
       borderRadius: json['borderRadius'] != null
           ? double.tryParse(json['borderRadius'].toString()) ?? 0.0
           : 0.0,
+      destination: json['destination'],
       jsonData: json,
     );
   }
@@ -40,5 +44,6 @@ class CartBannerConfig {
         'delayInMilliseconds': delayInMilliseconds,
         'durationInMilliseconds': durationInMilliseconds,
         'borderRadius': borderRadius,
+        'destination': destination,
       };
 }

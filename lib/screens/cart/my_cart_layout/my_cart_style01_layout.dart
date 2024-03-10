@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:inspireui/inspireui.dart';
 import 'package:provider/provider.dart';
 
+import '../../../app.dart';
 import '../../../common/config.dart';
 import '../../../common/tools/price_tools.dart';
 import '../../../generated/l10n.dart';
@@ -10,6 +11,7 @@ import '../../../models/app_model.dart';
 import '../../../models/cart/cart_base.dart';
 import '../../../models/entities/product.dart';
 import '../../../modules/dynamic_layout/config/cart_banner_config.dart';
+import '../../../services/firebase_service.dart';
 import '../../../widgets/animation/scaled_height_widget.dart';
 import '../../../widgets/product/cart_item/cart_item_state_ui.dart';
 import '../helpers/cart_items_helper.dart';
@@ -59,8 +61,20 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(cartBannerConfig.borderRadius),
-          child: CachedNetworkImage(
-            imageUrl: cartBannerConfig.imageUrl,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(cartBannerConfig.borderRadius),
+            onTap: () async {
+              final url = cartBannerConfig.destination;
+              if (url != null) {
+                await FirebaseServices().dynamicLinks?.handleDynamicLink(
+                      Uri.parse(url),
+                      App.fluxStoreNavigatorKey.currentContext!,
+                    );
+              }
+            },
+            child: CachedNetworkImage(
+              imageUrl: cartBannerConfig.imageUrl,
+            ),
           ),
         ),
       ),
