@@ -12,6 +12,7 @@ import '../common/config/models/index.dart';
 import '../common/constants.dart';
 import '../data/boxes.dart';
 import '../modules/dynamic_layout/config/app_config.dart';
+import '../modules/dynamic_layout/config/cart_banner_config.dart';
 import '../services/index.dart';
 import 'advertisement/index.dart' show AdvertisementConfig;
 import 'cart/cart_model.dart';
@@ -21,6 +22,7 @@ import 'filter_attribute_model.dart';
 
 class AppModel with ChangeNotifier {
   AppConfig? appConfig;
+  CartBannerConfig? cartBannerConfig;
   AdvertisementConfig advertisement = const AdvertisementConfig();
   Map? deeplink;
   late bool isMultivendor;
@@ -203,13 +205,31 @@ class AppModel with ChangeNotifier {
     );
   }
 
+  Future<void> fetchCloudCartBannerConfig(String url) async {
+    /// Do not enable cache here because we need to get the latest config JSON.
+    final cartBannerJson = await http.get(
+      Uri.encodeFull(url).toUri()!,
+      headers: {
+        'Accept': 'application/json',
+      },
+    );
+    cartBannerConfig = CartBannerConfig.fromJson(
+      convert.jsonDecode(
+        convert.utf8.decode(cartBannerJson.bodyBytes),
+      ),
+    );
+  }
+
   Future applyAppCaching() async {
     /// apply App Caching if isCaching is enable
     /// not use for Fluxbuilder
     if (!ServerConfig().isBuilder) {
-      await Services().widget.onLoadedAppConfig(langCode, (configCache) {
-        appConfig = AppConfig.fromJson(configCache);
-      });
+      await Services().widget.onLoadedAppConfig(
+        langCode,
+        (configCache) {
+          appConfig = AppConfig.fromJson(configCache);
+        },
+      );
     }
   }
 
@@ -269,6 +289,22 @@ class AppModel with ChangeNotifier {
             final appJson = await rootBundle.loadString(kAppConfig);
             appConfig = AppConfig.fromJson(convert.jsonDecode(appJson));
           }
+        }
+      }
+
+      /// Load cart banner config
+      if (kCartBannerConfig.isNotEmpty && kCartBannerConfig.contains('http')) {
+        var path = kCartBannerConfig;
+        if (path.contains('.json')) {
+          path = path.substring(0, path.lastIndexOf('/'));
+          path += '/cart_banner_config.json';
+        }
+        try {
+          await fetchCloudCartBannerConfig(path);
+        } catch (_) {
+          /// In case cart_banner_config.json is not found,
+          /// load user's original config URL.
+          printLog('🚑 Config at $path not found.');
         }
       }
 

@@ -11,6 +11,7 @@ class Configurations {
   static String _defaultLanguage = DefaultConfig.defaultLanguage;
   static Map _serverConfig = DefaultConfig.serverConfig;
   static String _appConfig = DefaultConfig.appConfig;
+  static String _cartBannerConfig = DefaultConfig.cartBannerConfig;
   static bool _defaultDarkTheme = DefaultConfig.defaultDarkTheme;
   static String _countryCodeDefault = DefaultConfig.countryCodeDefault;
   static String _dialCodeDefault = DefaultConfig.dialCodeDefault;
@@ -102,6 +103,8 @@ class Configurations {
   static Map get serverConfig => _serverConfig;
 
   static String get appConfig => _appConfig;
+
+  static String get cartBannerConfig => _cartBannerConfig;
 
   static bool get defaultDarkTheme => _defaultDarkTheme;
 
@@ -246,6 +249,7 @@ class Configurations {
     _defaultLanguage =
         value['defaultLanguage'] ?? DefaultConfig.defaultLanguage;
     _appConfig = value['appConfig'] ?? DefaultConfig.appConfig;
+    _cartBannerConfig = value['cartBannerConfig'] ?? _cartBannerConfig;
     _serverConfig = value['serverConfig'] ?? DefaultConfig.serverConfig;
     _defaultDarkTheme =
         value['defaultDarkTheme'] ?? DefaultConfig.defaultDarkTheme;
@@ -391,6 +395,7 @@ class Configurations {
           value['enableFirebaseAnalytics'] ?? _enableFirebaseAnalytics;
       _defaultLanguage = value['defaultLanguage'] ?? _defaultLanguage;
       _appConfig = value['appConfig'] ?? _appConfig;
+      _cartBannerConfig = value['cartBannerConfig'] ?? _cartBannerConfig;
       _serverConfig = value['serverConfig'] ?? _serverConfig;
       _defaultDarkTheme = value['defaultDarkTheme'] ?? _defaultDarkTheme;
       _storeIdentifier = value['storeIdentifier'] ?? _storeIdentifier;
