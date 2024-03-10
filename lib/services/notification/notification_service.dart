@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:notification_permissions/notification_permissions.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
@@ -15,15 +17,25 @@ abstract class NotificationService {
   }
 
   NotificationService() {
-    // var initSetting = const InitializationSettings(
-    //   android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-    //   iOS: IOSInitializationSettings(),
-    // );
-    //
-    // flutterLocalNotificationsPlugin.initialize(initSetting,
-    //     onSelectNotification: (String? payload) async {
-    //   /// Handle payload here
-    // });
+    var initSetting = const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(),
+    );
+
+    flutterLocalNotificationsPlugin.initialize(
+      initSetting,
+      onDidReceiveNotificationResponse: (notificationResponse) {
+        delegate.onMessageOpenedApp(
+          FStoreNotificationItem(
+            id: notificationResponse.id?.toString() ?? '',
+            title: '',
+            body: '',
+            additionalData: jsonDecode(notificationResponse.payload ?? ''),
+            date: DateTime.now(),
+          ),
+        );
+      },
+    );
 
     flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<

@@ -1,7 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
-import '../../common/constants.dart';
 import '../../models/entities/fstore_notification_item.dart';
 import '../../services/notification/notification_service.dart';
 
@@ -51,41 +52,28 @@ class OneSignalNotificationService extends NotificationService {
     _instance.setNotificationWillShowInForegroundHandler(
         (OSNotificationReceivedEvent result) {
       final data = result.notification;
-      if (isAndroid) {
-        _instance.completeNotification(
-            result.notification.notificationId, false);
-        flutterLocalNotificationsPlugin.show(
-          data.hashCode,
-          data.title,
-          data.body,
-          NotificationDetails(
-            android: AndroidNotificationDetails(
-              channel.id,
-              channel.name,
-              channelDescription: channel.description,
-              icon: data.largeIcon ??
-                  data.smallIcon ??
-                  'ic_stat_onesignal_default',
-              // other properties...
-            ),
-            iOS: const DarwinNotificationDetails(),
+
+      _instance.completeNotification(
+        result.notification.notificationId,
+        false,
+      );
+
+      flutterLocalNotificationsPlugin.show(
+        data.hashCode,
+        data.title,
+        data.body,
+        payload: jsonEncode(data.additionalData),
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            channel.id,
+            channel.name,
+            channelDescription: channel.description,
+            icon:
+                data.largeIcon ?? data.smallIcon ?? 'ic_stat_onesignal_default',
           ),
-          // payload: 'Notification'
-        );
-      } else {
-        /// When a notification arrives it will show right away if the app in the foreground
-        /// If the app is opening the notification will schedule 25 seconds to show
-        /// This statement makes the notification will show even when the app is opening
-        _instance.completeNotification(
-            result.notification.notificationId, true);
-      }
-      delegate.onMessage(FStoreNotificationItem(
-        id: data.notificationId,
-        title: data.title ?? '',
-        body: data.body ?? '',
-        additionalData: data.additionalData,
-        date: DateTime.now(),
-      ));
+          iOS: const DarwinNotificationDetails(),
+        ),
+      );
     });
   }
 
