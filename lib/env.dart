@@ -43,7 +43,7 @@ Map<String, dynamic> environment = {
     "DefaultLanguage": "en",
     "DetailedBlogLayout": "halfSizeImageType",
     "EnablePointReward": false,
-    "hideOutOfStock": false,
+    "hideOutOfStock": true,
     "HideEmptyTags": true,
     "HideEmptyCategories": true,
     "EnableRating": true,
