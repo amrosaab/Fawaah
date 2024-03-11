@@ -489,405 +489,405 @@ Map<String, dynamic> environment = {
     },
 
     // 1 English - intl_en.arb
-    /* {
-      "name": "English",
-      "icon": "assets/images/country/gb.png",
-      "code": "en",
-      "text": "English",
-      "storeViewCode": ""
-    },
-    // 2 Hindi - intl_hi.arb
-    {
-      "name": "Hindi",
-      "icon": "assets/images/country/in.png",
-      "code": "hi",
-      "text": "हिन्दी",
-      "storeViewCode": "hi"
-    },
-    // 3 Spanish - intl_es.arb
-    {
-      "name": "Spanish",
-      "icon": "assets/images/country/es.png",
-      "code": "es",
-      "text": "Español",
-      "storeViewCode": ""
-    },
-    // 4 French - intl_fr.arb
-    {
-      "name": "French",
-      "icon": "assets/images/country/fr.png",
-      "code": "fr",
-      "text": "Français",
-      "storeViewCode": "fr"
-    },
-    // 5 Arabic - intl_ar.arb
-    {
-      "name": "Arabic",
-      "icon": "assets/images/country/ar.png",
-      "code": "ar",
-      "text": "العربية",
-      "storeViewCode": "ar"
-    },
-    // 6 Russian - intl_ru.arb
-    {
-      "name": "Russian",
-      "icon": "assets/images/country/ru.png",
-      "code": "ru",
-      "text": "Русский",
-      "storeViewCode": "ru"
-    },
-    // 7 Indonesian - intl_id.arb
-    {
-      "name": "Indonesian",
-      "icon": "assets/images/country/id.png",
-      "code": "id",
-      "text": "Bahasa Indonesia",
-      "storeViewCode": "id"
-    },
-    // 8 Japanese - intl_ja.arb
-    {
-      "name": "Japanese",
-      "icon": "assets/images/country/ja.png",
-      "code": "ja",
-      "text": "日本語",
-      "storeViewCode": ""
-    },
-    // 9 Korean - intl_ko.arb
-    {
-      "name": "Korean",
-      "icon": "assets/images/country/ko.png",
-      "code": "ko",
-      "text": "한국어/조선말",
-      "storeViewCode": "ko"
-    },
-    // 10 Vietnamese - intl_vi.arb
-    {
-      "name": "Vietnamese",
-      "icon": "assets/images/country/vn.png",
-      "code": "vi",
-      "text": "Tiếng Việt",
-      "storeViewCode": ""
-    },
-    // 11 Romanian - intl_ro.arb
-    {
-      "name": "Romanian",
-      "icon": "assets/images/country/ro.png",
-      "code": "ro",
-      "text": "Românește",
-      "storeViewCode": "ro"
-    },
-    // 12 Turkish - intl_tr.arb
-    {
-      "name": "Turkish",
-      "icon": "assets/images/country/tr.png",
-      "code": "tr",
-      "text": "Türkçe",
-      "storeViewCode": "tr"
-    },
-    // 13 Italian - intl_it.arb
-    {
-      "name": "Italian",
-      "icon": "assets/images/country/it.png",
-      "code": "it",
-      "text": "Italiano",
-      "storeViewCode": "it"
-    },
-    // 14 German - intl_de.arb
-    {
-      "name": "German",
-      "icon": "assets/images/country/de.png",
-      "code": "de",
-      "text": "Deutsch",
-      "storeViewCode": "de"
-    },
-    // 15 Brazilian Portuguese - intl_pt_BR.arb
-    {
-      "name": "Brazilian Portuguese",
-      "icon": "assets/images/country/br.png",
-      "code": "pt_BR",
-      "text": "Português do Brasil",
-      "storeViewCode": ""
-    },
-    // 16 Portuguese from Portugal - intl_pt_PT.arb
-    {
-      "name": "Portuguese from Portugal",
-      "icon": "assets/images/country/pt.png",
-      "code": "pt_PT",
-      "text": "Português de Portugal",
-      "storeViewCode": ""
-    },
-    // 17 Hungarian - intl_hu.arb
-    {
-      "name": "Hungarian",
-      "icon": "assets/images/country/hu.png",
-      "code": "hu",
-      "text": "Magyar nyelv",
-      "storeViewCode": "hu"
-    },
-    // 18 Hebrew - intl_he.arb
-    {
-      "name": "Hebrew",
-      "icon": "assets/images/country/he.png",
-      "code": "he",
-      "text": "עִבְרִית",
-      "storeViewCode": "he"
-    },
-    // 19 Thai - intl_th.arb
-    {
-      "name": "Thai",
-      "icon": "assets/images/country/th.png",
-      "code": "th",
-      "text": "ภาษาไทย",
-      "storeViewCode": "th"
-    },
-    // 20 Dutch - intl_nl.arb
-    {
-      "name": "Dutch",
-      "icon": "assets/images/country/nl.png",
-      "code": "nl",
-      "text": "Nederlands",
-      "storeViewCode": "nl"
-    },
-    // 21 Serbian - intl_sr.arb
-    {
-      "name": "Serbian",
-      "icon": "assets/images/country/sr.jpeg",
-      "code": "sr",
-      "text": "српски",
-      "storeViewCode": "sr"
-    },
-    // 22 Polish - intl_pl.arb
-    {
-      "name": "Polish",
-      "icon": "assets/images/country/pl.png",
-      "code": "pl",
-      "text": "Język polski",
-      "storeViewCode": "pl"
-    },
-    // 23 Persian - intl_fa.arb
-    {
-      "name": "Persian",
-      "icon": "assets/images/country/fa.png",
-      "code": "fa",
-      "text": "زبان فارسی",
-      "storeViewCode": ""
-    },
-    // 24 Ukrainian - intl_uk.arb
-    {
-      "name": "Ukrainian",
-      "icon": "assets/images/country/uk.png",
-      "code": "uk",
-      "text": "Українська мова",
-      "storeViewCode": ""
-    },
-    // 25 Bengali - intl_bn.arb
-    {
-      "name": "Bengali",
-      "icon": "assets/images/country/bn.png",
-      "code": "bn",
-      "text": "বাংলা",
-      "storeViewCode": ""
-    },
-    // 26 Tamil - intl_ta.arb
-    {
-      "name": "Tamil",
-      "icon": "assets/images/country/ta.png",
-      "code": "ta",
-      "text": "தமிழ்",
-      "storeViewCode": ""
-    },
-    // 27 Kurdish - intl_ku.arb
-    {
-      "name": "Kurdish",
-      "icon": "assets/images/country/ku.png",
-      "code": "ku",
-      "text": "Kurdî / کوردی",
-      "storeViewCode": ""
-    },
-    // 28 Czech - intl_cs.arb
-    {
-      "name": "Czech",
-      "icon": "assets/images/country/cs.png",
-      "code": "cs",
-      "text": "Čeština",
-      "storeViewCode": "cs"
-    },
-    // 29 Swedish - intl_sv.arb
-    {
-      "name": "Swedish",
-      "icon": "assets/images/country/sv.png",
-      "code": "sv",
-      "text": "Svenska",
-      "storeViewCode": ""
-    },
-    // 30 Finland - intl_fi.arb
-    {
-      "name": "Finland",
-      "icon": "assets/images/country/fi.png",
-      "code": "fi",
-      "text": "Suomi",
-      "storeViewCode": ""
-    },
-    // 31 Greek - intl_el.arb
-    {
-      "name": "Greek",
-      "icon": "assets/images/country/el.png",
-      "code": "el",
-      "text": "Ελληνικά",
-      "storeViewCode": ""
-    },
-    // 32 Khmer - intl_km.arb
-    {
-      "name": "Khmer",
-      "icon": "assets/images/country/km.png",
-      "code": "km",
-      "text": "ភាសាខ្មែរ",
-      "storeViewCode": ""
-    },
-    // 33 Kannada - intl_kn.arb
-    {
-      "name": "Kannada",
-      "icon": "assets/images/country/kn.png",
-      "code": "kn",
-      "text": "ಕನ್ನಡ",
-      "storeViewCode": ""
-    },
-    // 34 Marathi - intl_mr.arb
-    {
-      "name": "Marathi",
-      "icon": "assets/images/country/mr.jpeg",
-      "code": "mr",
-      "text": "मराठी भाषा",
-      "storeViewCode": ""
-    },
-    // 35 Malay - intl_ms.arb
-    {
-      "name": "Malay",
-      "icon": "assets/images/country/ms.jpeg",
-      "code": "ms",
-      "text": "بهاس ملايو",
-      "storeViewCode": ""
-    },
-    // 36 Bosnian - intl_bs.arb
-    {
-      "name": "Bosnian",
-      "icon": "assets/images/country/bs.png",
-      "code": "bs",
-      "text": "босански",
-      "storeViewCode": ""
-    },
-    // 37 Lao - intl_lo.arb
-    {
-      "name": "Lao",
-      "icon": "assets/images/country/lo.png",
-      "code": "lo",
-      "text": "ພາສາລາວ",
-      "storeViewCode": ""
-    },
-    // 38 Slovak - intl_sk.arb
-    {
-      "name": "Slovak",
-      "icon": "assets/images/country/sk.png",
-      "code": "sk",
-      "text": "Slovaščina",
-      "storeViewCode": ""
-    },
-    // 39 Swahili - intl_sw.arb
-    {
-      "name": "Swahili",
-      "icon": "assets/images/country/sw.png",
-      "code": "sw",
-      "text": "كِيْسَوَاحِيْلِيْ",
-      "storeViewCode": ""
-    },
-    // 40 Chinese - intl_zh.arb
-    {
-      "name": "Chinese",
-      "icon": "assets/images/country/zh.png",
-      "code": "zh",
-      "text": "中文",
-      "storeViewCode": ""
-    },
-    // 41 Chinese Traditional - intl_zh_TW.arb
-    {
-      "name": "Chinese (traditional)",
-      "icon": "assets/images/country/zh.png",
-      "code": "zh_TW",
-      "text": "漢語",
-      "storeViewCode": ""
-    },
-    // 42 Chinese Simplified - intl_zh_CN.arb
-    {
-      "name": "Chinese (simplified)",
-      "icon": "assets/images/country/zh.png",
-      "code": "zh_CN",
-      "text": "汉语",
-      "storeViewCode": ""
-    },
-    // 43 Burmese - intl_my.arb
-    {
-      "name": "Burmese",
-      "icon": "assets/images/country/my.png",
-      "code": "my",
-      "text": "မြန်မာဘာသာစကား",
-      "storeViewCode": ""
-    },
-    // 44 Albanian - intl_sq.arb
-    {
-      "name": "Albanian",
-      "icon": "assets/images/country/sq.png",
-      "code": "sq",
-      "text": "Shqip",
-      "storeViewCode": ""
-    },
-    // 45 Danish - intl_da.arb
-    {
-      "name": "Danish",
-      "icon": "assets/images/country/da.svg",
-      "code": "da",
-      "text": "Dansk",
-      "storeViewCode": ""
-    },
-    // 46 Tigrinya - intl_ti.arb
-    {
-      "name": "Tigrinya",
-      "icon": "assets/images/country/er.png",
-      "code": "ti",
-      "text": "ትግርኛ",
-      "storeViewCode": "ti"
-    },
-    // 47 Urdu - intl_ur.arb
-    {
-      "name": "Urdu",
-      "icon": "assets/images/country/pk.png",
-      "code": "ur",
-      "text": "اُردُو",
-      "storeViewCode": ""
-    },
-    // 48 Azerbaijani- intl_az.arb
-    {
-      "name": "Azerbaijani",
-      "icon": "assets/images/country/az.jpg",
-      "code": "az",
-      "text": "Azərbaycan dili",
-      "storeViewCode": ""
-    },
-    // 49 Kazakhstan - intl_kk.arb
-    {
-      "name": "Kazakhstan",
-      "icon": "assets/images/country/kz.png",
-      "code": "kk",
-      "text": "Қазақ тілі",
-      "storeViewCode": ""
-    },
-    // 50 Uzbek - intl_uz.arb
-    {
-      "name": "Uzbek",
-      "icon": "assets/images/country/uz.png",
-      "code": "uz",
-      "text": "O'zbek",
-      "storeViewCode": ""
-    } */
+    //  {
+    //   "name": "English",
+    //   "icon": "assets/images/country/gb.png",
+    //   "code": "en",
+    //   "text": "English",
+    //   "storeViewCode": ""
+    // },
+    // // 2 Hindi - intl_hi.arb
+    // {
+    //   "name": "Hindi",
+    //   "icon": "assets/images/country/in.png",
+    //   "code": "hi",
+    //   "text": "हिन्दी",
+    //   "storeViewCode": "hi"
+    // },
+    // // 3 Spanish - intl_es.arb
+    // {
+    //   "name": "Spanish",
+    //   "icon": "assets/images/country/es.png",
+    //   "code": "es",
+    //   "text": "Español",
+    //   "storeViewCode": ""
+    // },
+    // // 4 French - intl_fr.arb
+    // {
+    //   "name": "French",
+    //   "icon": "assets/images/country/fr.png",
+    //   "code": "fr",
+    //   "text": "Français",
+    //   "storeViewCode": "fr"
+    // },
+    // // 5 Arabic - intl_ar.arb
+    // {
+    //   "name": "Arabic",
+    //   "icon": "assets/images/country/ar.png",
+    //   "code": "ar",
+    //   "text": "العربية",
+    //   "storeViewCode": "ar"
+    // },
+    // // 6 Russian - intl_ru.arb
+    // {
+    //   "name": "Russian",
+    //   "icon": "assets/images/country/ru.png",
+    //   "code": "ru",
+    //   "text": "Русский",
+    //   "storeViewCode": "ru"
+    // },
+    // // 7 Indonesian - intl_id.arb
+    // {
+    //   "name": "Indonesian",
+    //   "icon": "assets/images/country/id.png",
+    //   "code": "id",
+    //   "text": "Bahasa Indonesia",
+    //   "storeViewCode": "id"
+    // },
+    // // 8 Japanese - intl_ja.arb
+    // {
+    //   "name": "Japanese",
+    //   "icon": "assets/images/country/ja.png",
+    //   "code": "ja",
+    //   "text": "日本語",
+    //   "storeViewCode": ""
+    // },
+    // // 9 Korean - intl_ko.arb
+    // {
+    //   "name": "Korean",
+    //   "icon": "assets/images/country/ko.png",
+    //   "code": "ko",
+    //   "text": "한국어/조선말",
+    //   "storeViewCode": "ko"
+    // },
+    // // 10 Vietnamese - intl_vi.arb
+    // {
+    //   "name": "Vietnamese",
+    //   "icon": "assets/images/country/vn.png",
+    //   "code": "vi",
+    //   "text": "Tiếng Việt",
+    //   "storeViewCode": ""
+    // },
+    // // 11 Romanian - intl_ro.arb
+    // {
+    //   "name": "Romanian",
+    //   "icon": "assets/images/country/ro.png",
+    //   "code": "ro",
+    //   "text": "Românește",
+    //   "storeViewCode": "ro"
+    // },
+    // // 12 Turkish - intl_tr.arb
+    // {
+    //   "name": "Turkish",
+    //   "icon": "assets/images/country/tr.png",
+    //   "code": "tr",
+    //   "text": "Türkçe",
+    //   "storeViewCode": "tr"
+    // },
+    // // 13 Italian - intl_it.arb
+    // {
+    //   "name": "Italian",
+    //   "icon": "assets/images/country/it.png",
+    //   "code": "it",
+    //   "text": "Italiano",
+    //   "storeViewCode": "it"
+    // },
+    // // 14 German - intl_de.arb
+    // {
+    //   "name": "German",
+    //   "icon": "assets/images/country/de.png",
+    //   "code": "de",
+    //   "text": "Deutsch",
+    //   "storeViewCode": "de"
+    // },
+    // // 15 Brazilian Portuguese - intl_pt_BR.arb
+    // {
+    //   "name": "Brazilian Portuguese",
+    //   "icon": "assets/images/country/br.png",
+    //   "code": "pt_BR",
+    //   "text": "Português do Brasil",
+    //   "storeViewCode": ""
+    // },
+    // // 16 Portuguese from Portugal - intl_pt_PT.arb
+    // {
+    //   "name": "Portuguese from Portugal",
+    //   "icon": "assets/images/country/pt.png",
+    //   "code": "pt_PT",
+    //   "text": "Português de Portugal",
+    //   "storeViewCode": ""
+    // },
+    // // 17 Hungarian - intl_hu.arb
+    // {
+    //   "name": "Hungarian",
+    //   "icon": "assets/images/country/hu.png",
+    //   "code": "hu",
+    //   "text": "Magyar nyelv",
+    //   "storeViewCode": "hu"
+    // },
+    // // 18 Hebrew - intl_he.arb
+    // {
+    //   "name": "Hebrew",
+    //   "icon": "assets/images/country/he.png",
+    //   "code": "he",
+    //   "text": "עִבְרִית",
+    //   "storeViewCode": "he"
+    // },
+    // // 19 Thai - intl_th.arb
+    // {
+    //   "name": "Thai",
+    //   "icon": "assets/images/country/th.png",
+    //   "code": "th",
+    //   "text": "ภาษาไทย",
+    //   "storeViewCode": "th"
+    // },
+    // // 20 Dutch - intl_nl.arb
+    // {
+    //   "name": "Dutch",
+    //   "icon": "assets/images/country/nl.png",
+    //   "code": "nl",
+    //   "text": "Nederlands",
+    //   "storeViewCode": "nl"
+    // },
+    // // 21 Serbian - intl_sr.arb
+    // {
+    //   "name": "Serbian",
+    //   "icon": "assets/images/country/sr.jpeg",
+    //   "code": "sr",
+    //   "text": "српски",
+    //   "storeViewCode": "sr"
+    // },
+    // // 22 Polish - intl_pl.arb
+    // {
+    //   "name": "Polish",
+    //   "icon": "assets/images/country/pl.png",
+    //   "code": "pl",
+    //   "text": "Język polski",
+    //   "storeViewCode": "pl"
+    // },
+    // // 23 Persian - intl_fa.arb
+    // {
+    //   "name": "Persian",
+    //   "icon": "assets/images/country/fa.png",
+    //   "code": "fa",
+    //   "text": "زبان فارسی",
+    //   "storeViewCode": ""
+    // },
+    // // 24 Ukrainian - intl_uk.arb
+    // {
+    //   "name": "Ukrainian",
+    //   "icon": "assets/images/country/uk.png",
+    //   "code": "uk",
+    //   "text": "Українська мова",
+    //   "storeViewCode": ""
+    // },
+    // // 25 Bengali - intl_bn.arb
+    // {
+    //   "name": "Bengali",
+    //   "icon": "assets/images/country/bn.png",
+    //   "code": "bn",
+    //   "text": "বাংলা",
+    //   "storeViewCode": ""
+    // },
+    // // 26 Tamil - intl_ta.arb
+    // {
+    //   "name": "Tamil",
+    //   "icon": "assets/images/country/ta.png",
+    //   "code": "ta",
+    //   "text": "தமிழ்",
+    //   "storeViewCode": ""
+    // },
+    // // 27 Kurdish - intl_ku.arb
+    // {
+    //   "name": "Kurdish",
+    //   "icon": "assets/images/country/ku.png",
+    //   "code": "ku",
+    //   "text": "Kurdî / کوردی",
+    //   "storeViewCode": ""
+    // },
+    // // 28 Czech - intl_cs.arb
+    // {
+    //   "name": "Czech",
+    //   "icon": "assets/images/country/cs.png",
+    //   "code": "cs",
+    //   "text": "Čeština",
+    //   "storeViewCode": "cs"
+    // },
+    // // 29 Swedish - intl_sv.arb
+    // {
+    //   "name": "Swedish",
+    //   "icon": "assets/images/country/sv.png",
+    //   "code": "sv",
+    //   "text": "Svenska",
+    //   "storeViewCode": ""
+    // },
+    // // 30 Finland - intl_fi.arb
+    // {
+    //   "name": "Finland",
+    //   "icon": "assets/images/country/fi.png",
+    //   "code": "fi",
+    //   "text": "Suomi",
+    //   "storeViewCode": ""
+    // },
+    // // 31 Greek - intl_el.arb
+    // {
+    //   "name": "Greek",
+    //   "icon": "assets/images/country/el.png",
+    //   "code": "el",
+    //   "text": "Ελληνικά",
+    //   "storeViewCode": ""
+    // },
+    // // 32 Khmer - intl_km.arb
+    // {
+    //   "name": "Khmer",
+    //   "icon": "assets/images/country/km.png",
+    //   "code": "km",
+    //   "text": "ភាសាខ្មែរ",
+    //   "storeViewCode": ""
+    // },
+    // // 33 Kannada - intl_kn.arb
+    // {
+    //   "name": "Kannada",
+    //   "icon": "assets/images/country/kn.png",
+    //   "code": "kn",
+    //   "text": "ಕನ್ನಡ",
+    //   "storeViewCode": ""
+    // },
+    // // 34 Marathi - intl_mr.arb
+    // {
+    //   "name": "Marathi",
+    //   "icon": "assets/images/country/mr.jpeg",
+    //   "code": "mr",
+    //   "text": "मराठी भाषा",
+    //   "storeViewCode": ""
+    // },
+    // // 35 Malay - intl_ms.arb
+    // {
+    //   "name": "Malay",
+    //   "icon": "assets/images/country/ms.jpeg",
+    //   "code": "ms",
+    //   "text": "بهاس ملايو",
+    //   "storeViewCode": ""
+    // },
+    // // 36 Bosnian - intl_bs.arb
+    // {
+    //   "name": "Bosnian",
+    //   "icon": "assets/images/country/bs.png",
+    //   "code": "bs",
+    //   "text": "босански",
+    //   "storeViewCode": ""
+    // },
+    // // 37 Lao - intl_lo.arb
+    // {
+    //   "name": "Lao",
+    //   "icon": "assets/images/country/lo.png",
+    //   "code": "lo",
+    //   "text": "ພາສາລາວ",
+    //   "storeViewCode": ""
+    // },
+    // // 38 Slovak - intl_sk.arb
+    // {
+    //   "name": "Slovak",
+    //   "icon": "assets/images/country/sk.png",
+    //   "code": "sk",
+    //   "text": "Slovaščina",
+    //   "storeViewCode": ""
+    // },
+    // // 39 Swahili - intl_sw.arb
+    // {
+    //   "name": "Swahili",
+    //   "icon": "assets/images/country/sw.png",
+    //   "code": "sw",
+    //   "text": "كِيْسَوَاحِيْلِيْ",
+    //   "storeViewCode": ""
+    // },
+    // // 40 Chinese - intl_zh.arb
+    // {
+    //   "name": "Chinese",
+    //   "icon": "assets/images/country/zh.png",
+    //   "code": "zh",
+    //   "text": "中文",
+    //   "storeViewCode": ""
+    // },
+    // // 41 Chinese Traditional - intl_zh_TW.arb
+    // {
+    //   "name": "Chinese (traditional)",
+    //   "icon": "assets/images/country/zh.png",
+    //   "code": "zh_TW",
+    //   "text": "漢語",
+    //   "storeViewCode": ""
+    // },
+    // // 42 Chinese Simplified - intl_zh_CN.arb
+    // {
+    //   "name": "Chinese (simplified)",
+    //   "icon": "assets/images/country/zh.png",
+    //   "code": "zh_CN",
+    //   "text": "汉语",
+    //   "storeViewCode": ""
+    // },
+    // // 43 Burmese - intl_my.arb
+    // {
+    //   "name": "Burmese",
+    //   "icon": "assets/images/country/my.png",
+    //   "code": "my",
+    //   "text": "မြန်မာဘာသာစကား",
+    //   "storeViewCode": ""
+    // },
+    // // 44 Albanian - intl_sq.arb
+    // {
+    //   "name": "Albanian",
+    //   "icon": "assets/images/country/sq.png",
+    //   "code": "sq",
+    //   "text": "Shqip",
+    //   "storeViewCode": ""
+    // },
+    // // 45 Danish - intl_da.arb
+    // {
+    //   "name": "Danish",
+    //   "icon": "assets/images/country/da.svg",
+    //   "code": "da",
+    //   "text": "Dansk",
+    //   "storeViewCode": ""
+    // },
+    // // 46 Tigrinya - intl_ti.arb
+    // {
+    //   "name": "Tigrinya",
+    //   "icon": "assets/images/country/er.png",
+    //   "code": "ti",
+    //   "text": "ትግርኛ",
+    //   "storeViewCode": "ti"
+    // },
+    // // 47 Urdu - intl_ur.arb
+    // {
+    //   "name": "Urdu",
+    //   "icon": "assets/images/country/pk.png",
+    //   "code": "ur",
+    //   "text": "اُردُو",
+    //   "storeViewCode": ""
+    // },
+    // // 48 Azerbaijani- intl_az.arb
+    // {
+    //   "name": "Azerbaijani",
+    //   "icon": "assets/images/country/az.jpg",
+    //   "code": "az",
+    //   "text": "Azərbaycan dili",
+    //   "storeViewCode": ""
+    // },
+    // // 49 Kazakhstan - intl_kk.arb
+    // {
+    //   "name": "Kazakhstan",
+    //   "icon": "assets/images/country/kz.png",
+    //   "code": "kk",
+    //   "text": "Қазақ тілі",
+    //   "storeViewCode": ""
+    // },
+    // // 50 Uzbek - intl_uz.arb
+    // {
+    //   "name": "Uzbek",
+    //   "icon": "assets/images/country/uz.png",
+    //   "code": "uz",
+    //   "text": "O'zbek",
+    //   "storeViewCode": ""
+    // }
   ],
 
   /// ➡️  lib/common/config/payments.dart
