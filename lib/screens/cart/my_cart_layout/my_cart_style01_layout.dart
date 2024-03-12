@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:inspireui/inspireui.dart';
 import 'package:provider/provider.dart';
 
@@ -370,9 +371,9 @@ class RenderTotalPrice extends StatelessWidget {
                                   const EdgeInsets.symmetric(horizontal: 8)),
                           label: totalCartQuantity > 0
                               ? (isLoading
-                                  ? Text(
-                                      S.of(context).loading.toUpperCase(),
-                                      style: style,
+                                  ? const SpinKitThreeBounce(
+                                      color: Colors.white,
+                                      size: 22.0,
                                     )
                                   : Text(
                                       S.of(context).checkout,
