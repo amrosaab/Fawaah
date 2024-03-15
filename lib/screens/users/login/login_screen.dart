@@ -143,6 +143,11 @@ class _LoginPageState extends BaseScreen<LoginScreen>
                                           .of(_parentContext)
                                           .enterYourEmailOrUsername,
                                     ),
+                                    onSubmitted: (value) {
+                                      FocusScope.of(context).requestFocus(_passwordFocusNode);
+
+                                    },
+
                                   ),
                                   CustomTextField(
                                     key: const Key('loginPasswordField'),
