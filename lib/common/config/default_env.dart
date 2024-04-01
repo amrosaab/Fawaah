@@ -587,5 +587,5 @@ class DefaultConfig {
       'web': 'AIzaSyDW3uXzZepWBPi-69BIYKyS-xo9NjFSFhQ'
     },
   );
-  static bool enableOnBoarding = true;
+  static bool enableOnBoarding = false;
 }
