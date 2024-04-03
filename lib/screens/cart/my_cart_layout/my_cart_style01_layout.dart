@@ -137,6 +137,7 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
                                     child: Image.asset(
                                       'assets/images/trash.png',
                                       width: 20.0,
+                                      color:  Theme.of(context).brightness == Brightness.dark?const Color(0xff3fc1be):Colors.white,
                                     ),
                                   ),
                                 ),
@@ -377,11 +378,11 @@ class RenderTotalPrice extends StatelessWidget {
                                     )
                                   : Text(
                                       S.of(context).checkout,
-                                      style: style,
+                                      style: style.copyWith(fontSize: 16),
                                     ))
                               : Text(
                                   S.of(context).startShopping.toUpperCase(),
-                                  style: style,
+                                  style: style.copyWith(fontSize: 16),
                                 ),
                         );
                       },

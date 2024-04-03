@@ -60,9 +60,7 @@ mixin MyCartMixin<T extends StatefulWidget> on State<T> {
               },
               child: Text(
                 S.of(context).clear,
-                style: const TextStyle(
-                  color: Colors.white,
-                ),
+                style:  Theme.of(context).textTheme.bodySmall?.copyWith(color:Colors.white,)
               ),
             ),
           ],
