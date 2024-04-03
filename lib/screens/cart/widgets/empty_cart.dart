@@ -73,9 +73,7 @@ class EmptyCart extends StatelessWidget {
                           minimumSize: const Size.fromHeight(50),
                           backgroundColor: Theme.of(context).primaryColor,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(9.0),
-                          ),
+
                           // textStyle: const TextStyle(
                           //   letterSpacing: 0.8,
                           //   // fontSize: 11,
@@ -86,7 +84,8 @@ class EmptyCart extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(S.of(context).startShopping.toUpperCase()),
+                            Text(S.of(context).startShopping.toUpperCase(),style: Theme.of(context).textTheme.bodySmall?.copyWith(color:Colors.white )
+                      ),
                             const Icon(Icons.navigate_next, size: 16),
                           ],
                         ),
@@ -113,7 +112,9 @@ class EmptyCart extends StatelessWidget {
                             );
                           },
                           child:
-                              Text(S.of(context).searchForItems.toUpperCase()),
+                              Text(S.of(context).searchForItems.toUpperCase(),style: Theme.of(context).textTheme.bodySmall?.copyWith(color:
+                              Theme.of(context).brightness == Brightness.dark?Colors.grey[900]:Colors.teal[900],)
+                              ),
                         ),
                       ),
                     ),

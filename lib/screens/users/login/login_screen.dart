@@ -214,11 +214,7 @@ class _LoginPageState extends BaseScreen<LoginScreen>
                                   Stack(
                                     alignment: AlignmentDirectional.center,
                                     children: <Widget>[
-                                      SizedBox(
-                                          height: 50.0,
-                                          width: 200.0,
-                                          child: Divider(
-                                              color: Colors.grey.shade300)),
+
                                       Container(
                                           height: 30,
                                           width: 40,

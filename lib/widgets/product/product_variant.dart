@@ -56,7 +56,7 @@ class BasicSelection extends StatelessWidget {
       children: <Widget>[
         Container(
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: Theme.of(context).brightness == Brightness.dark?const Color(0xff282D39):Colors.grey[100],
             borderRadius: const BorderRadius.all(
               Radius.circular(8),
             ),
