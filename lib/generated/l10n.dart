@@ -5040,6 +5040,16 @@ class S {
     );
   }
 
+  /// `Full Address`
+  String get fullAddress {
+    return Intl.message(
+      'Full Address',
+      name: 'fullAddress',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Hide Phone`
   String get hidePhone {
     return Intl.message(
