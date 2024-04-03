@@ -62,9 +62,7 @@ class ShoppingCartRow extends StatelessWidget with ActionButtonMixin {
               },
               child: Text(
                 S.of(context).remove,
-                style: const TextStyle(
-                  color: Colors.white,
-                ),
+                style:  Theme.of(context).textTheme.bodySmall?.copyWith(color:Colors.white,)
               ),
             ),
           ],
