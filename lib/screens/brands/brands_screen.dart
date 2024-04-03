@@ -97,6 +97,7 @@ class _BrandsScreenState extends State<BrandsScreen> {
     return Scaffold(
       // backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Theme.of(context).brightness == Brightness.dark?const Color(0xFF546E7A):Theme.of(context).primaryColor,
         title: Center(
           child: Text(
             S.of(context).allBrands,
@@ -132,6 +133,8 @@ class _BrandsScreenState extends State<BrandsScreen> {
                     border: InputBorder.none,
                     prefixIcon: Icon(
                       Icons.search,
+                      color:  Color(0xff282D39),
+
                     ),
                   ),
                 ),
