@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:convert' as convert;
 
+import 'package:fstore/common/typesdef.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_auth/http_auth.dart';
 
@@ -104,9 +105,11 @@ abstract class BaseServices {
 
   Future<List<ShippingMethod>>? getShippingMethods(
           {CartModel? cartModel,
+            FormatAddress? formatAddress,
           String? token,
           String? checkoutId,
           Store? store,
+
           String? langCode}) =>
       null;
 
