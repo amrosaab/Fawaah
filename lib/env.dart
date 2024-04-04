@@ -3,7 +3,7 @@ import 'common/constants/country_phone_codes.dart';
 
 Map<String, dynamic> environment = {
   "appConfig":
-  "https://raw.githubusercontent.com/kaifapp/KaifApp/main/config_ar.json",
+  "https://raw.githubusercontent.com/amrosaab/FawaahApp/main/config_ar.json",
   "cartBannerConfig": "https://raw.githubusercontent.com/amrosaab/FawaahApp/main/cart_banner_config.json",
 
   "serverConfig": {
