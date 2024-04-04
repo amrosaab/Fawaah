@@ -48,6 +48,7 @@ class CountryState {
     code = parsedJson['code'];
     name = parsedJson['name'];
   }
+
   City toCity() {
     return City(id: id, name: name);
   }

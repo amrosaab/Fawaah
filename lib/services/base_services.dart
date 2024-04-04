@@ -103,14 +103,14 @@ abstract class BaseServices {
           {String? lang}) =>
       null;
 
-  Future<List<ShippingMethod>>? getShippingMethods(
-          {CartModel? cartModel,
-            FormatAddress? formatAddress,
-          String? token,
-          String? checkoutId,
-          Store? store,
-
-          String? langCode}) =>
+  Future<List<ShippingMethod>>? getShippingMethods({
+    CartModel? cartModel,
+    String? token,
+    String? checkoutId,
+    Store? store,
+    String? langCode,
+    FormatAddress? formatAddress,
+  }) =>
       null;
 
   Future<List<PaymentMethod>>? getPaymentMethods(
@@ -190,7 +190,8 @@ abstract class BaseServices {
   Future<Product?>? overrideGetProduct(id, {lang}) =>
       getProduct(id, lang: lang);
 
-  Future<ProductVariation?> getVariationProduct(String productId, String? variationId,
+  Future<ProductVariation?> getVariationProduct(
+          String productId, String? variationId,
           {String? lang}) async =>
       null;
 

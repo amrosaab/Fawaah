@@ -1,7 +1,6 @@
 
-import 'package:fstore/common/typesdef.dart';
-
 import '../../config.dart';
+import '../../typesdef.dart';
 import 'address_field_config.dart';
 
 class CountryAddressFieldsConfig {
@@ -32,7 +31,7 @@ class CountryAddressFieldsConfig {
     return CountryAddressFieldsConfig(
       country: country,
       addressFields: addressFields,
-      formatAddress: json['formatAddress'] ?? DefaultConfig.formatAddress,
+      formatAddress: json['formatAddress'] as FormatAddress,
     );
   }
 
