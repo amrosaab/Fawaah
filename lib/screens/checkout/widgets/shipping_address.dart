@@ -121,6 +121,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
     /// Load saved addresses.
     final addressValue =
     await Provider.of<CartModel>(context, listen: false).getAddress(
+      selectedCountryModel.selectedIsoCode,
     );
     if (addressValue != null) {
       updateAddress(addressValue);
@@ -145,6 +146,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
     address = address?.copyWith(
         country: () => selectedCountryModel.selectedIsoCode) ??
         Address(country: selectedCountryModel.selectedIsoCode);
+
 
     /// Init default fields.
     for (var field in _fieldsConfigs.values) {

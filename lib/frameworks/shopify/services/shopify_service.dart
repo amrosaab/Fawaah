@@ -583,7 +583,10 @@ class ShopifyService extends BaseServices {
         String? langCode}) async {
     try {
       var list = <ShippingMethod>[];
-      var newAddress = cartModel!.address!.toShopifyJson()['address'];
+      var newAddress = cartModel!.address!.toShopifyJson(
+        formatAddress: formatAddress,
+      )['address'];
+
 
       printLog('getShippingMethods with checkoutId $checkoutId');
 

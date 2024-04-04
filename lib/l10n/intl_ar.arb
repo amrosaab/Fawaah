@@ -911,4 +911,5 @@
 	"useMaximumPointDiscount": "استخدم {maxPointDiscount} نقطة كحد أقصى للحصول على خصم {maxPriceDiscount} على هذا الطلب!",
 	"wholesaleRegisterMsg": "يرجى التواصل مع المسؤول للموافقة على تسجيلك.",
 	"sureThatProductExists": "تاكد من المنتجات في السلة لازالت متوفرة"
+	"searchByCountryNameOrDialCode": "البحث بالاسم البلد أو رمز الاتصال",
 }

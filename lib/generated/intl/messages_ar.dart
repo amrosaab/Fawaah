@@ -1343,6 +1343,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "zipCodeIsRequired":
             MessageLookupByLibrary.simpleMessage("خانة الشقة مطلوبة"),
         "sureThatProductExists": MessageLookupByLibrary.simpleMessage(
-            "تاكد من المنتجات في السلة لازالت متوفرة")
+            "تاكد من المنتجات في السلة لازالت متوفرة"),
+    "searchByCountryNameOrDialCode": MessageLookupByLibrary.simpleMessage("البحث بالاسم البلد أو رمز الاتصال"),
       };
 }

@@ -35,7 +35,7 @@ Map<String, dynamic> environment = {
     "useInternationalFormat": true,
     "selectorFlagAsPrefixIcon": true,
     "showCountryFlag": true,
-    "customCountryList": countryPhoneCodes.map((e) => e['code']), // List alpha_2_code. E.g: ["VN", "AU"]
+    "customCountryList": countryPhoneCodes.map((e) => e['code']),
     "selectorType": "BOTTOM_SHEET", // [DROPDOWN, BOTTOM_SHEET, DIALOG]
   },
   "storeIdentifier": {
@@ -279,7 +279,7 @@ Map<String, dynamic> environment = {
 
     "EnableVersionCheck": true,
     "inAppUpdateForAndroid": {
-      "enable": false,
+      "enable": true,
       // "flexible, immediate"
       "typeUpdate": "immediate",
     },
@@ -1519,114 +1519,6 @@ Map<String, dynamic> environment = {
           'defaultValue': '00000',
         },
       ],
-    },
-
-    {
-      'country': 'SA',
-      'addressFields': [
-        {
-          'type': 'firstName',
-          'visible': true,
-          'position': 1,
-          'editable': true,
-          'required': true,
-          'defaultValue': '',
-        },
-        {
-          'type': 'lastName',
-          'visible': true,
-          'position': 2,
-          'editable': true,
-          'required': true,
-          'defaultValue': '',
-        },
-        {
-          'type': 'phoneNumber',
-          'visible': true,
-          'position': 3,
-          'editable': true,
-          'required': true,
-          'defaultValue': '',
-        },
-        {
-          'type': 'email',
-          'visible': true,
-          'position': 4,
-          'editable': true,
-          'required': true,
-          'defaultValue': '',
-        },
-        {
-          'type': 'searchAddress',
-          'visible': true,
-          'position': 5,
-        },
-        {
-          'type': 'selectAddress',
-          'visible': true,
-          'position': 6,
-        },
-        {
-          'type': 'country',
-          'visible': true,
-          'position': 7,
-          'editable': false,
-          'required': true,
-          'defaultValue': '',
-        },
-        {
-          'type': 'city',
-          'visible': true,
-          'position': 8,
-          'editable': true,
-          'required': true,
-          'defaultValue': '',
-        },
-        {
-          'type': 'state',
-          'visible': true,
-          'position': 9,
-        },
-        {
-          'type': 'block2',
-          'visible': true,
-          'position': 10,
-          'editable': true,
-          'required': false,
-          'defaultValue': '',
-        },
-        {
-          'type': 'apartment',
-          'visible': true,
-          'position': 11,
-          'editable': true,
-          'required': false,
-        },
-        {
-          'type': 'block',
-          'visible': true,
-          'position': 12,
-          'editable': true,
-          'required': false,
-          'defaultValue': '',
-        },
-        {
-          'type': 'street',
-          'visible': true,
-          'position': 13,
-          'editable': true,
-          'required': false,
-          'defaultValue': '',
-        },
-        {
-          'type': 'zipCode',
-          'visible': false,
-          'position': 14,
-          'editable': false,
-          'required': true,
-          'defaultValue': '00000',
-        },
-      ],
       'formatAddress': ({
         String? province,
         String? city,
@@ -1641,11 +1533,10 @@ Map<String, dynamic> environment = {
           if (province != null) 'province': province,
           if (city != null) 'city': city,
           'address1':
-          'Area: $city, Block: $block2, Street: $apartment, Building: $block, ${(street ?? '') == '' ? '' : 'Floor: $street, '} ${(street ?? '') == '' ? '' : 'Flat: $zipCode'}',
+              'Area: $city, Block: $block2, Street: $apartment, Building: $block, ${(street ?? '') == '' ? '' : 'Floor: $street, '} ${(street ?? '') == '' ? '' : 'Flat: $zipCode'}',
           'address2': '${block!}, ${block2 ?? ''}',
         };
       },
     },
   ],
-
 };

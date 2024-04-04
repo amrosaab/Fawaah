@@ -24,13 +24,16 @@ extension on _ShippingAddressState {
     _textControllers[AddressFieldType.state]?.text =
         address?.state?.trim() ?? '';
     _textControllers[AddressFieldType.city]?.text = address?.city?.trim() ?? '';
-    _textControllers[AddressFieldType.block2]?.text = address?.block2?.trim() ?? '';
+    _textControllers[AddressFieldType.block2]?.text =
+        address?.block2?.trim() ?? '';
     _textControllers[AddressFieldType.apartment]?.text =
         address?.apartment?.trim() ?? '';
     _textControllers[AddressFieldType.block]?.text =
         address?.block?.trim() ?? '';
     _textControllers[AddressFieldType.street]?.text =
         address?.street?.trim() ?? '';
+    _textControllers[AddressFieldType.fullAddress]?.text =
+        address?.fullAddress?.trim() ?? '';
     _textControllers[AddressFieldType.zipCode]?.text =
         address?.zipCode?.trim() ?? '';
     refresh();
@@ -38,13 +41,13 @@ extension on _ShippingAddressState {
 
   bool checkToSave() {
     var listAddress = <Address>[];
-    var data = UserBox().addresses;
+    var data = AddressBox().addresses;
     if (data.isNotEmpty) {
       listAddress.addAll(data);
     }
     for (var local in listAddress) {
       final isNotExistedInLocal = local.city !=
-          _textControllers[AddressFieldType.city]?.text ||
+              _textControllers[AddressFieldType.city]?.text ||
           local.street != _textControllers[AddressFieldType.street]?.text ||
           local.zipCode != _textControllers[AddressFieldType.zipCode]?.text ||
           local.state != _textControllers[AddressFieldType.state]?.text;
@@ -82,13 +85,13 @@ extension on _ShippingAddressState {
     if (address != null) {
       listAddress.add(address);
     }
-    var listData = UserBox().addresses;
+    var listData = AddressBox().addresses;
     if (listData.isNotEmpty) {
       for (var item in listData) {
         listAddress.add(item);
       }
     }
-    UserBox().addresses = listAddress;
+    AddressBox().addresses = listAddress;
     FlashHelper.message(
       context,
       message: S.of(context).yourAddressHasBeenSaved,
@@ -107,7 +110,11 @@ extension on _ShippingAddressState {
   /// Load Shipping beforehand
   void _loadShipping({bool beforehand = true}) {
     Services().widget.loadShippingMethods(
-        context, Provider.of<CartModel>(context, listen: false), beforehand);
+          context,
+          Provider.of<CartModel>(context, listen: false),
+          beforehand,
+      formatAddress: countryFields?.formatAddress,
+    );
   }
 
   /// on tap to Next Button
@@ -115,11 +122,19 @@ extension on _ShippingAddressState {
     {
       if (_formKey.currentState!.validate()) {
         _formKey.currentState!.save();
-        Provider.of<CartModel>(context, listen: false).setAddress(address);
+
+        await Future.delayed(const Duration(milliseconds: 1000));
+
+        Provider.of<CartModel>(context, listen: false).setAddress(
+          address,
+          isoCode: selectedCountryModel.selectedIsoCode,
+        );
+
         _loadShipping(beforehand: false);
         widget.onNext!();
       } else {
-        unawaited(FlashHelper.errorMessage(          context,
+        unawaited(FlashHelper.errorMessage(
+          context,
           message: S.of(context).pleaseInput,
         ));
       }
@@ -195,7 +210,7 @@ extension on _ShippingAddressState {
         final state = CountryState(id: address!.state);
         final city = City(id: val, name: val);
         final zipCode =
-        await Services().widget.loadZipCode(country, state, city);
+            await Services().widget.loadZipCode(country, state, city);
         if (zipCode != null) {
           address!.zipCode = zipCode;
           _textControllers[AddressFieldType.zipCode]?.text = zipCode;
@@ -209,102 +224,102 @@ extension on _ShippingAddressState {
   }
 
   void _openCountryPickerDialog() => showDialog(
-    context: context,
-    useRootNavigator: false,
-    builder: (contextBuilder) => countries!.isEmpty
-        ? Theme(
-      data: Theme.of(context).copyWith(primaryColor: Colors.pink),
-      child: SizedBox(
-        height: 500,
-        child: picker.CountryPickerDialog(
-          titlePadding: const EdgeInsets.all(8.0),
-          contentPadding: const EdgeInsets.all(2.0),
-          searchCursorColor: Colors.pinkAccent,
-          searchInputDecoration:
-          const InputDecoration(hintText: 'Search...'),
-          isSearchable: true,
-          title: Text(S.of(context).country),
-          onValuePicked: (picker_country.Country country) async {
-            _textControllers[AddressFieldType.country]?.text =
-                country.isoCode;
-            address!.country = country.isoCode;
-            refresh();
-            final c =
-            Country(id: country.isoCode, name: country.name);
-            states = await Services().widget.loadStates(c, langCode);
-            address!.zipCode = '';
-            _textControllers[AddressFieldType.zipCode]?.text = '';
-            refresh();
-          },
-          itemBuilder: (country) {
-            return Row(
-              children: <Widget>[
-                picker.CountryPickerUtils.getDefaultFlagImage(
-                    country),
-                const SizedBox(width: 8.0),
-                Expanded(child: Text(country.name)),
-              ],
-            );
-          },
-        ),
-      ),
-    )
-        : Dialog(
-      child: SingleChildScrollView(
-        child: Column(
-          children: List.generate(
-            countries!.length,
-                (index) {
-              return GestureDetector(
-                onTap: () async {
-                  _textControllers[AddressFieldType.country]?.text =
-                  countries![index].code!;
-                  address!.country = countries![index].id;
-                  address!.countryId = countries![index].id;
-                  refresh();
-                  Navigator.pop(contextBuilder);
-                  states = await Services()
-                      .widget
-                      .loadStates(countries![index], langCode);
-                  address!.zipCode = '';
-                  _textControllers[AddressFieldType.zipCode]?.text =
-                  '';
-                  refresh();
-                },
-                child: ListTile(
-                  leading: countries![index].icon != null
-                      ? SizedBox(
-                    height: 40,
-                    width: 60,
-                    child: FluxImage(
-                      imageUrl: countries![index].icon!,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                      : (countries![index].code != null
-                      ? Image.asset(
-                    picker.CountryPickerUtils
-                        .getFlagImageAssetPath(
-                        countries![index].code!),
-                    height: 40,
-                    width: 60,
-                    fit: BoxFit.fill,
-                    package: 'country_pickers',
-                  )
-                      : const SizedBox(
-                    height: 40,
-                    width: 60,
-                    child: Icon(Icons.streetview),
-                  )),
-                  title: Text(countries![index].name!),
+        context: context,
+        useRootNavigator: false,
+        builder: (contextBuilder) => countries!.isEmpty
+            ? Theme(
+                data: Theme.of(context).copyWith(primaryColor: Colors.pink),
+                child: SizedBox(
+                  height: 500,
+                  child: picker.CountryPickerDialog(
+                    titlePadding: const EdgeInsets.all(8.0),
+                    contentPadding: const EdgeInsets.all(2.0),
+                    searchCursorColor: Colors.pinkAccent,
+                    searchInputDecoration:
+                        const InputDecoration(hintText: 'Search...'),
+                    isSearchable: true,
+                    title: Text(S.of(context).country),
+                    onValuePicked: (picker_country.Country country) async {
+                      _textControllers[AddressFieldType.country]?.text =
+                          country.isoCode;
+                      address!.country = country.isoCode;
+                      refresh();
+                      final c =
+                          Country(id: country.isoCode, name: country.name);
+                      states = await Services().widget.loadStates(c, langCode);
+                      address!.zipCode = '';
+                      _textControllers[AddressFieldType.zipCode]?.text = '';
+                      refresh();
+                    },
+                    itemBuilder: (country) {
+                      return Row(
+                        children: <Widget>[
+                          picker.CountryPickerUtils.getDefaultFlagImage(
+                              country),
+                          const SizedBox(width: 8.0),
+                          Expanded(child: Text(country.name)),
+                        ],
+                      );
+                    },
+                  ),
                 ),
-              );
-            },
-          ),
-        ),
-      ),
-    ),
-  );
+              )
+            : Dialog(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: List.generate(
+                      countries!.length,
+                      (index) {
+                        return GestureDetector(
+                          onTap: () async {
+                            _textControllers[AddressFieldType.country]?.text =
+                                countries![index].code!;
+                            address!.country = countries![index].id;
+                            address!.countryId = countries![index].id;
+                            refresh();
+                            Navigator.pop(contextBuilder);
+                            states = await Services()
+                                .widget
+                                .loadStates(countries![index], langCode);
+                            address!.zipCode = '';
+                            _textControllers[AddressFieldType.zipCode]?.text =
+                                '';
+                            refresh();
+                          },
+                          child: ListTile(
+                            leading: countries![index].icon != null
+                                ? SizedBox(
+                                    height: 40,
+                                    width: 60,
+                                    child: FluxImage(
+                                      imageUrl: countries![index].icon!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : (countries![index].code != null
+                                    ? Image.asset(
+                                        picker.CountryPickerUtils
+                                            .getFlagImageAssetPath(
+                                                countries![index].code!),
+                                        height: 40,
+                                        width: 60,
+                                        fit: BoxFit.fill,
+                                        package: 'country_pickers',
+                                      )
+                                    : const SizedBox(
+                                        height: 40,
+                                        width: 60,
+                                        child: Icon(Icons.streetview),
+                                      )),
+                            title: Text(countries![index].name!),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+      );
 
   void onTextFieldSaved(String? value, AddressFieldType type) {
     switch (type) {
@@ -348,7 +363,7 @@ extension on _ShippingAddressState {
         address?.zipCode = value?.trim();
         break;
 
-    /// Unsupported.
+      /// Unsupported.
       case AddressFieldType.searchAddress:
       case AddressFieldType.selectAddress:
       case AddressFieldType.unknown:
@@ -364,7 +379,7 @@ extension on _ShippingAddressState {
       case AddressFieldType.lastName:
         return S.of(context).lastName;
       case AddressFieldType.phoneNumber:
-        return S.of(context).phoneNumber;
+        return '  ${S.of(context).phoneNumber}';
       case AddressFieldType.email:
         return S.of(context).email;
       case AddressFieldType.country:
@@ -374,7 +389,7 @@ extension on _ShippingAddressState {
       case AddressFieldType.city:
         return S.of(context).city;
       case AddressFieldType.apartment:
-        return  S.of(context).streetNameApartment;
+        return S.of(context).streetNameApartment;
       case AddressFieldType.block:
         return S.of(context).streetNameBlock;
       case AddressFieldType.block2:
@@ -394,10 +409,10 @@ extension on _ShippingAddressState {
   }
 
   String? validateField(
-      String? val,
-      AddressFieldConfig config,
-      AddressFieldType type,
-      ) {
+    String? val,
+    AddressFieldConfig config,
+    AddressFieldType type,
+  ) {
     if (!config.required) {
       return null;
     }
@@ -433,8 +448,10 @@ extension on _ShippingAddressState {
                 if (!checkToSave()) return;
                 if (_formKey.currentState!.validate()) {
                   _formKey.currentState!.save();
-                  Provider.of<CartModel>(context, listen: false)
-                      .setAddress(address);
+                  Provider.of<CartModel>(context, listen: false).setAddress(
+                    address,
+                    isoCode: selectedCountryModel.selectedIsoCode,
+                  );
                   saveDataToLocal();
                 } else {
                   FlashHelper.errorMessage(
@@ -450,8 +467,8 @@ extension on _ShippingAddressState {
               label: Text(
                 S.of(context).saveAddress.toUpperCase(),
                 style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
               ),
             ),
           ),
@@ -471,10 +488,10 @@ extension on _ShippingAddressState {
               onPressed: _onNext,
               label: Text(
                 (kPaymentConfig.enableShipping
-                    ? S.of(context).continueToShipping
-                    : kPaymentConfig.enableReview
-                    ? S.of(context).continueToReview
-                    : S.of(context).continueToPayment)
+                        ? S.of(context).continueToShipping
+                        : kPaymentConfig.enableReview
+                            ? S.of(context).continueToReview
+                            : S.of(context).continueToPayment)
                     .toUpperCase(),
                 style: Theme.of(context)
                     .textTheme

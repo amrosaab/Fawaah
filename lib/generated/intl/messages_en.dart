@@ -1395,6 +1395,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "zipCodeIsRequired": MessageLookupByLibrary.simpleMessage(
             "The zip code field is required"),
         "sureThatProductExists": MessageLookupByLibrary.simpleMessage(
-            "Check that the products in the cart are still available")
+            "Check that the products in the cart are still available"),
+    "searchByCountryNameOrDialCode": MessageLookupByLibrary.simpleMessage("Search by country name or dial code"),
       };
 }

@@ -30,11 +30,13 @@ class ShippingMethodModel extends ChangeNotifier {
       }
       notifyListeners();
       shippingMethods = await _service.api.getShippingMethods(
-          formatAddress: formatAddress ?? DefaultConfig.formatAddress,
           cartModel: cartModel,
           token: token,
           checkoutId: checkoutId,
-          langCode: langCode);
+          langCode: langCode,
+        formatAddress: formatAddress ?? DefaultConfig.formatAddress,
+
+      );
 
 
       if (kAdvanceConfig.enableDeliveryDateOnCheckout) {

@@ -333,12 +333,9 @@ class Configurations {
     if (addressFieldsData is List && addressFieldsData.isNotEmpty) {
       _addressFields = [];
       for (var item in addressFieldsData) {
-        final addressFieldConfig = AddressFieldConfig.fromMap(item);
         final countryAddressFieldConfig = CountryAddressFieldsConfig.fromJson(item);
         _addressFields.add(countryAddressFieldConfig);
-
       }
-
     }
     _defaultCountryShipping =
         value['defaultCountryShipping'] ?? DefaultConfig.defaultCountryShipping;
@@ -459,7 +456,6 @@ class Configurations {
         for (var item in addressFieldsData) {
           final countryAddressFieldConfig = CountryAddressFieldsConfig.fromJson(item);
           _addressFields.add(countryAddressFieldConfig);
-
         }
       }
       _defaultCountryShipping =
