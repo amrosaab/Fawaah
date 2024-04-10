@@ -150,6 +150,16 @@ class S {
     );
   }
 
+  /// `Are you sure you want to remove this product?`
+  String get confirmRemoveProductInCart {
+    return Intl.message(
+      'Are you sure you want to remove this product?',
+      name: 'confirmRemoveProductInCart',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Additional Information`
   String get additionalInformation {
     return Intl.message(
@@ -9156,6 +9166,16 @@ class S {
     return Intl.message(
       'Check that the products in the cart are still available',
       name: 'sureThatProductExists',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search by country name or dial code`
+  String get searchByCountryNameOrDialCode {
+    return Intl.message(
+      'Search by country name or dial code',
+      name: 'searchByCountryNameOrDialCode',
       desc: '',
       args: [],
     );
