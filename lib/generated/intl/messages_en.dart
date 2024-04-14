@@ -208,7 +208,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "bleHasNotBeenEnabled": MessageLookupByLibrary.simpleMessage(
             "Bluetooth has not been enabled"),
         "bleState": m3,
-        "block2": MessageLookupByLibrary.simpleMessage("Block"),
+        "block2": MessageLookupByLibrary.simpleMessage("Floor"),
         "blog": MessageLookupByLibrary.simpleMessage("Blog"),
         "booked": MessageLookupByLibrary.simpleMessage("Already booked"),
         "booking": MessageLookupByLibrary.simpleMessage("Booking"),
@@ -1197,7 +1197,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "streetIsRequired":
             MessageLookupByLibrary.simpleMessage("The floor field is required"),
         "streetName": MessageLookupByLibrary.simpleMessage("Floor"),
-        "streetNameApartment": MessageLookupByLibrary.simpleMessage("Street"),
+        "streetNameApartment": MessageLookupByLibrary.simpleMessage("Flat"),
         "streetNameBlock": MessageLookupByLibrary.simpleMessage("Building"),
         "submit": MessageLookupByLibrary.simpleMessage("Submit"),
         "submitYourPost":

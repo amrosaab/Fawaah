@@ -1481,14 +1481,16 @@ Map<String, dynamic> environment = {
         },
 
         {
-          'type': 'apartment',
+          'type': 'province',
           'visible': true,
           'position': 10,
           'editable': true,
           'required': false,
+          'defaultValue': '',
         },
+
         {
-          'type': 'block',
+          'type': 'street',
           'visible': true,
           'position': 11,
           'editable': true,
@@ -1496,24 +1498,36 @@ Map<String, dynamic> environment = {
           'defaultValue': '',
         },
         {
-          'type': 'street',
+          'type': 'block',
           'visible': true,
           'position': 12,
           'editable': true,
           'required': false,
           'defaultValue': '',
-        }, {
-          'type': 'block2',
-          'visible': true,
-          'position': 13,
-          'editable': true,
-          'required': false,
-          'defaultValue': '',
         },
+
+
+
+ {
+'type': 'block2',
+'visible': true,
+'position': 13,
+'editable': true,
+'required': false,
+'defaultValue': '',
+},
+{
+'type': 'apartment',
+'visible': true,
+'position': 14,
+'editable': true,
+'required': false,
+}
+       ,
         {
           'type': 'zipCode',
           'visible': false,
-          'position': 14,
+          'position': 15,
           'editable': false,
           'required': true,
           'defaultValue': '00000',
@@ -1521,6 +1535,7 @@ Map<String, dynamic> environment = {
       ],
       'formatAddress': ({
         String? province,
+        String? province2,
         String? city,
         String? street,
         String? block,
@@ -1533,7 +1548,7 @@ Map<String, dynamic> environment = {
           if (province != null) 'province': province,
           if (city != null) 'city': city,
           'address1':
-              'Area: $city, Block: $block2, Street: $apartment, Building: $block, ${(street ?? '') == '' ? '' : 'Floor: $street, '} ${(street ?? '') == '' ? '' : 'Flat: $block2'}',
+              'Area: $city, area: $province2, Street: $street, Building: $block, ${(street ?? '') == '' ? '' : 'Floor: $block2, '} ${(block2 ?? '') == '' ? '' : 'Flat: $apartment'}',
           'address2': '${block!}, ${block2 ?? ''}',
         };
       },

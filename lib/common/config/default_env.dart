@@ -467,6 +467,7 @@ class DefaultConfig {
   ].map<AddressFieldConfig>(AddressFieldConfig.fromMap).toList();
   static FormatAddress formatAddress = ({
     String? province,
+    String? province2,
     String? city,
     String? street,
     String? block,

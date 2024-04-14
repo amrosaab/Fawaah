@@ -41,6 +41,8 @@ extension on _ShippingAddressState {
     _textControllers[AddressFieldType.city]?.text = address?.city?.trim() ?? '';
     _textControllers[AddressFieldType.block2]?.text =
         address?.block2?.trim() ?? '';
+    _textControllers[AddressFieldType.province]?.text =
+        address?.province?.trim() ?? '';
     _textControllers[AddressFieldType.apartment]?.text =
         address?.apartment?.trim() ?? '';
     _textControllers[AddressFieldType.block]?.text =
@@ -370,6 +372,9 @@ extension on _ShippingAddressState {
       case AddressFieldType.apartment:
         address?.apartment = value;
         break;
+        case AddressFieldType.province:
+        address?.province = value;
+        break;
       case AddressFieldType.block:
         address?.block = value;
         break;
@@ -409,6 +414,8 @@ extension on _ShippingAddressState {
         return S.of(context).country;
       case AddressFieldType.state:
         return S.of(context).stateProvince;
+        case AddressFieldType.province:
+        return S.of(context).area;
       case AddressFieldType.city:
         return S.of(context).city;
       case AddressFieldType.apartment:

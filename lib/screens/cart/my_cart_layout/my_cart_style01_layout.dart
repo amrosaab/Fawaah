@@ -106,6 +106,7 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
                 selector: (_, cartModel) => cartModel.totalCartQuantity,
                 builder: (context, totalCartQuantity, child) {
                   return Column(
+
                     children: [
                       Expanded(
                         child: CustomScrollView(

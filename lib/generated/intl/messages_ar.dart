@@ -206,7 +206,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "bleHasNotBeenEnabled":
             MessageLookupByLibrary.simpleMessage("لم يتم تمكين البلوتوث"),
         "bleState": m3,
-        "block2": MessageLookupByLibrary.simpleMessage("الشقه"),
+        "block2": MessageLookupByLibrary.simpleMessage("الدور"),
         "blog": MessageLookupByLibrary.simpleMessage("المدونة"),
         "booked": MessageLookupByLibrary.simpleMessage("حجزت بالفعل"),
         "booking": MessageLookupByLibrary.simpleMessage("الحجز"),
@@ -1172,12 +1172,12 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("لافتة ثابتة للمتجر"),
         "storeVacation": MessageLookupByLibrary.simpleMessage("اجازة المتجر"),
         "stores": MessageLookupByLibrary.simpleMessage("المتاجر"),
-        "street": MessageLookupByLibrary.simpleMessage("الدور"),
+        "street": MessageLookupByLibrary.simpleMessage("الشارع"),
         "street2": MessageLookupByLibrary.simpleMessage("شارع 2"),
         "streetIsRequired":
             MessageLookupByLibrary.simpleMessage("خانة اسم الشارع مطلوبة"),
         "streetName": MessageLookupByLibrary.simpleMessage("اسم الشارع"),
-        "streetNameApartment": MessageLookupByLibrary.simpleMessage("الشارع"),
+        "streetNameApartment": MessageLookupByLibrary.simpleMessage("الشقه"),
         "streetNameBlock": MessageLookupByLibrary.simpleMessage("المنزل"),
         "submit": MessageLookupByLibrary.simpleMessage("أرسال"),
         "submitYourPost": MessageLookupByLibrary.simpleMessage("أرسل رسالتك"),

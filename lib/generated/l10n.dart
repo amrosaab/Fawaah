@@ -3070,10 +3070,10 @@ class S {
     );
   }
 
-  /// `Street`
+  /// `Flat`
   String get streetNameApartment {
     return Intl.message(
-      'Street',
+      'Flat',
       name: 'streetNameApartment',
       desc: '',
       args: [],
@@ -3090,10 +3090,10 @@ class S {
     );
   }
 
-  /// `Block`
+  /// `Floor`
   String get block2 {
     return Intl.message(
-      'Block',
+      'Floor',
       name: 'block2',
       desc: '',
       args: [],

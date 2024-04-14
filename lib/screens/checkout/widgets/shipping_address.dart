@@ -435,6 +435,11 @@ class _ShippingAddressState extends State<ShippingAddress> {
                       builder: (context) => ChooseAddressScreen((address){
                         phoneNumecode=address!.country!;
                         selectedCountryModel.selectedIsoCode=phoneNumecode;
+                        _fieldsConfigs.clear();
+                        _fieldsPositions.clear();
+                        _textControllers.clear();
+                        _focusNodes.clear();
+                        initializeFields();
                         preFillData();
                       }),
                     ),

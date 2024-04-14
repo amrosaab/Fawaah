@@ -18,6 +18,7 @@ class Address {
   String? phoneNumber;
   String? fullAddress;
   String? zipCode;
+  String? province;
   String? mapUrl;
   String? latitude;
   String? longitude;
@@ -36,6 +37,7 @@ class Address {
         this.phoneNumber,
         this.fullAddress,
         this.zipCode,
+        this.province,
         this.mapUrl,
         this.latitude,
         this.longitude});
@@ -48,6 +50,7 @@ class Address {
     block = parsedJson['address_2'] ?? '';
     city = parsedJson['city'] ?? '';
     state = parsedJson['state'] ?? '';
+    province = parsedJson['province'] ?? '';
     country = parsedJson['country'] ?? '';
     email = parsedJson['email'] ?? '';
     // final alphanumeric = RegExp(r'^[a-zA-Z0-9]+$');
@@ -65,6 +68,7 @@ class Address {
     apartment = parsedJson['company'];
     street = parsedJson['address_1'];
     block = parsedJson['address_2'];
+    province = parsedJson['province'];
     city = parsedJson['city'];
     state = parsedJson['zone_id'];
     country = parsedJson['country_id'];
@@ -85,6 +89,7 @@ class Address {
     state = parsedJson['region'];
     country = parsedJson['country_id'];
     email = parsedJson['email'];
+    province = parsedJson['province'];
     phoneNumber = parsedJson['telephone'];
     fullAddress = parsedJson['full_address'];
     zipCode = parsedJson['postcode'];
@@ -95,6 +100,7 @@ class Address {
     lastName = parsedJson['lastname'];
     street = parsedJson['address1'];
     block = parsedJson['address2'];
+    province = parsedJson['province'];
     city = parsedJson['city'];
     country = parsedJson['id_country'];
     phoneNumber = parsedJson['phone'];
@@ -112,6 +118,8 @@ class Address {
       'company': apartment ?? '',
       'city': city,
       'state': state,
+      'province': province,
+
       'country': country,
       'phone': phoneNumber,
       'full_address': fullAddress,
@@ -147,6 +155,7 @@ class Address {
       block2 = json['block2'];
       apartment = json['company'];
       city = json['city'];
+      province = json['province'];
       state = json['state'];
       country = json['country'];
       email = json['email'];
@@ -174,6 +183,7 @@ class Address {
         'full_address': fullAddress,
         'postcode': zipCode,
         'city': city,
+        'province': province,
         'firstname': firstName,
         'lastname': lastName,
         'email': email,
@@ -193,6 +203,7 @@ class Address {
       'full_address': fullAddress,
       'postcode': zipCode,
       'city': city,
+      'province': province,
       'firstname': firstName,
       'lastname': lastName,
       'email': email,
@@ -231,6 +242,7 @@ class Address {
       'address_2': block ?? '',
       'company': apartment ?? '',
       'city': city,
+      'province': province,
       'state': state,
       'country': country,
       'email': email,
@@ -272,6 +284,7 @@ class Address {
         if (formatAddress != null)
           ...formatAddress(
             province: state,
+            province2: province,
             city: city,
             street: street,
             block: block,
