@@ -64,7 +64,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleURLTypes</key>
@@ -108,7 +108,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ENVATO_PURCHASE_CODE</key>
 	<string>${envatoPurchaseCode}</string>
 	<key>FacebookAppID</key>
@@ -176,7 +176,7 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>This application needs the speech recognition permission</string>
 	<key>NSUserTrackingUsageDescription</key>
-	<string>This identifier will be used to deliver personalized ads to you. "Ask App Not to track" will limit Advertisement network's ability to deliver relevant ads to you but will not reduce the number of ads you receive.</string>
+	<string>This identifier will be used to deliver personalized ads to you. &quot;Ask App Not to track&quot; will limit Advertisement network&apos;s ability to deliver relevant ads to you but will not reduce the number of ads you receive.</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>

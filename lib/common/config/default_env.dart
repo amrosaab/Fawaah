@@ -431,22 +431,22 @@ class DefaultConfig {
       'defaultValue': '',
     },
 
-    {
-      'type': 'apartment',
-      'visible': true,
-      'position': 8,
-      'editable': true,
-      'required': true,
-      'defaultValue': '',
-    },
-    {
-      'type': 'block',
-      'visible': true,
-      'position': 8,
-      'editable': true,
-      'required': true,
-      'defaultValue': '',
-    },
+    // {
+    //   'type': 'apartment',
+    //   'visible': true,
+    //   'position': 8,
+    //   'editable': true,
+    //   'required': true,
+    //   'defaultValue': '',
+    // },
+    // {
+    //   'type': 'block',
+    //   'visible': true,
+    //   'position': 8,
+    //   'editable': true,
+    //   'required': true,
+    //   'defaultValue': '',
+    // },
 
     {
       'type': 'fullAddress',
@@ -468,6 +468,7 @@ class DefaultConfig {
   static FormatAddress formatAddress = ({
     String? province,
     String? province2,
+   String ? sector,
     String? city,
     String? street,
     String? block,

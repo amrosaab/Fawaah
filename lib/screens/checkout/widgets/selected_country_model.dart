@@ -15,8 +15,10 @@ class SelectedCountryModel extends ChangeNotifier {
   }
 
   void onInputChanged(PhoneNumber phoneNumber) {
+    print("cxvxcvcxvcxvvc");
     final isoCode = phoneNumber.isoCode;
     if (isoCode != null && isoCode != selectedIsoCode) {
+      phoneNumecode=isoCode;
       selectedIsoCode = isoCode;
       notifyListeners();
     }

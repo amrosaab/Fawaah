@@ -305,6 +305,8 @@
 	"streetNameApartment": "Flat",
     "streetNameBlock": "Building",
     "block2": "Floor",
+	"sector": "Block",
+
 	"byTag": "By Tag",
 	"transactionCancelled": "Transaction cancelled",
 	"tax": "Tax",

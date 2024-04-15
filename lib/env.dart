@@ -1,5 +1,9 @@
 // ignore_for_file: prefer_single_quotes, lines_longer_than_80_chars final
+
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'common/constants/country_phone_codes.dart';
+import 'generated/l10n.dart';
 
 Map<String, dynamic> environment = {
   "appConfig":
@@ -1488,6 +1492,14 @@ Map<String, dynamic> environment = {
           'required': false,
           'defaultValue': '',
         },
+        {
+          'type': 'sector',
+          'visible': true,
+          'position': 10,
+          'editable': true,
+          'required': false,
+          'defaultValue': '',
+        },
 
         {
           'type': 'street',
@@ -1536,6 +1548,7 @@ Map<String, dynamic> environment = {
       'formatAddress': ({
         String? province,
         String? province2,
+        String? sector,
         String? city,
         String? street,
         String? block,
@@ -1544,11 +1557,12 @@ Map<String, dynamic> environment = {
         String? fullAddress,
         String? zipCode,
       }) {
+
+
         return {
           if (province != null) 'province': province,
           if (city != null) 'city': city,
-          'address1':
-              'Area: $city, area: $province2, Street: $street, Building: $block, ${(street ?? '') == '' ? '' : 'Floor: $block2, '} ${(block2 ?? '') == '' ? '' : 'Flat: $apartment'}',
+          'address1': 'Country: $city, Area: $province2,Block:${sector??''}, Street: $street, Building: $block, ${(street ?? '') == '' ? '' : 'Floor: $block2, '} ${(block2 ?? '') == '' ? '' : 'Flat: $apartment'}',
           'address2': '${block!}, ${block2 ?? ''}',
         };
       },

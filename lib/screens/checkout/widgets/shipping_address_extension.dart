@@ -43,6 +43,8 @@ extension on _ShippingAddressState {
         address?.block2?.trim() ?? '';
     _textControllers[AddressFieldType.province]?.text =
         address?.province?.trim() ?? '';
+    _textControllers[AddressFieldType.sector]?.text =
+        address?.sector?.trim() ?? '';
     _textControllers[AddressFieldType.apartment]?.text =
         address?.apartment?.trim() ?? '';
     _textControllers[AddressFieldType.block]?.text =
@@ -75,6 +77,7 @@ extension on _ShippingAddressState {
         context: context,
         useRootNavigator: false,
         builder: (BuildContext context) {
+
           return AlertDialog(
             title: Text(S.of(context).yourAddressExistYourLocal),
             actions: <Widget>[
@@ -375,6 +378,9 @@ extension on _ShippingAddressState {
         case AddressFieldType.province:
         address?.province = value;
         break;
+        case AddressFieldType.sector:
+        address?.sector = value;
+        break;
       case AddressFieldType.block:
         address?.block = value;
         break;
@@ -416,6 +422,9 @@ extension on _ShippingAddressState {
         return S.of(context).stateProvince;
         case AddressFieldType.province:
         return S.of(context).area;
+
+        case AddressFieldType.sector:
+        return S.of(context).sector;
       case AddressFieldType.city:
         return S.of(context).city;
       case AddressFieldType.apartment:

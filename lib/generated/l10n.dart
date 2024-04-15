@@ -3100,6 +3100,16 @@ class S {
     );
   }
 
+  /// `Block`
+  String get sector {
+    return Intl.message(
+      'Block',
+      name: 'sector',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `By Tag`
   String get byTag {
     return Intl.message(

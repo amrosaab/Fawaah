@@ -1068,6 +1068,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "searchingAddress":
             MessageLookupByLibrary.simpleMessage("حدد موقعك على الخريطة"),
         "secondsAgo": m26,
+        "sector": MessageLookupByLibrary.simpleMessage("القطعة"),
         "seeAll": MessageLookupByLibrary.simpleMessage("اظهار الكل"),
         "seeNewAppConfig": MessageLookupByLibrary.simpleMessage(
             "استمر في رؤية المحتوى الجديد على تطبيقك."),

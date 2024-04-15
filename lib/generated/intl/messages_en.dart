@@ -1082,6 +1082,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "searchingAddress":
             MessageLookupByLibrary.simpleMessage("Search Address"),
         "secondsAgo": m26,
+        "sector": MessageLookupByLibrary.simpleMessage("Block"),
         "seeAll": MessageLookupByLibrary.simpleMessage("See All"),
         "seeNewAppConfig": MessageLookupByLibrary.simpleMessage(
             "Continue to see new content on your app."),

@@ -1058,9 +1058,10 @@ class ShopifyService extends BaseServices {
           variables: {
             'input': {
               'lineItems': lineItems,
-              if (cartModel.address != null) ...{
-                'email': cartModel.address!.email,
-              }
+              //hokshcomment
+              // if (cartModel.address != null) ...{
+              //   'email': cartModel.address?.email,
+              // }
             },
             'langCode': cartModel.langCode?.toUpperCase(),
             'countryCode': countryCode,
@@ -1070,11 +1071,12 @@ class ShopifyService extends BaseServices {
         final result = await client.mutate(options);
 
         if (result.hasException) {
-          printLog(result.exception.toString());
+          printLog("{asdxcxzcxzc ${result.exception.toString()}");
           throw Exception(result.exception.toString());
         }
 
-        final checkout = result.data!['checkoutCreate']['checkout'];
+        print("xxzxzxzxxz${ result.data}");
+        final checkout = result.data?['checkoutCreate']['checkout'];
 
         printLog('addItemsToCart checkout $checkout');
 

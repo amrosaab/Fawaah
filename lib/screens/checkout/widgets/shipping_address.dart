@@ -181,20 +181,21 @@ class _ShippingAddressState extends State<ShippingAddress> {
       try {
         final phoneNumber =
         _textControllers[AddressFieldType.phoneNumber]?.text.trim();
-        if (phoneNumber?.isNotEmpty ?? false) {
-          initialPhoneNumber = await PhoneNumber.getParsablePhoneNumber(
-            PhoneNumber(
-              dialCode: selectedCountryModel.dialCode,
-              isoCode: selectedCountryModel.selectedIsoCode,
-              phoneNumber: phoneNumber,
-            ),
-          );
-        } else {
+        //hokshcomment
+        // if (phoneNumber?.isNotEmpty ?? false) {
+        //   initialPhoneNumber = await PhoneNumber.getParsablePhoneNumber(
+        //     PhoneNumber(
+        //       dialCode: selectedCountryModel.dialCode,
+        //       isoCode: selectedCountryModel.selectedIsoCode,
+        //       phoneNumber: phoneNumber,
+        //     ),
+        //   );
+        // } else {
           initialPhoneNumber = PhoneNumber(
             dialCode: selectedCountryModel.dialCode,
             isoCode: selectedCountryModel.selectedIsoCode,
           );
-        }
+      //  }
         refresh();
       } catch (e, trace) {
         printError(e, trace);
@@ -250,7 +251,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
   void selectedIsoCodeListener() async {
     print("dfdsfd${selectedCountryModel.selectedIsoCode}");
     final isoCode = selectedCountryModel.selectedIsoCode;
-    if (isoCode != address?.country) {
+     if (isoCode != address?.country) {
       disposeOldData();
       initializeFields();
       await Future.delayed(const Duration(seconds: 1));
@@ -439,6 +440,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
                         _fieldsPositions.clear();
                         _textControllers.clear();
                         _focusNodes.clear();
+                        // disposeOldData();
                         initializeFields();
                         preFillData();
                       }),
