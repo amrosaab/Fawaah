@@ -82,13 +82,18 @@ class DynamicLinkServiceImpl extends DynamicLinkService {
   @override
   Future<String> generateProductCategoryUrl(dynamic productCategoryId) async {
     final cate = await _service.api
-        .getProductCategoryById(categoryId: productCategoryId);
+        .getCategories();
+     // final cate = await _service.api
+     //    .getProductCategoryById(categoryId: productCategoryId);
+     //
+     print("xzcxzc${productCategoryId!}");
+     productCategoryId=productCategoryId=='Z2lkOi8vc2hvcGlmeS9Db2xsZWN0aW9uLzI4NjE2MDYxNzY1Mg=='?"gid://shopify/Collection/286160617652":productCategoryId;
     var url;
     if (cate != null) {
       if (ServerConfig().isShopify) {
-        url = cate.onlineStoreUrl;
+        url = cate.firstWhere((element) => element.id==productCategoryId).onlineStoreUrl;
       } else {
-        url = '${ServerConfig().url}/product-category/${cate.slug}';
+        url = '${ServerConfig().url}/product-category/${cate.firstWhere((element) => element.id==productCategoryId).slug}';
       }
     }
     return url;

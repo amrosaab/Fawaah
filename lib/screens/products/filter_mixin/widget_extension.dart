@@ -2,97 +2,113 @@ part of 'products_filter_mixin.dart';
 
 extension ProductsFilterMixinWidgetExtension on ProductsFilterMixin {
   Widget renderFilters(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _renderFilterTitle(context),
-        ),
-        const SizedBox(width: 5),
-        const SizedBox(
-          height: 44,
-          child: VerticalDivider(
-            width: 15,
-            indent: 8,
-            endIndent: 8,
-            color: Colors.black,
-          ),
-        ),
-        const SizedBox(width: 5),
-        CupertinoButton(
-          padding: EdgeInsets.zero,
-          child: Row(
-            children: [
-              Text(S.of(context).filter,
-                  style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(width: 4),
-              const Icon(CupertinoIcons.chevron_down, size: 13),
-            ],
-          ),
-          onPressed: () => showModalBottomSheet(
-            context: App.fluxStoreNavigatorKey.currentContext!,
-            isScrollControlled: true,
-            isDismissible: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => Stack(
-              children: [
-                GestureDetector(
-                  onTap: Navigator.of(context).pop,
-                  child: Container(color: Colors.transparent),
-                ),
-                DraggableScrollableSheet(
-                  initialChildSize: 0.7,
-                  minChildSize: 0.2,
-                  maxChildSize: 0.9,
-                  builder: (BuildContext context,
-                      ScrollController scrollController) {
-                    return Stack(
-                      alignment: Alignment.bottomCenter,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(15.0),
-                              topRight: Radius.circular(15.0),
-                            ),
-                            color: Theme.of(context).colorScheme.background,
-                          ),
-                          child: Stack(
-                            children: [
-                              const DragHandler(),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 20),
-                                child: BackdropMenu(
-                                  onFilter: onFilter,
-                                  categoryId: categoryId,
-                                  sortBy: filterSortBy,
-                                  tagId: tagId,
-                                  listingLocationId: listingLocationId,
-                                  controller: scrollController,
-                                  minPrice: minPrice,
-                                  maxPrice: maxPrice,
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 20,horizontal: 20),
+      decoration: BoxDecoration(
 
-                                  /// hide layout filter from Search screen
-                                  showLayout: shouldShowLayout,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
+        border: Border.all(color: Colors.grey[200]!),
+        borderRadius: BorderRadius.circular(5)
+
+
+      ),
+      child:  Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+
+        children: [
+          _renderFilterTitle(context),
+
+          const SizedBox(width: 5),
+          const SizedBox(
+            height: 44,
+            child: VerticalDivider(
+              width: 15,
+              indent: 8,
+              endIndent: 8,
+              color: Colors.black,
             ),
           ),
-        ),
-        const SizedBox(width: 5),
-      ],
-    );
+          const SizedBox(width: 5),
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            child: Row(
+              children: [
+                Text(S.of(context).filter,
+                    style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(width: 4),
+                const Icon(CupertinoIcons.chevron_down, size: 13),
+              ],
+            ),
+            onPressed: () =>
+
+                showModalBottomSheet(
+              context: App.fluxStoreNavigatorKey.currentContext!,
+              isScrollControlled: true,
+              isDismissible: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => Stack(
+                children: [
+                  GestureDetector(
+                    onTap: Navigator.of(context).pop,
+                    child: Container(color: Colors.transparent),
+                  ),
+                  DraggableScrollableSheet(
+                    initialChildSize: 0.7,
+                    minChildSize: 0.2,
+                    maxChildSize: 0.9,
+                    builder: (BuildContext context,
+                        ScrollController scrollController) {
+                      return Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(15.0),
+                                topRight: Radius.circular(15.0),
+                              ),
+                              color: Theme.of(context).colorScheme.background,
+                            ),
+                            child: Stack(
+                              children: [
+                                const DragHandler(),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 20),
+                                  child: BackdropMenu(
+                                    onFilter: onFilter,
+                                    categoryId: categoryId,
+                                    sortBy: filterSortBy,
+                                    tagId: tagId,
+                                    listingLocationId: listingLocationId,
+                                    controller: scrollController,
+                                    minPrice: minPrice,
+                                    maxPrice: maxPrice,
+
+                                    /// hide layout filter from Search screen
+                                    showLayout: shouldShowLayout,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 5),
+        ],
+      ) ,
+    )
+
+    ;
   }
 
   Widget _renderFilterTitle(BuildContext context) {
-    var attributeTerms = getAttributeTerm(showName: true);
+    var attributeTerms = getAttributeTerm(showName: false);
+    print("hokshgggg${attributeTerms}");
     var attributeList =
         attributeTerms.isNotEmpty ? attributeTerms.split(',') : [];
     return SingleChildScrollView(

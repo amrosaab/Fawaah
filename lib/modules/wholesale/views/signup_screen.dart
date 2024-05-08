@@ -335,7 +335,9 @@ class _WholesaleSignUpScreenState extends State<WholesaleSignUpScreen> {
                                       text: S.of(context).agreeWithPrivacy,
                                       style: TextStyle(
                                           color: Theme.of(context).primaryColor,
-                                          decoration: TextDecoration.underline),
+                                          // decoration: TextDecoration.underline
+
+                                      ),
                                       recognizer: TapGestureRecognizer()
                                         ..onTap = () => Navigator.push(
                                               context,

@@ -413,7 +413,9 @@ class _RegistrationScreenState extends State<DigitsMobileLoginSignUpScreen> {
                                       text: S.of(context).agreeWithPrivacy,
                                       style: TextStyle(
                                           color: Theme.of(context).primaryColor,
-                                          decoration: TextDecoration.underline),
+                                          // decoration: TextDecoration.underline
+
+                                      ),
                                       recognizer: TapGestureRecognizer()
                                         ..onTap = () => Navigator.push(
                                               context,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../generated/l10n.dart';
 
@@ -27,14 +28,20 @@ mixin PermissionRequestMixin<T extends StatefulWidget> on State<T> {
               onPressed: onAcceptPermission,
               child: Text(
                 S.current.allow.toUpperCase(),
-                style: const TextStyle(
+                style:  TextStyle(
+                  fontFamily: GoogleFonts.cairo().fontFamily,
                   color: Colors.white,
                 ),
               ),
             ),
             OutlinedButton(
               onPressed: onDeclinePermission,
-              child: Text(S.current.decline.toUpperCase()),
+              child: Text(S.current.decline.toUpperCase(),
+                style:
+                TextStyle(
+                  fontFamily: GoogleFonts.cairo().fontFamily,
+                ),
+              ),
             ),
           ],
         ),

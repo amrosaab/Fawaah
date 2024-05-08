@@ -31,7 +31,7 @@ class ProductVariant extends StatefulWidget {
     this.defaultQuantity = 1,
     this.isModal = false,
   });
-
+//
   @override
   // ignore: no_logic_in_create_state
   State<ProductVariant> createState() => _StateProductVariant(product!);

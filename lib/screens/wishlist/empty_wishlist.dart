@@ -48,6 +48,7 @@ class EmptyWishlist extends StatelessWidget {
                 child: ButtonTheme(
                   height: 45,
                   child: ElevatedButton(
+                    //
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Theme.of(context).primaryColor,
@@ -69,9 +70,10 @@ class EmptyWishlist extends StatelessWidget {
                 child: ButtonTheme(
                   height: 44,
                   child: ElevatedButton(
+
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: kGrey400,
-                      backgroundColor: kGrey200,
+                      // foregroundColor: kGrey400,
+                      backgroundColor: Theme.of(context).brightness == Brightness.dark?Color(0xff292d39):Colors.white,
                     ),
                     onPressed: onSearchForItem,
                     child: Text(S.of(context).searchForItems.toUpperCase(),style: Theme.of(context).textTheme.bodySmall,),

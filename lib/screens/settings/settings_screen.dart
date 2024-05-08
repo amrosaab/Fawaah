@@ -421,36 +421,36 @@ class SettingScreenState extends State<SettingScreen>
                   indent: 75,
                   //endIndent: 20,
                 ),
-                if (model.enable) ...[
-                  Card(
-                    margin: const EdgeInsets.only(bottom: 2.0),
-                    elevation: 0,
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).pushNamed(RouteList.notify);
-                      },
-                      child: ListTile(
-                        leading: Icon(
-                          CupertinoIcons.list_bullet,
-                          size: 22,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                        title: Text(S.of(context).listMessages),
-                        trailing: const Icon(
-                          Icons.arrow_forward_ios,
-                          size: 18,
-                          color: kGrey600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Divider(
-                    color: Colors.black12,
-                    height: 1.0,
-                    indent: 75,
-                    //endIndent: 20,
-                  ),
-                ],
+                // if (model.enable) ...[
+                //   Card(
+                //     margin: const EdgeInsets.only(bottom: 2.0),
+                //     elevation: 0,
+                //     child: GestureDetector(
+                //       onTap: () {
+                //         Navigator.of(context).pushNamed(RouteList.notify);
+                //       },
+                //       child: ListTile(
+                //         leading: Icon(
+                //           CupertinoIcons.list_bullet,
+                //           size: 22,
+                //           color: Theme.of(context).colorScheme.secondary,
+                //         ),
+                //         title: Text(S.of(context).listMessages),
+                //         trailing: const Icon(
+                //           Icons.arrow_forward_ios,
+                //           size: 18,
+                //           color: kGrey600,
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                //   const Divider(
+                //     color: Colors.black12,
+                //     height: 1.0,
+                //     indent: 75,
+                //     //endIndent: 20,
+                //   ),
+               // ],
               ],
             );
           });

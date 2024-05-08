@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -165,41 +167,7 @@ class OrderListItem extends StatelessWidget {
                                 const Expanded(
                                   child: SizedBox(height: 1),
                                 ),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        S.of(context).createdOn +
-                                            DateFormat('d MMM, HH:mm')
-                                                .format(order.createdAt!),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall!
-                                            .copyWith(
-                                              fontSize: 12.0,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .secondary
-                                                  .withOpacity(0.8),
-                                            ),
-                                      ),
-                                    ),
-                                    Text(
-                                      S.of(context).orderNo +
-                                          order.number.toString(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall!
-                                          .copyWith(
-                                            fontSize: 12.0,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .secondary
-                                                .withOpacity(0.8),
-                                          ),
-                                    ),
-                                  ],
-                                ),
+
                                 const SizedBox(height: 5),
                               ],
                             ),
@@ -212,6 +180,55 @@ class OrderListItem extends StatelessWidget {
                 //   height: 1,
                 //   color: Theme.of(context).primaryColorLight,
                 // ),
+
+
+
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  color: Theme.of(context).colorScheme.background,
+
+                  child:                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          S.of(context).createdOn +
+                              DateFormat('d MMM, HH:mm','en')
+                                  .format(order.createdAt!),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall!
+                              .copyWith(
+
+                            fontSize: 12.0,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondary
+                                .withOpacity(0.8),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        S.of(context).orderNo +
+                            order.number.toString(),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall!
+                            .copyWith(
+                          fontFamily: GoogleFonts.cairo().fontFamily,
+
+                          fontSize: 12.0,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .secondary
+                              .withOpacity(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                )
+,
                 Expanded(
                   flex: 1,
                   child: Container(

@@ -88,12 +88,43 @@ class UserModel with ChangeNotifier {
       Function? fail,
       context}) async {
     try {
-      user = await _service.api.loginSMS(token: phoneNumber);
-      await saveUser(user);
-      success(user);
+      // user = await _service.api.loginSMS(token: phoneNumber);
+      //
+      // print("usersssx${user!.toJson()}");
 
-      notifyListeners();
+      await   login(username:          phoneNumber!+"@fawaah.com", password: phoneNumber+"@fawaah.com", success: (sucUser) async {
+
+        user=sucUser;
+        user!.isSocial=true;
+        await saveUser(user);
+        success!(user);
+        notifyListeners();
+
+      }, fail: (fail) async {
+
+        await    createUser(success: (successuser) async {
+          user=successuser;
+          user!.isSocial=true;
+
+
+          await saveUser(user);
+          success!(user);
+          notifyListeners();
+        },username:  phoneNumber!+"@fawaah.com",password:  phoneNumber!+"@fawaah.com",fail: (failed){
+          print("hokshfailed3${fail}");
+
+        });
+        print("hokshfailed2${fail}");
+
+      });
+
+
+      // await saveUser(user);
+      // success(user);
+      //
+      // notifyListeners();
     } catch (err) {
+      fail!(err);
       fail!(S.of(context).loginErrorServiceProvider(err.toString()));
     }
   }
@@ -103,15 +134,45 @@ class UserModel with ChangeNotifier {
     try {
       final result = await FacebookAuth.instance.login();
       switch (result.status) {
+
+
         case LoginStatus.success:
           final accessToken = await FacebookAuth.instance.accessToken;
-
           Services().firebase.loginFirebaseFacebook(token: accessToken!.token);
 
-          user = await _service.api.loginFacebook(token: accessToken.token);
 
-          await saveUser(user);
-          success!(user);
+          await   login(username:           accessToken.userId+"@fawaah.com", password:  accessToken.userId+"@fawaah.com", success: (sucUser) async {
+
+            user=sucUser;
+            user!.isSocial=true;
+
+            await saveUser(user);
+            success!(user);
+            notifyListeners();
+
+          }, fail: (fail) async {
+
+            await    createUser(success: (successuser) async {
+              user=successuser;
+              user!.isSocial=true;
+
+              await saveUser(user);
+              success!(user);
+              notifyListeners();
+            },username:  accessToken.userId+"@fawaah.com",password:  accessToken.userId+"@fawaah.com",fail: (failed){
+              print("hokshfailed3${fail}");
+
+            });
+            print("hokshfailed2${fail}");
+
+          });
+
+
+
+          // user = await _service.api.loginFacebook(token: accessToken.token);
+
+          // await saveUser(user);
+          // success!(user);
           break;
         case LoginStatus.cancelled:
           fail!(S.of(context).loginCanceled);
@@ -144,13 +205,44 @@ class UserModel with ChangeNotifier {
       } else {
         var auth = await res.authentication;
         Services().firebase.loginFirebaseGoogle(token: auth.accessToken);
-        user = await _service.api.loginGoogle(token: auth.accessToken);
+        print("cdvffasaas");
+
+        await   login(username: res.email, password: res.email, success: (sucUser) async {
+
+          user=sucUser;
+          user!.isSocial=true;
+          await saveUser(user);
+          success!(user);
+          notifyListeners();
+
+        }, fail: (failed) async {
+
+//
+          await    createUser(success: (successuser) async {
+        user=successuser;
+        user!.isSocial=true;
+
         await saveUser(user);
         success!(user);
         notifyListeners();
+      },username: res.email,password: res.email,fail: (failed){
+        print("hokshfailed3${failed}");
+        fail!(S.of(context).loginErrorServiceProvider(failed.toString()));
+
+        notifyListeners();
+
+          });
+       print("hokshfailed2${fail}");
+
+     });
+        // user = await _service.api.loginGoogle(token: auth.accessToken);
+        // await saveUser(user);
+        // success!(user);
+        // notifyListeners();
       }
     } catch (err, trace) {
       printError(err, trace);
+      print("hokshfialed"+err.toString());
       fail!(S.of(context).loginErrorServiceProvider(err.toString()));
     }
   }
@@ -295,6 +387,7 @@ class UserModel with ChangeNotifier {
         username: username,
         password: password,
       );
+
 
       final userEmail =
           (user?.email?.isNotEmpty ?? false) ? user?.email : username;

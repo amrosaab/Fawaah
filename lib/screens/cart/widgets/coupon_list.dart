@@ -183,7 +183,7 @@ class _CouponListState extends BaseScreen<CouponList> {
                 showCupertinoDialog(
                   context: context,
                   builder: (ctx) => CupertinoAlertDialog(
-                    title: const Text('Notice'),
+                     title: const Text('Notice'),
                     content: Text(S.of(context).couponInvalid),
                     actions: [
                       CupertinoDialogAction(

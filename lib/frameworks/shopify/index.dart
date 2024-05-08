@@ -202,16 +202,26 @@ class ShopifyWidget extends BaseFrameworks
             token: cartModel.user?.cookie,
             onFinish: (number) async {
               // Success
-              orderNum = number;
-              if (number == '0') {
+
+              if (number != '0') {
                 if (!kPaymentConfig.guestCheckout) {
                   final order = await shopifyService.getLatestOrder(
                       cookie: cartModel.user?.cookie ?? '');
+
                   if (order == null) return error!('Checkout failed');
                   success!(order);
                   return;
                 }
-                success!(Order());
+                //
+
+                // print("sdsadsadsa${ cartModel.user?.cookie}");
+                // final order = await shopifyService.getLatestOrder(
+                //     cookie: cartModel.user?.cookie ?? '');
+// print("vxcvcxvxcvcx${order!.number}");
+
+                print("cvvccxccxvcx${number}");
+                success!(Order(number: number));
+                // success!(Order());
                 return;
               }
             },

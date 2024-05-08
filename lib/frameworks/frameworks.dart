@@ -558,7 +558,7 @@ abstract class BaseFrameworks {
       children: [
         const SizedBox(height: 20),
         Align(
-          alignment: Alignment.topLeft,
+          alignment:  Directionality.of(context)==TextDirection.rtl?Alignment.topRight :Alignment.topLeft,
           child: Text(
             S.of(context).status,
             style: const TextStyle(
@@ -643,7 +643,36 @@ abstract class BaseFrameworks {
       item: item,
       width: width,
       maxWidth: maxWidth,
-      config: config..imageRatio = ratioProductImage ?? 1.2,
+      config: config..hideStore=false..imageRatio = ratioProductImage ?? 1.2,
+    );
+  }
+ Widget renderProductCardView2({
+    Product? item,
+    double? width,
+    double? maxWidth,
+    double? height,
+    double? ratioProductImage = 1.2,
+    required ProductConfig config,
+  }) {
+    if (item == null) {
+      return const SizedBox();
+    }
+    if (config.cardDesign == CardDesign.glass) {
+      return ProductGlass(
+        item: item,
+        width: width,
+        maxWidth: maxWidth,
+        config: config..imageRatio = ratioProductImage ?? 1.2,
+      );
+    }
+    if (config.cardDesign == CardDesign.horizontal) {
+      return ProductHorizontalCard(item: item, productConfig: config);
+    }
+    return ProductCard2(
+      item: item,
+      width: width,
+      maxWidth: maxWidth,
+      config: config..hideStore=false..imageRatio = ratioProductImage ?? 1.2,
     );
   }
 
@@ -653,11 +682,17 @@ abstract class BaseFrameworks {
     EdgeInsets? padding,
     required ProductConfig config,
   }) {
-    return ProductItemTileView(
-      item: item,
-      padding: padding,
-      config: config,
+    return
+        ProductItemTileView(
+        item: item,
+        padding: padding,
+        config: config,
+
+
     );
+
+
+
   }
 
   /// render product glass card

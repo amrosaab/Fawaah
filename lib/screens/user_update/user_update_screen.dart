@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:inspireui/widgets/auto_hide_keyboard.dart';
 import 'package:provider/provider.dart';
 
@@ -376,7 +377,7 @@ class _StateUserUpdate extends BaseScreen<UserUpdateScreen> {
         onPressed: isLoading ? null : updateUserInfo,
         child: Text(
           S.of(context).update,
-          style: const TextStyle(color: Colors.white),
+          style:  TextStyle(color: Colors.white,fontFamily: GoogleFonts.cairo().fontFamily),
         ),
       ),
     );

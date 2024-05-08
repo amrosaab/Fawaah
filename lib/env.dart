@@ -231,7 +231,7 @@ Map<String, dynamic> environment = {
     "EnableDeliveryDateOnCheckout": true,
 
     /// Enable new SMS Login
-    "EnableNewSMSLogin": false,
+    "EnableNewSMSLogin": true,
 
     /// Enable bottom add to cart from product card view
     "EnableBottomAddToCart": false,
@@ -339,9 +339,9 @@ Map<String, dynamic> environment = {
   "loginSetting": {
     "IsRequiredLogin": false,
     "showAppleLogin": false,
-    "showFacebook": false,
-    "showSMSLogin": false,
-    "showGoogleLogin": false,
+    "showFacebook": true,
+    "showSMSLogin": true,
+    "showGoogleLogin": true,
     "showPhoneNumberWhenRegister": false,
     "requirePhoneNumberWhenRegister": false,
     "isResetPasswordSupported": true,
@@ -351,8 +351,8 @@ Map<String, dynamic> environment = {
     /// These configs are only used for FluxBuilder's Auto build feature.
     /// To update manually, follow this below doc:
     /// https://support.inspireui.com/help-center/articles/42/44/32/social-login#login
-    "facebookAppId": "430258564493822",
-    "facebookLoginProtocolScheme": "fb430258564493822",
+    "facebookAppId": "312342787488170",
+    "facebookLoginProtocolScheme": "fb312342787488170",
   },
   "oneSignalKey": {
     "enable": true,
@@ -1132,7 +1132,7 @@ Map<String, dynamic> environment = {
     "showSku": true,
     "showStockQuantity": true,
     "showProductCategories": false,
-    "showProductTags": false,
+    "showProductTags": true,
     "hideInvalidAttributes": true,
 
     /// Enable this to show a quantity selector in product list.
@@ -1395,13 +1395,14 @@ Map<String, dynamic> environment = {
 
     ///  Type should be: 'fade-in', 'zoom-in', 'zoom-out', 'top-down', 'rive', 'flare', ''static'
     "type": "static",
-    "image": "assets/images/splash.gif",
+    "image": "assets/images/newsplashx2.gif",
 
     /// AnimationName's is used for 'rive' and 'flare' type
     "animationName": "Fawaah",
 
     "boxFit": "contain",
-    "backgroundColor": "#0d1d40",
+    // "backgroundColor": "#0f1b3b",
+     "backgroundColor": "#0d1d40",
     "paddingTop": 0,
     "paddingBottom": 0,
     "paddingLeft": 0,
@@ -1562,8 +1563,9 @@ Map<String, dynamic> environment = {
         return {
           if (province != null) 'province': province,
           if (city != null) 'city': city,
-          'address1': 'Country: $city, Area: $province2,Block:${sector??''}, Street: $street, Building: $block, ${(street ?? '') == '' ? '' : 'Floor: $block2, '} ${(block2 ?? '') == '' ? '' : 'Flat: $apartment'}',
-          'address2': '${block!}, ${block2 ?? ''}',
+          'address1': ' Area: $province2,Block: ${sector??''}, Street: $street, Building: $block,${block2!=null && block2.isNotEmpty?'Floor: $block2,':''}  ${apartment!=null&&apartment.isNotEmpty?'Flat: $apartment':""} ',
+          // 'address2': '${block!}, ${block2 ?? ''}',
+          'address2': '',
         };
       },
     },

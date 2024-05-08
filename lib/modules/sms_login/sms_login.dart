@@ -5,6 +5,7 @@ import '../../../../common/error_codes/error_codes.dart';
 import '../../../../generated/l10n.dart';
 import '../../../../models/entities/user.dart';
 import '../../models/entities/firebase_error_exception.dart';
+import '../../models/user_model.dart';
 import '../../widgets/common/loading_body.dart';
 import 'sms_info.dart';
 import 'sms_model.dart';
@@ -110,15 +111,25 @@ class _SMSIndexState extends State<SMSIndex> {
 
   Future<void> verifyUser() async {
     final model = Provider.of<SMSModel>(context, listen: false);
+    final model2 = Provider.of<UserModel>(context, listen: false);
     final isVerified = await model.smsVerify(_showMessage);
     if (isVerified) {
       final isUserExisted = await model.isPhoneNumberExisted();
       if (isUserExisted) {
         try {
-          final user = await model.login();
-          if (user != null) {
-            widget.onSuccess(user);
-          }
+          print("number ${model.dialPhoneNumber}");
+
+            model2.loginFirebaseSMS(phoneNumber:model.dialPhoneNumberWithoutPlus,success: (user){
+               if (user != null) {
+                 widget.onSuccess(user);
+               }
+            },fail: (Fail){
+
+            },context:context ) ;
+          // final user = await model.login();
+          // if (user != null) {
+          //   widget.onSuccess(user);
+          // }
           return;
         } catch (e) {
           _showMessage(e);

@@ -370,7 +370,8 @@ class _CheckoutState extends BaseScreen<Checkout> {
                 .widget
                 .updateOrderAfterCheckout(context, order);
             cartModel.clearCart();
-            unawaited(context.read<WalletModel>().refreshWallet());
+            //unhoksh
+          //  unawaited(context.read<WalletModel>().refreshWallet());
           }),
         );
       case 2:

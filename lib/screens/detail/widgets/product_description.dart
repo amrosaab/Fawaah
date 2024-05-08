@@ -42,6 +42,7 @@ class ProductDescription extends StatelessWidget {
                     .renderProductDescription(context, product!.description!),
               ),
               const SizedBox(height: 20),
+              //
             ],
           ),
         if (enableBrand) ...[

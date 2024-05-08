@@ -1162,7 +1162,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Speech not available"),
         "startExploring":
             MessageLookupByLibrary.simpleMessage("Start Exploring"),
-        "startShopping": MessageLookupByLibrary.simpleMessage("Start Shopping"),
+        "startShopping": MessageLookupByLibrary.simpleMessage(" SHOP NOW"),
         "state": MessageLookupByLibrary.simpleMessage("State"),
         "stateIsRequired":
             MessageLookupByLibrary.simpleMessage("The state field is required"),

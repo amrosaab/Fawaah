@@ -87,7 +87,7 @@ class MenuBarState extends State<SideBarMenu> {
                     imageUrl: drawer.logo as String,
                   ),
                 ),
-                const Divider(),
+                // const Divider(),
               ],
               ...List.generate(
                 drawer.items?.length ?? 0,

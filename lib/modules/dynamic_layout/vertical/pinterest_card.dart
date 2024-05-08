@@ -81,6 +81,7 @@ class PinterestCard extends StatelessWidget with ActionButtonMixin {
                               maxLines: 1),
                           const SizedBox(height: 6),
                         ],
+
                         StoreName(product: item, hide: config.hideStore),
                         item.tagLine != null
                             ? Text(

@@ -11,12 +11,28 @@ class StoreName extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return product.store != null && product.store!.name != '' && !hide
-        ? Padding(
+    return
+    //   product.store != null && product.store!.name != '' && !hide
+    //     ?
+    //
+    // Padding(
+    //         padding: const EdgeInsets.only(top: 2, bottom: 2),
+    //         child: Text(
+    //           '${S.of(context).soldBy} ${product.store!.name!}',
+    //           style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+    //         ),
+    //       )
+    //     : const SizedBox();
+    product.vendor != null && product.vendor != '' && !hide
+        ?
+
+    Padding(
             padding: const EdgeInsets.only(top: 2, bottom: 2),
             child: Text(
-              '${S.of(context).soldBy} ${product.store!.name!}',
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+              // '${S.of(context).soldBy}'
+                  '${product.vendor!}',
+              maxLines: 1,
+              style:  TextStyle(fontSize: 10, fontWeight: FontWeight.w500,color: Theme.of(context).primaryColor),
             ),
           )
         : const SizedBox();

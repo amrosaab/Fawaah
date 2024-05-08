@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
 import 'expansion_tile.dart';
 
@@ -32,10 +33,19 @@ class ExpansionInfo extends StatelessWidget {
                 Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: <Widget>[
-                      Icon(
-                        Icons.star,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                      SvgPicture.asset(
+
+
+
+////
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 20,
+                          height: 20,
+                          'assets/icons/brands/inoficon.svg'),
+                      // Icon(
+                      //   Icons.star,
+                      //   color: Theme.of(context).colorScheme.primary,
+                      // ),
                       const SizedBox(width: 8),
                       Text(
                         title.toUpperCase(),
@@ -65,10 +75,21 @@ class ExpansionInfo extends StatelessWidget {
                 child: Row(
                     // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      Icon(
-                        Icons.star,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                      SvgPicture.asset(
+
+
+
+////
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 20,
+                          height: 20,
+                          'assets/icons/brands/inoficon.svg'),
+
+                      // Icon(
+                      //   //hokshedit
+                      //   Icons.info_outline,
+                      //   color: Theme.of(context).colorScheme.primary,
+                      // ),
                       const SizedBox(width: 8),
                       Text(
                         title.toUpperCase(),

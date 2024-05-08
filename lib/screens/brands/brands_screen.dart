@@ -95,7 +95,7 @@ class _BrandsScreenState extends State<BrandsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor: Colors.white,
+       backgroundColor:Theme.of(context).brightness == Brightness.dark?darkBackgroundColor:Colors.white ,
       appBar: AppBar(
         backgroundColor: Theme.of(context).brightness == Brightness.dark?Theme.of(context).primaryColor:Theme.of(context).primaryColor,
         title: Center(
@@ -123,19 +123,41 @@ class _BrandsScreenState extends State<BrandsScreen> {
               ),
               child: Form(
                 child: TextFormField(
+
                   style: const TextStyle(color: Colors.black),
                   // textAlign: TextAlign.center,
                   controller: filterController,
                   onChanged: (value) {
                     onFilter(value);
                   },
-                  decoration: const InputDecoration(
+                  decoration:  InputDecoration(
+                    // isDense: true,
+                    // isCollapsed: true,
+
                     border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero
+,
                     prefixIcon: Icon(
                       Icons.search,
                       color:  Color(0xff282D39),
 
                     ),
+                    suffixIcon:filterController.value.text.length>0?
+
+                    IconButton(
+                      alignment: Alignment.center,
+                     icon:Center(child:  Icon(
+                        Icons.close,
+                        color:  Color(0xff282D39)
+                    )), onPressed: () {
+                      filterController.clear();
+setState(() {
+  getAllBrands();
+
+});
+                    },
+
+                    ):null,
                   ),
                 ),
               ),
@@ -172,6 +194,8 @@ class _BrandsScreenState extends State<BrandsScreen> {
                 ),
 
                 content: ListView.separated(
+
+
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemBuilder: (context, index) {

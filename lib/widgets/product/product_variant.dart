@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:html_unescape/html_unescape.dart';
 
 import '../../common/config.dart';
@@ -65,16 +66,26 @@ class BasicSelection extends StatelessWidget {
             padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
-                Icon(
-                  Icons.star,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                SvgPicture.asset(
+////
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 20,
+                    height: 20,
+                    'assets/icons/brands/inoficon.svg'),
+
+                // Icon(
+                //   //hokshedit
+                //   Icons.settings,
+                //   color: Theme.of(context).colorScheme.primary,
+                // ),
                 const SizedBox(width: 8),
                 Text(
                   '${title![0].toUpperCase()}${title!.substring(1)}: ',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                for (var item in options) Text('${item.toString()}, '),
+                for (var item in options)
+
+                  Text('${item.toString()} ${options.length>1?',':''} '),
               ],
             ),
           ),

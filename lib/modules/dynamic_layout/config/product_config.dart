@@ -68,6 +68,8 @@ class ProductConfig {
   double backgroundRadius = 10;
 
   bool showCountDown = false;
+
+  bool showCatigory=false;
   bool onSale = false;
   int rows = 1;
   int columns = 3;

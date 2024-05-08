@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app.dart';
 import '../../common/config.dart';
 import '../../common/constants.dart';
 import '../../generated/l10n.dart';
@@ -20,6 +21,7 @@ import '../../services/index.dart';
 import '../../widgets/asymmetric/asymmetric_view.dart';
 import '../../widgets/backdrop/backdrop.dart';
 import '../../widgets/backdrop/backdrop_menu.dart';
+import '../../widgets/common/drag_handler.dart';
 import '../../widgets/product/product_bottom_sheet.dart';
 import '../../widgets/product/product_list.dart';
 import '../common/app_bar_mixin.dart';
@@ -135,6 +137,7 @@ class ProductsScreenState extends State<ProductsScreen>
 
     /// only request to server if there is empty config params
     // / If there is config, load the products one
+    getproductCatName();
   }
 
   void _initFilter() {
@@ -160,6 +163,7 @@ class ProductsScreenState extends State<ProductsScreen>
 
   @override
   Future<void> getProductList() async {
+    print("maxxprice ${maxPrice}");
     await productModel.getProductsList(
       categoryId: categoryId,
       minPrice: minPrice,
@@ -254,11 +258,97 @@ class ProductsScreenState extends State<ProductsScreen>
     );
   }
 
+
+  showBotomFilter(){
+    showModalBottomSheet(
+      context: App.fluxStoreNavigatorKey.currentContext!,
+      isScrollControlled: true,
+      isDismissible: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Stack(
+        children: [
+          GestureDetector(
+            onTap: Navigator.of(context).pop,
+            child: Container(color: Colors.transparent),
+          ),
+          DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            minChildSize: 0.2,
+            maxChildSize: 0.9,
+            builder: (BuildContext context,
+                ScrollController scrollController) {
+              return Stack(
+                alignment: Alignment.bottomCenter,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(15.0),
+                        topRight: Radius.circular(15.0),
+                      ),
+                      color: Theme.of(context).colorScheme.background,
+                    ),
+                    child: Stack(
+                      children: [
+                        const DragHandler(),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 20),
+                          child: BackdropMenu(
+                            onFilter: onFilter,
+                            categoryId: categoryId,
+                            sortBy: filterSortBy,
+                            tagId: tagId,
+                            listingLocationId: listingLocationId,
+                            controller: scrollController,
+                            minPrice: minPrice,
+                            maxPrice: maxPrice,
+
+                            /// hide layout filter from Search screen
+                            showLayout: shouldShowLayout,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  final _service = Services();
+
+  getproductCatName() async {
+
+ var productCategoryId =productModel.categoryId;
+    final cate = await _service.api
+        .getCategories(lang: appModel.langCode);
+    productCategoryId=productCategoryId=='Z2lkOi8vc2hvcGlmeS9Db2xsZWN0aW9uLzI4NjE2MDYxNzY1Mg=='?"gid://shopify/Collection/286160617652":productCategoryId;
+
+    print("bvbvbv${cate}");
+    var url;
+    if (cate != null) {
+
+        url = cate.firstWhere((element) => element.id==productCategoryId).name;
+
+       _currentTitle = productConfig.name ?? url ?? S.of(context).results;
+
+       setState(() {
+
+       });
+    }
+
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    _currentTitle = productConfig.name ??
-        productModel.categoryName ??
-        S.of(context).results;
+    print("xzxzxzxzx${productModel.categoryId}");
+
+    // _currentTitle = productConfig.name ?? productModel.categoryName ?? S.of(context).results;
 
     Widget buildMain = LayoutBuilder(
       builder: (context, constraint) {
@@ -286,7 +376,9 @@ class ProductsScreenState extends State<ProductsScreen>
                       return ProductFlatView(
                         searchFieldController: _searchFieldController,
                         hasAppBar: hasAppBar,
+                        currentTitle:_currentTitle,
                         autoFocusSearch: widget.autoFocusSearch,
+                        showfilter:()=>showBotomFilter(),
                         enableSearchHistory: widget.enableSearchHistory,
                         builder: layout.isListView
                             ? ProductList(
@@ -301,9 +393,10 @@ class ProductsScreenState extends State<ProductsScreen>
                                 ratioProductImage: ratioProductImage,
                                 productListItemHeight: productListItemHeight,
                                 width: constraint.maxWidth,
-                                appbar: widget.routeName == RouteList.search
-                                    ? null
-                                    : renderFilters(context),
+                                //hokshedit
+                                // appbar: widget.routeName == RouteList.search
+                                //     ? null
+                                //     : renderFilters(context),
                                 header: [
                                   // TODO(fahjan): if you need to display categories
                                   /* ProductCategoryMenu(
@@ -318,27 +411,27 @@ class ProductsScreenState extends State<ProductsScreen>
                                   ), */
                                   Padding(
                                     padding: const EdgeInsets.only(
-                                        left: 10,
-                                        right: 10,
-                                        bottom: 10,
-                                        top: 25),
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        top: 4),
                                     child: Column(
                                       children: [
                                         Row(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.end,
                                           children: [
-                                            Text(
-                                              currentTitle,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleLarge!
-                                                  .copyWith(
-                                                    fontWeight: FontWeight.w700,
-                                                    height: 0.6,
-                                                  ),
-                                            ),
-                                            const Spacer(),
+                                            // Text(
+                                            //   currentTitle,
+                                            //   style: Theme.of(context)
+                                            //       .textTheme
+                                            //       .titleLarge!
+                                            //       .copyWith(
+                                            //         fontWeight: FontWeight.w700,
+                                            //         height: 0.6,
+                                            //       ),
+                                            // ),
+                                            // const Spacer(),
                                             if ((currentCategory
                                                             ?.totalProduct ??
                                                         0) >
@@ -433,6 +526,7 @@ class ProductsScreenState extends State<ProductsScreen>
         );
       },
     );
+
 
     buildMain = renderScaffold(
       routeName: widget.routeName ?? RouteList.backdrop,

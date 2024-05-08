@@ -84,6 +84,7 @@ class HeaderView extends StatelessWidget {
               ),
             ),
             if (showSeeAll)
+              //
               InkResponse(
                 onTap: callback,
                 child: Padding(

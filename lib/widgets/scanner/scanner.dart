@@ -126,9 +126,11 @@ class _ScannerIndexState extends State<ScannerIndex> {
         return;
       }
       _isScanning = true;
+      //
 
       /// To remove extra 0000 from barcode
       if (scanData.code != null) {
+        print("xzcxzcxz${scanData}");
         var id = int.parse(scanData.code!).toString();
         switch (scanData.format) {
           case BarcodeFormat.ean13:
@@ -159,6 +161,10 @@ class _ScannerIndexState extends State<ScannerIndex> {
 
   @override
   Widget build(BuildContext context) {
+    var scanArea = (MediaQuery.of(context).size.width < 400 ||
+        MediaQuery.of(context).size.height < 400)
+        ? 150.0
+        : 300.0;
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -166,6 +172,7 @@ class _ScannerIndexState extends State<ScannerIndex> {
           QRView(
             key: qrKey,
             onQRViewCreated: _onQRViewCreated,
+
             onPermissionSet: (controller, result) async {
               if (_didCallback) {
                 return;
@@ -176,6 +183,13 @@ class _ScannerIndexState extends State<ScannerIndex> {
                 Navigator.of(context).pop();
               }
             },
+            overlay: QrScannerOverlayShape(
+                borderColor: Colors.red,
+                borderRadius: 10,
+                borderLength: 30,
+                borderWidth: 10,
+                cutOutSize: scanArea),
+
           ),
           SafeArea(
             child: IconButton(
@@ -191,3 +205,4 @@ class _ScannerIndexState extends State<ScannerIndex> {
     );
   }
 }
+

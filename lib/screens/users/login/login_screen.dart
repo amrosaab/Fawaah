@@ -183,8 +183,8 @@ class _LoginPageState extends BaseScreen<LoginScreen>
                                             style: TextStyle(
                                               color: Theme.of(context)
                                                   .primaryColor,
-                                              decoration:
-                                                  TextDecoration.underline,
+                                              // decoration:
+                                              //     TextDecoration.underline,
                                             ),
                                           ),
                                         ),

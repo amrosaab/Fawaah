@@ -42,6 +42,7 @@ class ProductList extends StatelessWidget {
   }
 
   Widget getProductLayout({maxWidth, maxHeight, products}) {
+    print("hoksggggg${products}");
     switch (config.layout) {
       case Layout.listTile:
         return ProductListTitle(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../common/config.dart';
@@ -114,7 +115,7 @@ class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
             color: secondaryColor,
             fontWeight: FontWeight.w600,
             decoration: TextDecoration.underline,
-          ),
+          ),//
           isWalletTopup: isWalletTopup,
         ),
       ],
@@ -156,7 +157,7 @@ class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
                 if (order?.number != null)
                   Row(
                     children: <Widget>[
-                      Text(
+                      Text(//
                         S.of(context).orderNo,
                         style: TextStyle(fontSize: 14, color: secondaryColor),
                       ),
@@ -233,7 +234,9 @@ class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
                       );
                     },
                     child: Text(
+
                       S.of(context).showAllMyOrdered.toUpperCase(),
+                      style: TextStyle(fontFamily: GoogleFonts.cairo().fontFamily),
                     ),
                   ),
                 ),

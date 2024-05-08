@@ -104,18 +104,19 @@ class _ProductTitleState extends BaseScreen<ProductTitle> {
       children: <Widget>[
         // TODO(fahjan): show brand into another shops,
         //
-        // if (widget.product!.vendor != null)
-        //   Row(
-        //     children: <Widget>[
-        //       Text(
-        //         widget.product!.vendor!,
-        //         style: Theme.of(context).textTheme.titleMedium!.copyWith(
-        //               fontWeight: FontWeight.w400,
-        //               color: theme.colorScheme.secondary,
-        //             ),
-        //       ),
-        //     ],
-        //   ),
+        if (widget.product!.vendor != null)
+          Row(
+            children: <Widget>[
+              Text(
+                widget.product!.vendor!,
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      fontWeight: FontWeight.w400,
+                      // color: theme.colorScheme.secondary,
+                      color: theme.colorScheme.primary,
+                    ),
+              ),
+            ],
+          ),
         const SizedBox(height: 10),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,

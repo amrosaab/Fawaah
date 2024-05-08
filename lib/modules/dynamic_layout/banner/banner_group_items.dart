@@ -67,6 +67,7 @@ class _StateBannerGroupItems extends State<BannerGroupItems> {
   Future<List<Product>?> getProductsByCategoryId() async {
     try {
       var bannerItems = widget.config.items;
+      print("cxczczxc${bannerItems}");
       var item = bannerItems[indexSelected!];
       return await Services().api.fetchProductsByCategory(
             categoryId: item.categoryId?.toString(),

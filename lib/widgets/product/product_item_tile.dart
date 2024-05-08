@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../common/tools.dart';
 import '../../models/index.dart' show Product;
@@ -32,7 +33,10 @@ class ProductItemTileView extends StatelessWidget with ActionButtonMixin {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () => onTapProduct(context, product: item, config: config),
-      child: Padding(
+      child: Container(
+        color: Theme.of(context).cardColor,
+        margin: EdgeInsets.symmetric(vertical: 2,horizontal: 5),
+
         padding: padding ?? const EdgeInsets.symmetric(vertical: 5.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,7 +62,7 @@ class ProductItemTileView extends StatelessWidget with ActionButtonMixin {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.redAccent,
+                            color: Color(0xffd6081b),
                             borderRadius: BorderRadius.only(
                               bottomRight: context.isRtl
                                   ? Radius.zero
@@ -100,9 +104,9 @@ class ProductItemTileView extends StatelessWidget with ActionButtonMixin {
       onTap: onTapProduct,
       child: ImageResize(
         url: item.imageFeature,
-        size: kSize.medium,
+        // size: kSize.medium,
         isResize: true,
-        // height: _height,
+         height: 100,
         // fit: ImageTools.boxFit(config.imageBoxfit),
         fit: BoxFit.contain,
       ),
@@ -133,6 +137,7 @@ class _ProductDescription extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            SizedBox(height: 10,),
             if (item.categoryName != null)
               Text(
                 item.categoryName!.toUpperCase(),
@@ -153,27 +158,43 @@ class _ProductDescription extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             StoreName(product: item, hide: config.hideStore),
+
             if (item.tagLine != null)
               Text(
                 item.tagLine.toString(),
                 maxLines: 1,
                 style: const TextStyle(fontSize: 13),
               ),
-            ProductPricing(product: item, hide: config.hidePrice),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+              ProductPricing(product: item, hide: config.hidePrice),
+
+              if (!config.showQuantity)
+                Align(
+                  alignment:
+                  context.isRtl ? Alignment.topLeft : Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: CartIcon(product: item, config: config),
+                  ),
+                ),
+            ],),
             StockStatus(product: item, config: config),
             ProductRating(
               product: item,
               config: config,
             ),
-            if (!config.showQuantity)
-              Align(
-                alignment:
-                    context.isRtl ? Alignment.topLeft : Alignment.topRight,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: CartIcon(product: item, config: config),
-                ),
-              ),
+            // if (!config.showQuantity)
+            //   Align(
+            //     alignment:
+            //         context.isRtl ? Alignment.topLeft : Alignment.topRight,
+            //     child: Padding(
+            //       padding: const EdgeInsets.symmetric(horizontal: 12),
+            //       child: CartIcon(product: item, config: config),
+            //     ),
+            //   ),
             if (Services().widget.enableShoppingCart(item))
               Padding(
                 padding: const EdgeInsets.only(right: 8),
@@ -185,6 +206,7 @@ class _ProductDescription extends StatelessWidget {
                 if (config.showCartButton &&
                     Services().widget.enableShoppingCart(item))
                   CartButton(
+
                     product: item,
                     hide: !item.canBeAddedToCartFromList(
                             enableBottomAddToCart:

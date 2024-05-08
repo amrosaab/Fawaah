@@ -91,7 +91,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m32(date) => "صالح حتى ${date}";
 
-  static String m33(message) => "تحذير: ${message}";
+  static String m33(message) => " ${message}";
 
   static String m34(defaultCurrency) =>
       "العملة المحددة حالياً غير متاحة لميزة المحفظة ، الرجاء تغييرها إلى ${defaultCurrency}";
@@ -800,21 +800,19 @@ class MessageLookup extends MessageLookupByLibrary {
         "orderStatusCancelled": MessageLookupByLibrary.simpleMessage("ملغية"),
         "orderStatusChargeBack":
             MessageLookupByLibrary.simpleMessage("إعادة التوصيل"),
-        "orderStatusCompleted": MessageLookupByLibrary.simpleMessage("مكتلمة"),
+        "orderStatusCompleted": MessageLookupByLibrary.simpleMessage("مكتمل"),
         "orderStatusDenied": MessageLookupByLibrary.simpleMessage("مرفوض"),
         "orderStatusExpired":
             MessageLookupByLibrary.simpleMessage("منتهي الصلاحية"),
         "orderStatusFailed": MessageLookupByLibrary.simpleMessage("فشلت"),
-        "orderStatusOnHold":
-            MessageLookupByLibrary.simpleMessage("في الانتظار"),
+        "orderStatusOnHold": MessageLookupByLibrary.simpleMessage("معلق"),
         "orderStatusPending":
             MessageLookupByLibrary.simpleMessage("قيد الانتظار"),
         "orderStatusPendingPayment":
-            MessageLookupByLibrary.simpleMessage("في انتظار الدفع"),
+            MessageLookupByLibrary.simpleMessage("الدفع"),
         "orderStatusProcessed":
             MessageLookupByLibrary.simpleMessage("تمت المعالجة"),
-        "orderStatusProcessing":
-            MessageLookupByLibrary.simpleMessage("قيد المعالجة"),
+        "orderStatusProcessing": MessageLookupByLibrary.simpleMessage("تجهيز"),
         "orderStatusRefunded": MessageLookupByLibrary.simpleMessage("مرتجعة"),
         "orderStatusReversed":
             MessageLookupByLibrary.simpleMessage("تم إسترجاعه"),
@@ -1143,7 +1141,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("الكلام غير متوفر"),
         "startExploring":
             MessageLookupByLibrary.simpleMessage("ابدأ الاستكشاف"),
-        "startShopping": MessageLookupByLibrary.simpleMessage("تسوق هنا"),
+        "startShopping": MessageLookupByLibrary.simpleMessage("تسوق الان"),
         "state": MessageLookupByLibrary.simpleMessage("حالة"),
         "stateIsRequired":
             MessageLookupByLibrary.simpleMessage("خانة المحافظة مطلوبة"),

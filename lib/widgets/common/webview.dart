@@ -67,7 +67,8 @@ class WebView extends StatefulWidget {
   final bool enableForward;
   final bool enableBackward;
   final bool enableClose;
-  final Function(String url)? onPageFinished;
+  final Function(String url,String ordernumber)? onPageFinished;
+  // final Function(String url)? onPageFinished;
   final Function? onClosed;
   final bool auth;
   final String script;
@@ -111,6 +112,7 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
     const foundation.Factory(EagerGestureRecognizer.new)
   };
 
+  var astr;
   void onFinishLoading() {
     setState(() {
       selectedIndex = 0;
@@ -118,6 +120,20 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
     controller.runJavaScript(widget.script.isEmptyOrNull
         ? kAdvanceConfig.webViewScript
         : widget.script);
+
+    print("getcdcdccxczcx ${widget.script??"jjj"}");
+
+    controller.addJavaScriptChannel("ordernum", onMessageReceived: (mess){
+     // var aStr = mess.message.toString().replaceAll(new RegExp(r'[^0-9]'),''); // '23'
+   astr=   mess.message.toString();
+
+   astr= astr.substring(astr.indexOf("#")+1,astr.length);
+  print("testdata${astr}");
+    //  widget.onPageFinished?.call('thank_you2',astr);
+    //
+    //
+     });
+
   }
 
   @override
@@ -143,7 +159,7 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
             }
           },
           onPageStarted: (String url) {},
-          onPageFinished: (String url) => widget.onPageFinished?.call(url),
+          onPageFinished: (String url) => widget.onPageFinished?.call(url,astr),
           onWebResourceError: (WebResourceError error) {},
           // onNavigationRequest: (NavigationRequest request) {},
         ),
@@ -177,6 +193,7 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
 
     /// override WebView URL to include Token
     if (widget.auth && (user?.cookie?.isNotEmpty ?? false)) {
+     // if ( (user?.cookie?.isNotEmpty ?? false)) {
       var base64Str = EncodeUtils.encodeCookie(user!.cookie!);
       url = '$url${url.paramSymbol}cookie=$base64Str';
     }
@@ -241,7 +258,7 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
         ),
       );
     }
-
+//
     /// is Mobile or Web
     if (!kIsWeb && kAdvanceConfig.inAppWebView) {
       return renderScaffold(
@@ -260,7 +277,7 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
           enableClose: widget.enableClose,
           onClosed: widget.onClosed,
           onUrlChanged: (String? url) {
-            widget.onPageFinished?.call(url ?? '');
+            widget.onPageFinished?.call(url ?? '','');
           },
         ),
       );
@@ -286,7 +303,7 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
               if (widget.enableClose)
                 IconButton(
                   onPressed: () async {
-                    widget.onClosed?.call();
+                    // widget.onClosed?.call();
                     Navigator.of(context).pop();
                   },
                   icon: const Icon(Icons.close, size: 20),

@@ -186,6 +186,7 @@ class ProductSimpleView extends StatelessWidget with ActionButtonMixin {
                 if ((kProductDetail.showAddToCartInSearchResult &&
                     canAddToCart &&
                     !productConfig.showQuantity))
+
                   CartIcon(
                     product: item!,
                     config: productConfig,

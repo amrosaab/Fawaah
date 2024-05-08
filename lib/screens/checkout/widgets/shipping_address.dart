@@ -426,7 +426,8 @@ class _ShippingAddressState extends State<ShippingAddress> {
                   backgroundColor:
                   Theme.of(context).brightness == Brightness.dark
                       ? Theme.of(context).primaryColorLight
-                      : Colors.grey[300],
+                      : Color(0xffededed),
+                  //
                   elevation: 0.0,
                 ),
                 onPressed: () {
@@ -561,6 +562,10 @@ class _ShippingAddressState extends State<ShippingAddress> {
           );
         }
 
+
+        if(currentFieldType ==AddressFieldType.country){
+          return Container();
+        }
 
         return TextFormField(
           /// Auto focus first field if it's empty.

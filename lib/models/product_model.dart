@@ -227,12 +227,26 @@ class ProductModel with ChangeNotifier {
         productsList = [...productsList!, ...products];
       }
 
+      if(maxPrice!=null&&minPrice!=null){
+        productsList!.where((product) {
+          final double price = double.parse(product.price!);
+          return price >= minPrice && price <= maxPrice; // Set your price range here
+        }).toList();
+
+        productsList!.sort((a, b) =>double.parse(a.price??'0.0').compareTo(double.parse(b.price??'0.0')));
+
+
+      }
+
       if (search?.isNotEmpty ?? false) {
         recentSearch = productsList;
       }
 
       isFetching = false;
       errMsg = null;
+
+
+
 
       notifyListeners();
     } catch (err, trace) {

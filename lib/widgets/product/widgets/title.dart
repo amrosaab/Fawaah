@@ -68,7 +68,7 @@ class ProductTitle extends StatelessWidget {
               ),
             ),
           TextSpan(
-            text: '${product.name}\n',
+            text:'${product.name}\n',
           ),
         ],
       ),

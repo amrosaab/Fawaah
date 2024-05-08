@@ -26,6 +26,7 @@ class ProductImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // var maxHeight = width * (ratioProductImage ?? 1.2);
     var maxHeight = width * (ratioProductImage ?? 1.2);
     final gauss = offset != null
         ? math.exp(-(math.pow(offset!.abs() - 0.5, 2) / 0.08))

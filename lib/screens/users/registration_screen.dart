@@ -361,7 +361,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     text: S.of(context).agreeWithPrivacy,
                                     style: TextStyle(
                                         color: Theme.of(context).primaryColor,
-                                        decoration: TextDecoration.underline),
+                                        // decoration: TextDecoration.underline
+                                    ),
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = () => FluxNavigate.push(
                                             MaterialPageRoute(
@@ -439,7 +440,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                       S.of(context).loginToYourAccount,
                                       style: TextStyle(
                                         color: Theme.of(context).primaryColor,
-                                        decoration: TextDecoration.underline,
+                                        // decoration: TextDecoration.underline,
                                         fontSize: 15,
                                       ),
                                     ),

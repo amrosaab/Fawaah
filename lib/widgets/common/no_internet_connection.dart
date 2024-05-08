@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../generated/l10n.dart';
 
@@ -62,6 +63,7 @@ class NoInternetConnection extends StatelessWidget {
                         },
                         child: Text(
                           S.of(context).refresh.toUpperCase(),
+                          style: TextStyle(fontFamily: GoogleFonts.cairo().fontFamily),
                         ),
                       );
               },

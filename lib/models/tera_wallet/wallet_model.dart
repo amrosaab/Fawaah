@@ -24,7 +24,8 @@ class WalletModel with ChangeNotifier {
 
   WalletModel({
     required this.user,
-  }) : _walletTransactionModel = WalletTransactionModel(
+  })
+      : _walletTransactionModel = WalletTransactionModel(
             Services().getWalletTransaction(user.cookie ?? '')) {
     printLog('Wallet token ne ${user.cookie}');
   }

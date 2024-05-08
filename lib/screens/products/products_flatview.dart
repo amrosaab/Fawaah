@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 import '../../common/config.dart';
@@ -13,6 +14,7 @@ import '../../models/user_model.dart';
 import '../../services/service_config.dart';
 import '../../services/services.dart';
 import '../cart/cart_screen.dart';
+import 'filter_mixin/products_filter_mixin.dart';
 import 'products_mixin.dart';
 import 'products_searchview.dart';
 
@@ -28,8 +30,9 @@ class ProductFlatView extends StatefulWidget {
   final bool enableSearchHistory;
   final bool autoFocusSearch;
   final bool hasAppBar;
+final String  currentTitle;
   final TextEditingController searchFieldController;
-
+ final  Function ? showfilter;
   const ProductFlatView({
     required this.builder,
     required this.onSearch,
@@ -41,7 +44,7 @@ class ProductFlatView extends StatefulWidget {
     this.autoFocusSearch = true,
     this.hasAppBar = false,
     Key? key,
-    required this.searchFieldController,
+    required this.searchFieldController, required this.currentTitle, this.showfilter,
   }) : super(key: key);
 
   @override
@@ -50,6 +53,7 @@ class ProductFlatView extends StatefulWidget {
 
 class _ProductFlatViewState extends State<ProductFlatView> with ProductsMixin {
   Color get labelColor => Colors.black;
+  bool _isSearching = false;
 
   bool get isLoggedIn =>
       Provider.of<UserModel>(context, listen: false).loggedIn;
@@ -186,6 +190,7 @@ class _ProductFlatViewState extends State<ProductFlatView> with ProductsMixin {
       child: widget.titleFilter,
     );
   }
+  FocusNode _searchFocusNode = FocusNode();
 
   @override
   Widget build(BuildContext context) {
@@ -212,35 +217,118 @@ class _ProductFlatViewState extends State<ProductFlatView> with ProductsMixin {
             primary: !widget.hasAppBar,
             titleSpacing: 0,
             backgroundColor: Theme.of(context).colorScheme.background,
-            leading: Navigator.of(context).canPop()
-                ? CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    child: const Icon(CupertinoIcons.back),
-                    onPressed: () => Navigator.of(context).pop(),
-                  )
-                : null,
+            leading:Row(
+              children: [
+                Navigator.of(context).canPop() ? CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  child:  Icon(CupertinoIcons.back),
+                  onPressed: ()  {
+                    if(_isSearching){
+                      _isSearching = false;
+                      _searchFocusNode.nextFocus();
+                      setState(() {
+
+                      });
+
+                      return;
+                    }
+
+                    Navigator.of(context).pop();
+
+                  },
+                )
+                    : SizedBox(),
+
+              ],
+            ),
+
+
             // title: Text(
             //   S.of(context).search,
             //   style: Theme.of(context).textTheme.titleLarge!.copyWith(
             //         fontWeight: FontWeight.w700,
             //       ),
             // ),
-            title: CupertinoSearchTextField(
-              onChanged: onSearch,
-              onSubmitted: onSearch,
-              placeholder: S.of(context).searchForItems,
-              style: Theme.of(context).textTheme.bodySmall,
+            title:AnimatedSwitcher(
+              duration: Duration(milliseconds: 300),
+              child: _isSearching
+                  ? Row(children: [
+                Expanded(child:  CupertinoSearchTextField(
+                  onChanged: onSearch,
+                  focusNode: _searchFocusNode,
+                  onSubmitted: onSearch,
+                  placeholder: S.of(context).searchForItems,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ))
+, IconButton(onPressed: () async {
+                  widget.showfilter!();
+
+                }, icon:Icon(Icons.tune,size: 20,color: Theme.of(context).primaryColor,),
+                ),
+                IconButton(onPressed: () async {
+                  await shareProductsLink(context);
+
+                }, icon:Icon(Icons.share,size: 20,color: Theme.of(context).primaryColor,),
+                ),
+                SizedBox(width: 8),
+              ],)
+
+                : Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+
+                    _isSearching?SizedBox():     Expanded(child:  Text(
+                      widget.currentTitle,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge!
+                          .copyWith(
+                        fontWeight: FontWeight.w700,
+                        height: 0.6,
+                      ),
+                    )),
+
+                    IconButton(onPressed: () async {
+                      widget.showfilter!();
+
+                    }, icon:Icon(Icons.tune,size: 20,color: Theme.of(context).primaryColor,),
+                    ),
+                    GestureDetector(
+                  child:                     Icon(Icons.search,color: Theme.of(context).primaryColor,),
+
+                  onTap: () {
+            setState(() {
+            _isSearching = true;
+            _searchFocusNode.requestFocus();
+
+
+            });
+            },
+                  ),
+
+                    IconButton(onPressed: () async {
+                      await shareProductsLink(context);
+
+                    }, icon:Icon(Icons.share,size: 20,color: Theme.of(context).primaryColor,),
+                    ),
+                    SizedBox(width: 8),
+                    // Text('Search'),
+                  ],
+                ),
+
+
             ),
-            centerTitle: true,
-            actions: [
-              Selector<UserModel, bool>(
-                selector: (context, provider) => provider.loggedIn,
-                builder: (context, loggedIn, child) {
-                  return _buildMoreWidget(loggedIn);
-                },
-              ),
-              const SizedBox(width: 4),
-            ],
+            // centerTitle: true,
+
+            // actions: [
+            //   Selector<UserModel, bool>(
+            //     selector: (context, provider) => provider.loggedIn,
+            //     builder: (context, loggedIn, child) {
+            //       return _buildMoreWidget(loggedIn);
+            //     },
+            //   ),
+            //   const SizedBox(width: 4),
+            // ],
           ),
           Expanded(
             child: Stack(

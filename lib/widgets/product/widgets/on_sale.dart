@@ -58,7 +58,7 @@ class ProductOnSale extends StatelessWidget {
         decoration: decoration ??
             _getSaleDecoration(context, borderRadius: config.borderRadius),
         child: Text(
-          '$salePercent%',
+          '${salePercent.abs()}%',
           style: Theme.of(context)
               .textTheme
               .bodySmall!
@@ -100,7 +100,7 @@ class ProductOnSale extends StatelessWidget {
 BoxDecoration _getSaleDecoration(BuildContext context,
         {double? borderRadius = 0.0}) =>
     BoxDecoration(
-      color: Colors.redAccent.shade100,
+      color: Color(0xffd6081b),
       borderRadius: BorderRadius.only(
         topLeft:
             context.isRtl ? Radius.zero : Radius.circular(borderRadius ?? 0.0),

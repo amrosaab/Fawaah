@@ -23,7 +23,9 @@ class PaymentWebviewState extends BaseScreen<PaymentWebview> with WebviewMixin {
   int selectedIndex = 1;
   String? orderId;
 
-  void handleUrlChanged(String url) {
+  void handleUrlChanged(String url,String ordernumber) {
+    print("hokshtestrerer${url}${ordernumber}");
+
     if (url.contains('/order-received/')) {
       final items = url.split('/order-received/');
       if (items.length > 1) {
@@ -36,13 +38,18 @@ class PaymentWebviewState extends BaseScreen<PaymentWebview> with WebviewMixin {
     }
 
     if (url.contains('thank-you')) {
-      orderId = '0';
+      // orderId = '0';
+      orderId = ordernumber;
     }
 
     // shopify url final checkout
     if (url.contains('thank_you')) {
-      orderId = '0';
+      orderId = ordernumber;
     }
+    // if (url.contains('thank_you2')) {
+    //   orderId="0";
+    //   orderId2 = ordernumber;
+    // }
 
     /// BigCommerce.
     if (url.contains('/checkout/order-confirmation')) {
@@ -55,8 +62,11 @@ class PaymentWebviewState extends BaseScreen<PaymentWebview> with WebviewMixin {
       orderId = (uri.queryParameters['id_order'] ?? 0).toString();
     }
 
-    /// Finally
-    if (orderId != null) {
+    /// F//inally
+   print("objectfff${orderId}");
+    if (orderId!=null) {
+      print("testrrerererer${orderId}");
+
       widget.onFinish?.call(orderId);
       if (kPaymentConfig.showWebviewCheckoutSuccessScreen) {
         Navigator.of(context).pop();
@@ -110,6 +120,29 @@ class PaymentWebviewState extends BaseScreen<PaymentWebview> with WebviewMixin {
 
       url: checkoutMap['url'] ?? '',
       headers: checkoutMap['headers'],
+      script: '''
+      
+      
+        if (location.href.indexOf('thank_you')>-1){
+       var xx=document.getElementsByClassName("os-order-number")[0];
+console.log(xx.innerHTML.replace(/\D/g, ""));
+    window.ordernum.postMessage(xx.innerHTML.replace(/\D/g, ""));
+
+    // window.flutter_inappwebview.callHandler('ordernum', ...xxx);
+
+     }
+      
+    //  if (location.href.indexOf('thank_you')>-1){
+    //    var xx=document.getElementsByClassName("os-order-number")[0];
+    //
+    // window.ordernum.postMessage(xx.innertext);
+    //
+    // // window.flutter_inappwebview.callHandler('ordernum', ...xxx);
+    //
+    //  }
+    
+      
+      ''',
       onPageFinished: handleUrlChanged,
       onClosed: () {
         widget.onFinish?.call(orderId);

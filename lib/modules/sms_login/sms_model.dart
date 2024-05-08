@@ -100,6 +100,7 @@ class SMSModel extends ChangeNotifier {
     try {
       final credential = Services().firebase.getFirebaseCredential(
           verificationId: _verificationId, smsCode: _smsCode);
+      print("xzcxzcxzcxzc");
 
       final user = await Services()
           .firebase
@@ -134,7 +135,10 @@ class SMSModel extends ChangeNotifier {
   }
 
   Future<User?> login() async {
-    try {
+    try {//
+      print("cdcdcdcd");
+
+
       final result =
           await Services().api.loginSMS(token: dialPhoneNumberWithoutPlus);
       if (result == null) {

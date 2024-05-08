@@ -12,6 +12,7 @@ import '../../../data/boxes.dart';
 import '../../../generated/l10n.dart';
 import '../../../models/cart/cart_model_shopify.dart';
 import '../../../models/entities/currency.dart';
+import '../../../models/entities/filter_tags.dart';
 import '../../../models/entities/index.dart';
 import '../../../models/index.dart'
     show
@@ -452,7 +453,7 @@ class ShopifyService extends BaseServices {
       return <Product>[];
     }
 
-    final sortKey = getProductCollectionSortKey(orderBy);
+    var sortKey = getProductCollectionSortKey(orderBy);
     final reverse = getOrderDirection(order);
 
     try {
@@ -467,12 +468,15 @@ class ShopifyService extends BaseServices {
       currentCursor = _cacheCursorWithCategories['$categoryId'];
       const nRepositories = 50;
 
+print("serattt${search}");
       var variables = <String, dynamic>{
         'nRepositories': nRepositories,
         'categoryId': categoryId,
         'pageSize': limit ?? apiPageSize,
         'query': search ?? '',
         'sortKey': sortKey,
+
+
         'reverse': reverse,
         'langCode': languageCode,
         'countryCode': countryCode,
@@ -518,7 +522,7 @@ class ShopifyService extends BaseServices {
         var edges = productResp['edges'];
 
         printLog(
-            'fetchProductsByCategory with products length ${edges.length}');
+            'fetchProductsByCategory with products length ${node}');
 
         if (edges.length != 0) {
           var lastItem = edges.last;
@@ -537,7 +541,22 @@ class ShopifyService extends BaseServices {
           }
           list.add(Product.fromShopify(product));
         }
+
+
       }
+
+      if(maxPrice!=null&&minPrice!=null){
+        final List<Product> filteredProducts = list.where((product) {
+          final double price = double.parse(product.price!);
+          return price >= minPrice && price <= maxPrice; // Set your price range here
+        }).toList();
+
+        filteredProducts.sort((a, b) =>double.parse(a.price??'0.0').compareTo(double.parse(b.price??'0.0')));
+
+
+        return filteredProducts;
+      }
+
       return list;
     } catch (e) {
       printError('::::fetchProductsByCategory shopify error $e');
@@ -818,7 +837,7 @@ class ShopifyService extends BaseServices {
     } catch (e) {
       printLog('::::createUser shopify error');
       printLog(e.toString());
-      rethrow;
+      rethrow ;
     }
   }
 
@@ -1626,7 +1645,8 @@ class ShopifyService extends BaseServices {
       final options = QueryOptions(
         document: gql(ShopifyQuery.getCollectionById),
         variables: <String, dynamic>{
-          'nRepositories': nRepositories,
+           'nRepositories': nRepositories,
+           // 'langCode': 'en',
           'id': categoryId,
         },
       );
@@ -1636,13 +1656,54 @@ class ShopifyService extends BaseServices {
         printLog(result.exception.toString());
       }
 
+
       final collectionData = result.data?['collection'];
+
+      print("ksasasasccx${result}");
       final collection = Category.fromJsonShopify(collectionData);
       return collection;
     } catch (e) {
       printLog('::::getCollection shopify error');
-      printLog(e.toString());
+      printLog( e.toString());
       return null;
+    }
+  }
+
+
+  @override
+  Future<List<FilterTag>>? getFilterTags({String? lang}) async {
+    printLog('::::getalltags shopify id');
+    try {
+      var list = <FilterTag>[];
+
+      const nRepositories = 50;
+      final options = QueryOptions(
+        document: gql(ShopifyQuery.getallTags),
+        variables: <String, dynamic>{
+            'nRepositories': nRepositories,
+            'langCode': 'AR',
+          // 'id': categoryId,
+        },
+      );
+      final result = await client.query(options);
+      print("tagsdsdsds${result}");
+
+      if (result.hasException) {
+        printLog(result.exception.toString());
+      }
+
+
+      for (var item in result.data?['productTags']['edges']) {
+        list.add(FilterTag.fromJson({"name":item['node']}));
+      }
+       // final collectionData = result.data?['productTags']['edges'];
+
+      // final collection = Category.fromJsonShopify(collectionData);
+       return list;
+    } catch (e) {
+      printLog('gettags shopify error');
+      printLog( e.toString());
+      return [];
     }
   }
 

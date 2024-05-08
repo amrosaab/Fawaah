@@ -59,7 +59,7 @@ class CartIcon extends StatelessWidget with ActionButtonMixin {
     return InkWell(
       // constraints: showQuantitySelector ? const BoxConstraints() : null,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 2,vertical: 0),
         child: Icon(
           Icons.add_circle,
            // size: 20.0,

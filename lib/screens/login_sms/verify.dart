@@ -158,8 +158,9 @@ class _VerifyCodeState extends State<VerifyCode>
   void _loginSMS(smsCode, context) async {
     await _playAnimation();
     try {
+      print("xzzxzxzx${_verId}");
       final credential = Services().firebase.getFirebaseCredential(
-            verificationId: _verId!,
+            verificationId: _verId,
             smsCode: smsCode,
           );
       await _signInWithCredential(credential);
@@ -334,9 +335,12 @@ class _VerifyCodeState extends State<VerifyCode>
   }
 
   Future<void> _signInWithCredential(credential) async {
+    print("xccxvxxvc${credential}");
     final user = await Services()
         .firebase
         .loginFirebaseCredential(credential: credential);
+
+    print("hokshuser ${user!.toJson()}");
     if (user != null) {
       if (widget.callback != null) {
         await _stopAnimation();

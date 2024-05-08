@@ -103,7 +103,7 @@ class EmptyCart extends StatelessWidget {
                             elevation: 0,
                             minimumSize: const Size.fromHeight(50),
                             // foregroundColor: kGrey400,
-                            backgroundColor: Theme.of(context).brightness == Brightness.dark?kGrey400.withOpacity(.5):Colors.white,
+                            backgroundColor: Theme.of(context).brightness == Brightness.dark?Color(0xff292d39):Colors.white,
                           ),
                           onPressed: () {
                             NavigateTools.navigateToRootTab(

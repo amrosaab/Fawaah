@@ -640,7 +640,9 @@ class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
                     children: <Widget>[
                       Text(
                         S.of(context).orderNo,
-                        style: TextStyle(fontSize: 14, color: secondaryColor),
+                        style: TextStyle(fontSize: 14, color: secondaryColor,
+                        fontFamily: GoogleFonts.cairo().fontFamily
+                        ),
                       ),
                       const SizedBox(width: 5),
                       Expanded(
@@ -716,6 +718,8 @@ class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
                     },
                     child: Text(
                       S.of(context).showAllMyOrdered.toUpperCase(),
+                      style: TextStyle(fontFamily: GoogleFonts.cairo().fontFamily),
+
                     ),
                   ),
                 ),

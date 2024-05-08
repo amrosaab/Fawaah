@@ -88,6 +88,12 @@ class _WebViewInAppState extends State<WebViewInApp> {
         }
       },
     );
+    // webViewController?.addJavaScriptHandler(handlerName: "ordernum", callback: (args){
+    //
+    //   print("hokshtest${args.first} ${args}");
+    //
+    // });
+
   }
 
   @override

@@ -41,8 +41,11 @@ class HeaderSearch extends StatelessWidget {
             height: config.height.toDouble(),
             decoration: BoxDecoration(
               color: config.backgroundColor != null
-                  ? HexColor(config.backgroundColor)
-                  : (config.usePrimaryColor
+                  ?Theme.of(context).brightness == Brightness.dark?  HexColor('#292d39'):HexColor(config.backgroundColor)
+
+
+
+                  :    (config.usePrimaryColor
                       ? Theme.of(context).primaryColorLight
                       : Theme.of(context).colorScheme.background),
               boxShadow: [

@@ -463,18 +463,20 @@ Widget actionButton(
   bool isInAppPurchaseChecking,
   BuildContext context,
 ) {
+
   return Row(
     children: <Widget>[
+      // if (!ignoreBuyOrOutOfStockButton)
+      //   Expanded(
+      //     child: GestureDetector(
+      //       onTap: (isAvailable && !isInAppPurchaseChecking)
+      //           ? () => addToCart(true, inStock || allowBackorder)
+      //           : null,
+      //       child: buyOrOutOfStockButton,
+      //     ),
+      //   ),
       if (!ignoreBuyOrOutOfStockButton)
-        Expanded(
-          child: GestureDetector(
-            onTap: (isAvailable && !isInAppPurchaseChecking)
-                ? () => addToCart(true, inStock || allowBackorder)
-                : null,
-            child: buyOrOutOfStockButton,
-          ),
-        ),
-      if (!ignoreBuyOrOutOfStockButton) const SizedBox(width: 10),
+        // const SizedBox(width: 10),
       if (isAvailable &&
           (inStock || allowBackorder) &&
           !isExternal &&
@@ -482,7 +484,8 @@ Widget actionButton(
         Expanded(
           child: GestureDetector(
             onTap: () => addToCart(false, inStock || allowBackorder),
-            child: Container(
+            child:
+            Container(
               height: 44,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(3),

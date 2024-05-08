@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:country_pickers/country_pickers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -113,7 +114,10 @@ class _OrderHistoryDetailScreenState
           ],
           title: Text(
             '${S.of(context).orderNo} #${order.number}',
-            style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+            style: TextStyle(color: Theme.of(context).colorScheme.secondary,
+                fontFamily: GoogleFonts.cairo().fontFamily
+
+            ),
           ),
           backgroundColor: Theme.of(context).colorScheme.background,
           elevation: 0.0,
@@ -439,7 +443,9 @@ class _OrderHistoryDetailScreenState
                         children: <Widget>[
                           Text(
                             S.of(context).orderNotes,
-                            style: const TextStyle(
+                            style:  TextStyle(
+                                fontFamily: GoogleFonts.cairo().fontFamily,
+
                                 fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 10),

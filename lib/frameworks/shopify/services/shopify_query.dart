@@ -26,6 +26,25 @@ class ShopifyQuery {
     $fragmentCollection
     ''';
 
+
+  static String getallTags = '''
+query {
+  productTags(first: 250) {
+    edges {
+      cursor
+      node 
+      
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}
+
+   
+    ''';
+
   static String getProducts = '''
     query(
     \$cursor: String

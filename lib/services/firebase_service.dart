@@ -124,7 +124,7 @@ class FirebaseServices extends BaseFirebaseServices {
 
   @override
   Future<User?>? loginFirebaseCredential({credential}) {
-    return _auth!.loginFirebaseCredential(credential: credential);
+    return _auth?.loginFirebaseCredential(credential: credential);
   }
 
   @override

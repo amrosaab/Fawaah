@@ -127,7 +127,7 @@ class _BackdropMenuState extends State<BackdropMenu> {
     return [
       const SizedBox(height: 10),
       Padding(
-        padding: const EdgeInsets.only(left: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 15),
         child: Text(
           S.of(context).layout,
           style: Theme.of(context).textTheme.titleLarge!.copyWith(
@@ -270,6 +270,7 @@ class _BackdropMenuState extends State<BackdropMenu> {
   Widget renderAttributes() {
     return Consumer<FilterAttributeModel>(
       builder: (context, value, child) {
+        // print("cxvcxvcx${value.lstCurrentAttr.first}");
         if (value.lstProductAttribute?.isNotEmpty ?? false) {
           var list = List<Widget>.generate(
             value.lstProductAttribute!.length,
@@ -474,8 +475,8 @@ class _BackdropMenuState extends State<BackdropMenu> {
             BackDropListingMenu(onFilter: _onFilter),
 
           if (!ServerConfig().isListingType &&
-              ServerConfig().type != ConfigType.shopify &&
-              widget.showPrice) ...[
+              ServerConfig().type == ConfigType.shopify && widget.showPrice)
+            ...[
             renderPriceSlider(),
             renderAttributes(),
           ],
@@ -487,15 +488,16 @@ class _BackdropMenuState extends State<BackdropMenu> {
                   onChanged: (tagId) => _onFilter(tagId: tagId),
                 ),
 
-          if (widget.showCategory)
-            CategoryMenu(
-              isUseBlog: widget.isUseBlog,
-              onFilter: (category) => _onFilter(
-                categoryId: category.id,
-                categoryName: category.name,
-                isSearch: false,
-              ),
-            ),
+          //hokshedit
+          // if (widget.showCategory)
+          //   CategoryMenu(
+          //     isUseBlog: widget.isUseBlog,
+          //     onFilter: (category) => _onFilter(
+          //       categoryId: category.id,
+          //       categoryName: category.name,
+          //       isSearch: false,
+          //     ),
+          //  ),
 
           /// render Apply button
           if (!ServerConfig().isListingType &&

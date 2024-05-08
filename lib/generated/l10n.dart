@@ -340,10 +340,10 @@ class S {
     );
   }
 
-  /// `Start Shopping`
+  /// ` SHOP NOW`
   String get startShopping {
     return Intl.message(
-      'Start Shopping',
+      ' SHOP NOW',
       name: 'startShopping',
       desc: '',
       args: [],

@@ -226,7 +226,7 @@ class _SimpleLayoutState extends State<SimpleLayout>
                                         bottom: 4.0,
                                         left: 15,
                                         right: 15,
-                                      ),
+                                      ),//
                                       child: widget.product.isGroupedProduct
                                           ? const SizedBox()
                                           : ProductTitle(product),

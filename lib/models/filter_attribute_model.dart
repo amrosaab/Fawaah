@@ -30,11 +30,15 @@ class FilterAttributeModel with ChangeNotifier, LanguageMixin {
 
   Future<void> getFilterAttributes() async {
     try {
+
       _isLoading = true;
       notifyListeners();
+
       lstProductAttribute = await _service.api.getFilterAttributes(
         lang: langCode,
       );
+      print("objectxxzx${lstProductAttribute.toString()}");
+
       if (lstProductAttribute != null &&
           lstProductAttribute!.isNotEmpty &&
           lstProductAttribute?.first.id != null) {
