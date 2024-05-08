@@ -95,7 +95,7 @@ class SearchModel extends ChangeNotifier with LanguageMixin {
 
     List<Product> newProducts;
 
-    _cancelLoadProduct = CancelableOperation.fromFuture(_searchProducts(
+    _cancelLoadProduct = CancelableOperation.fromFuture(_searchProductsSearchanise(
       name: name!,
       page: _page,
       userId: userId,
@@ -176,6 +176,7 @@ class SearchModel extends ChangeNotifier with LanguageMixin {
     attributeTerm = '';
   }
 
+  // ignore: unused_element
   Future<List<Product>> _searchProducts({
     required String name,
     dynamic page,
@@ -197,6 +198,46 @@ class SearchModel extends ChangeNotifier with LanguageMixin {
             listingLocation: listingLocation,
             userId: userId,
           )!;
+      final data = pagingResponse.data ?? [];
+      _page = pagingResponse.cursor ?? _page;
+
+      if (data.isNotEmpty && page == 1 && name.isNotEmpty) {
+        if (keywords.contains(name)) {
+          keywords.remove(name);
+        }
+        keywords.insert(0, name);
+        saveKeywords(keywords);
+      }
+      errMsg = null;
+      return data;
+    } catch (err) {
+      isLoading = false;
+      errMsg = '⚠️ $err';
+      notifyListeners();
+      return <Product>[];
+    }
+  }
+
+  Future<List<Product>> _searchProductsSearchanise({
+    required String name,
+    dynamic page,
+    userId,
+  }) async {
+    try {
+      if (name.isEmpty || name.trim() == '') {
+        return [];
+      }
+      final pagingResponse = await Services().api.searchProductsSearchanise(
+        name: name,
+        categoryId: category,
+        categoryName: categoryName,
+        tag: tag,
+        attribute: attribute,
+        attributeId: attributeTerm,
+        page: page,
+        listingLocation: listingLocation,
+        userId: userId,
+      )!;
       final data = pagingResponse.data ?? [];
       _page = pagingResponse.cursor ?? _page;
 
@@ -242,7 +283,7 @@ class SearchModel extends ChangeNotifier with LanguageMixin {
       isLoading = true;
       notifyListeners();
       final pagingResponse =
-          await Services().api.searchProducts(name: name, page: page);
+          await Services().api.searchProductsSearchanise(name: name, page: page);
       _products = pagingResponse?.data ?? [];
       isLoading = false;
       errMsg = null;

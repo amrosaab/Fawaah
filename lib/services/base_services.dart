@@ -159,6 +159,19 @@ abstract class BaseServices {
   }) =>
       null;
 
+  Future<PagingResponse<Product>>? searchProductsSearchanise({
+    name,
+    categoryId,
+    categoryName,
+    tag,
+    attribute,
+    attributeId,
+    required page,
+    listingLocation,
+    userId,
+  }) =>
+      null;
+
   Future<User?>? getUserInfo(cookie) => null;
 
   Future<User?>? createUser({
