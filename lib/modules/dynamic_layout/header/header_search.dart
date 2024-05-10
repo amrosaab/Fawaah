@@ -1,7 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../common/tools.dart';
+import '../../../models/user_model.dart';
+import '../../../widgets/scanner/scanner_button.dart';
 import '../config/header_config.dart';
 import '../helper/helper.dart';
 
@@ -88,6 +91,12 @@ class HeaderSearch extends StatelessWidget {
                           .withOpacity(
                               Helper.formatDouble(config.textOpacity)!),
                     ),
+                  ),
+                ),
+
+                Consumer<UserModel>(
+                  builder: (_, model, __) => ScannerButton(
+                    user: model.user,
                   ),
                 ),
               ],
