@@ -75,6 +75,7 @@ class DynamicLayout extends StatelessWidget {
         return HeaderSearch(
           config: HeaderConfig.fromJson(config),
           onSearch: () {
+
             FluxNavigate.pushNamed(
               RouteList.homeSearch,
               forceRootNavigator: true,

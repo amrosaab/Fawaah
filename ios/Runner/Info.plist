@@ -106,6 +106,14 @@
 				<string>paytmMID</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.637255430447-4r9s0pugkpc688abs8br80bfc2mkcl68</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
@@ -176,7 +184,7 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>This application needs the speech recognition permission</string>
 	<key>NSUserTrackingUsageDescription</key>
-	<string>This identifier will be used to deliver personalized ads to you. &quot;Ask App Not to track&quot; will limit Advertisement network&apos;s ability to deliver relevant ads to you but will not reduce the number of ads you receive.</string>
+	<string>This identifier will be used to deliver personalized ads to you. "Ask App Not to track" will limit Advertisement network's ability to deliver relevant ads to you but will not reduce the number of ads you receive.</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>

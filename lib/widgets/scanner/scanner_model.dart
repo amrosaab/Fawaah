@@ -13,10 +13,12 @@ class ScannerModel {
     var result;
     try {
       result =
-          await _services.api.getDataFromScanner(data, cookie: _user?.cookie);
+          await _services.api.fetchProductsByCategory(page: 1,search: data);
+      // result =
+      //     await _services.api.getDataFromScanner(data, cookie: _user?.cookie);
     } catch (e) {
       return e;
     }
-    return result;
+    return         result.first;
   }
 }
