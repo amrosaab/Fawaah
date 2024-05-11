@@ -12,13 +12,18 @@ class ScannerModel {
   ) async {
     var result;
     try {
+      print("dassdasdsa$data");
       result =
-          await _services.api.fetchProductsByCategory(page: 1,search: data);
+          await _services.api.fetchProductsByCategory(categoryId: -1,page: 1,search: data);
+
+      print("dfdsfdsfdsf$result");
+      ////
       // result =
       //     await _services.api.getDataFromScanner(data, cookie: _user?.cookie);
     } catch (e) {
       return e;
     }
-    return         result.first;
+    return   result.length>0?      result.first:null;
   }
 }
+

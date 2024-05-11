@@ -188,6 +188,7 @@ class _ProductSearchViewState extends State<ProductSearchView>
                           fontWeight: FontWeight.w700,
                         ),
                   ),
+                  //
                   SearchBox(
                     // width: widthSearchBox,
                     autoFocus: widget.autoFocusSearch,

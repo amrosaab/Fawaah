@@ -245,7 +245,7 @@
 	"orderStatusCancelled": "Cancelled",
 	"orderStatusRefunded": "Refunded",
 	"pleaseFillCode": "Please fill your code",
-	"warning": "Warning: {message}",
+	"warning": "{message}",
 	"nItems": "{itemCount} items",
 	"dataEmpty": "Data Empty",
 	"yourAddressExistYourLocal": "Your address is exist in your local",

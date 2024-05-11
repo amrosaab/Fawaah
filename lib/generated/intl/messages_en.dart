@@ -92,7 +92,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m32(date) => "Valid til ${date}";
 
-  static String m33(message) => "Warning: ${message}";
+  static String m33(message) => "${message}";
 
   static String m34(defaultCurrency) =>
       "The currently selected currency is not available for the Wallet feature, please change it to ${defaultCurrency}";

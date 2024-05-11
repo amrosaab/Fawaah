@@ -491,6 +491,8 @@ class ProductsScreenState extends State<ProductsScreen>
                             layout.isListView ? null : renderFilters(context),
                         onFilter: onFilter,
                         onSearch: (String searchText) => {
+//
+                          print("Sasdasdsad${categoryId}"),
                           onFilter(
                             minPrice: minPrice,
                             maxPrice: maxPrice,

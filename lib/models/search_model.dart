@@ -186,6 +186,7 @@ class SearchModel extends ChangeNotifier with LanguageMixin {
       if (name.isEmpty || name.trim() == '') {
         return [];
       }
+
       final pagingResponse = await Services().api.searchProducts(
             name: name,
             categoryId: category,

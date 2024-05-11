@@ -2500,10 +2500,10 @@ class S {
     );
   }
 
-  /// `Warning: {message}`
+  /// `{message}`
   String warning(Object message) {
     return Intl.message(
-      'Warning: $message',
+      '$message',
       name: 'warning',
       desc: '',
       args: [message],

@@ -124,7 +124,7 @@ class _SearchBoxState extends State<SearchBox> {
               onSubmitted: (value) => widget.onSubmitted?.call(value),
               onSuffixTap: _onCancelText,
             ),
-          ),
+          ),//
           if (widget.showQRCode)
             Consumer<UserModel>(
               builder: (_, model, __) => ScannerButton(

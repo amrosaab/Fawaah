@@ -130,7 +130,7 @@ class _ScannerIndexState extends State<ScannerIndex> {
 
       /// To remove extra 0000 from barcode
       if (scanData.code != null) {
-        print("xzcxzcxz${scanData.format}");
+        // print("xzcxzcxz${scanData.code}");
         var id = int.parse(scanData.code!).toString();
         switch (scanData.format) {
           case BarcodeFormat.ean13:
@@ -148,7 +148,8 @@ class _ScannerIndexState extends State<ScannerIndex> {
           default:
             break;
         }
-                print("xczxcxzid${scanData.code}");
+        //
+        //         print("xczxcxzid${scanData.code}");
         model.getDataFromScanner(id).then(_navigate);
       }
     });
