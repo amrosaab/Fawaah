@@ -25,13 +25,17 @@ class DynamicLinkServiceImpl extends DynamicLinkService {
     // Subscribe to all events when app is started.
 // (Use allStringLinkStream to get it as [String])
 
-  print("xzczxcxzcx");
-    final initialLink = await _appLinks.getInitialAppLink();
+    final initialLink = await _appLinks.getInitialLink();
+
     if (initialLink != null) {
-      await handleDynamicLink(initialLink, context);
+    //  await handleDynamicLink(initialLink, context);
     }
 
-    _appLinks.allUriLinkStream.listen((uri) async {
+    _appLinks.uriLinkStream.listen((uri) async {
+      if(uri.toString().contains("request_ip_version")){
+        return;
+
+      }
       await handleDynamicLink(uri, context);
 
       // Do something (navigation, ...)
@@ -41,7 +45,7 @@ class DynamicLinkServiceImpl extends DynamicLinkService {
   @override
   void initDynamicLinks(BuildContext context) async {
 
-  // hokshedit await initUniLinks(context);
+    await initUniLinks(context);
 
     // var initialLink = await FirebaseDynamicLinks.instance.getInitialLink();
 
@@ -126,8 +130,8 @@ class DynamicLinkServiceImpl extends DynamicLinkService {
   @override
   Future<void> handleDynamicLink(Uri uri, BuildContext context) async {
     try {
-      print("xzcxzcxzcxzc");
-      _showLoading(context);
+      //hokshedidt
+    //  _showLoading(context);
       var url = Uri.parse(uri.path).toString();
 
       /// PRODUCT CASE
