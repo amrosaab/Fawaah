@@ -6,7 +6,7 @@ import 'package:fstore/models/entities/user.dart';
 class FirebaseAuthService {
   void deleteAccount() {}
 
-  void loginFirebaseApple({authorizationCode, identityToken}) {}
+   loginFirebaseApple({authorizationCode, identityToken}) {}
 
   void loginFirebaseFacebook({token}) {}
 

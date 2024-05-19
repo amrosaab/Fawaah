@@ -3,16 +3,19 @@ class BackDropArguments {
   final String? cateName;
   final String? tag;
   final List? data;
+
   final Map? config;
   final String? brandId;
+  final String? vendor;
   final String? brandName;
   final String? brandImg;
   final bool showCountdown;
   Duration countdownDuration = Duration.zero;
 
-  BackDropArguments({
+  BackDropArguments( {
     this.cateId,
     this.cateName,
+    this.vendor,
     this.tag,
     this.data,
     this.config,

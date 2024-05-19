@@ -17,12 +17,13 @@ class FirebaseAuthServiceImpl extends FirebaseAuthService {
   }
 
   @override
-  void loginFirebaseApple({authorizationCode, identityToken}) async {
+   loginFirebaseApple({authorizationCode, identityToken}) async {
     final AuthCredential credential = OAuthProvider('apple.com').credential(
       accessToken: String.fromCharCodes(authorizationCode),
       idToken: String.fromCharCodes(identityToken),
     );
-    await _auth.signInWithCredential(credential);
+    UserCredential dd=  await _auth.signInWithCredential(credential);
+    return dd;
   }
 
   @override

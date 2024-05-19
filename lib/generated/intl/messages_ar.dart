@@ -318,6 +318,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "commentSuccessfully": MessageLookupByLibrary.simpleMessage(
             "التعليق بنجاح ، يرجى الانتظار حتى تتم الموافقة على تعليقك"),
         "complete": MessageLookupByLibrary.simpleMessage("مكتمل"),
+        "con": MessageLookupByLibrary.simpleMessage("البلد"),
         "confirm": MessageLookupByLibrary.simpleMessage("تأكيد"),
         "confirmAccountDeletion":
             MessageLookupByLibrary.simpleMessage("تأكيد حذف الحساب"),
@@ -449,8 +450,8 @@ class MessageLookup extends MessageLookupByLibrary {
             "يبدو أنك لم تقم بإضافة أي سلع إلى السلة بعد. ابدأ التسوق الآن."),
         "emptyComment": MessageLookupByLibrary.simpleMessage(
             "تعليقك لا يمكن أن يكون خالياً"),
-        "emptySearch": MessageLookupByLibrary.simpleMessage(
-            "لم تبحث عن العناصر حتى الآن. لنبدأ الآن - سنساعدك."),
+        "emptySearch":
+            MessageLookupByLibrary.simpleMessage("ابدأ البحث عن منتجات"),
         "emptyShippingMsg": MessageLookupByLibrary.simpleMessage(
             "يرجى التأكد من تحديد موقعك على الخريطة في الخطوة السابقة، أو الاتصال بنا إذا كنت بحاجة إلى أي مساعدة."),
         "emptyUsername":
@@ -629,6 +630,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "khmer": MessageLookupByLibrary.simpleMessage("الخمير"),
         "korean": MessageLookupByLibrary.simpleMessage("الكورية"),
         "kurdish": MessageLookupByLibrary.simpleMessage("Kurdish"),
+        "lang": MessageLookupByLibrary.simpleMessage("اللغة"),
         "language": MessageLookupByLibrary.simpleMessage("اللغات"),
         "languageSuccess":
             MessageLookupByLibrary.simpleMessage("تم تحديث اللغة بنجاح"),
@@ -735,7 +737,7 @@ class MessageLookup extends MessageLookupByLibrary {
             "سيظهر بمجرد أن يبدأ عملاؤك في الدردشة معك"),
         "noData": MessageLookupByLibrary.simpleMessage("لا توجد بيانات"),
         "noFavoritesYet":
-            MessageLookupByLibrary.simpleMessage("قائمة المفضلة فارغة حالياً."),
+            MessageLookupByLibrary.simpleMessage("قائمة المفضلة فارغة حالياً"),
         "noFileToDownload":
             MessageLookupByLibrary.simpleMessage("لا يوجد ملف للتنزيل."),
         "noForwardHistoryItem":
@@ -751,6 +753,8 @@ class MessageLookup extends MessageLookupByLibrary {
             "عذراً ، يبدو أن هذه الصفحة لم تعد موجودة!"),
         "noPrinters": MessageLookupByLibrary.simpleMessage("لا توجد طابعات"),
         "noProduct": MessageLookupByLibrary.simpleMessage("لا يوجد منتج"),
+        "noProducts":
+            MessageLookupByLibrary.simpleMessage("لا يوجد منتجات في السلة"),
         "noResultFound": MessageLookupByLibrary.simpleMessage("لاتوجد نتائج"),
         "noReviews": MessageLookupByLibrary.simpleMessage("لا توجد تقييمات"),
         "noSlotAvailable":
@@ -830,6 +834,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "orderTotal": MessageLookupByLibrary.simpleMessage("الطلب الكلي"),
         "orderTracking": MessageLookupByLibrary.simpleMessage("تتبع الطلب"),
         "orders": MessageLookupByLibrary.simpleMessage("الطلبات"),
+        "ordersoon":
+            MessageLookupByLibrary.simpleMessage("سنقوم بمعالجة طلبك قريبا"),
         "otpVerification":
             MessageLookupByLibrary.simpleMessage("التحقق من OTP"),
         "ourBankDetails": MessageLookupByLibrary.simpleMessage(
@@ -865,6 +871,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "pickADate":
             MessageLookupByLibrary.simpleMessage("اختر التاريخ والوقت"),
         "placeMyOrder": MessageLookupByLibrary.simpleMessage("تنفيذ الطلب"),
+        "placedsucc":
+            MessageLookupByLibrary.simpleMessage("لقد تم الطلب بنجاح"),
         "playAll": MessageLookupByLibrary.simpleMessage("تشغيل الكل"),
         "pleaseAddPrice":
             MessageLookupByLibrary.simpleMessage("الرجاء إضافة السعر"),
@@ -1009,6 +1017,8 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("التسجيل كبائع"),
         "registerFailed": MessageLookupByLibrary.simpleMessage("فشل التسجيل"),
         "registerSuccess": MessageLookupByLibrary.simpleMessage("تسجيل بنجاح"),
+        "registertotrack":
+            MessageLookupByLibrary.simpleMessage("سجل لمتابعة طلباتك"),
         "regularPrice": MessageLookupByLibrary.simpleMessage("السعر العادي"),
         "relatedLayoutTitle":
             MessageLookupByLibrary.simpleMessage("أشياء قد تحبها"),
@@ -1111,6 +1121,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "shopOrders": MessageLookupByLibrary.simpleMessage("طلبات المتجر"),
         "shopPhone": MessageLookupByLibrary.simpleMessage("هاتف المتجر"),
         "shopSlug": MessageLookupByLibrary.simpleMessage("صلاق المتجر"),
+        "shopnoww": MessageLookupByLibrary.simpleMessage("تسوق الان"),
         "shoppingCartItems": m27,
         "shortDescription": MessageLookupByLibrary.simpleMessage("وصف قصير"),
         "showAllMyOrdered":
@@ -1197,6 +1208,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("اضغط على الميكروفون للتحدث"),
         "tax": MessageLookupByLibrary.simpleMessage("ضريبة"),
         "thailand": MessageLookupByLibrary.simpleMessage("Thai"),
+        "thankyou": MessageLookupByLibrary.simpleMessage(" شكراً لك"),
         "theFieldIsRequired": m29,
         "thisDateIsNotAvailable":
             MessageLookupByLibrary.simpleMessage("هذا التاريخ غير متوفر"),
@@ -1294,6 +1306,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("عرض على خرائط جوجل"),
         "viewRecentTransactions":
             MessageLookupByLibrary.simpleMessage("عرض المعاملات الأخيرة"),
+        "viewallorders": MessageLookupByLibrary.simpleMessage("متابعة طلباتي"),
         "visible": MessageLookupByLibrary.simpleMessage("مرئي"),
         "visitStore": MessageLookupByLibrary.simpleMessage("زيارة المتجر"),
         "waitForLoad":

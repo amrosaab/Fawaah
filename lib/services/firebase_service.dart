@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flux_firebase/index.dart';
-
 import '../common/config.dart';
 import '../common/constants.dart';
 import '../common/tools.dart';
@@ -10,6 +9,7 @@ import '../models/entities/firebase_error_exception.dart';
 import '../models/entities/user.dart';
 import 'firebase/index.dart';
 import 'index.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firex;
 
 class FirebaseServices extends BaseFirebaseServices {
   static final FirebaseServices _instance = FirebaseServices._internal();
@@ -94,11 +94,15 @@ class FirebaseServices extends BaseFirebaseServices {
   }
 
   @override
-  void loginFirebaseApple({authorizationCode, identityToken}) {
+ Future<firex.UserCredential?>  loginFirebaseApple({authorizationCode, identityToken}) async {
     if (FirebaseServices().isEnabled) {
-      _auth?.loginFirebaseApple(
+    var userauth= await  _auth?.loginFirebaseApple(
           authorizationCode: authorizationCode, identityToken: identityToken);
+
+    return userauth;
     }
+
+    return null;
   }
 
   @override

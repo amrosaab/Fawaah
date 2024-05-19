@@ -30,6 +30,7 @@ class RouteList {
 
   // Products
   static const String products = 'products';
+  static const String productsbyvendor = 'productsbyvendor';
   static const String productDetail = 'product';
 
   // WishList

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../common/tools/flash.dart';
 import '../../generated/l10n.dart';
+import '../../models/entities/user.dart';
 import '../../models/user_model.dart';
 import '../../services/index.dart';
 import '../../widgets/common/common_safe_area.dart';
@@ -65,6 +66,7 @@ class _StateUserUpdate extends BaseScreen<UserUpdateScreen> {
     }
 
     final user = Provider.of<UserModel>(context, listen: false).user;
+
     setState(() {
       isLoading = true;
     });
@@ -77,8 +79,12 @@ class _StateUserUpdate extends BaseScreen<UserUpdateScreen> {
               isLoading = false;
             });
           },
-          onSuccess: (user) {
-            Provider.of<UserModel>(context, listen: false).updateUser(user);
+      //
+          onSuccess: (User? userx) {
+            userx!.isSocial=user!.isSocial;
+            print("cxcxzczczxccv${user!.isSocial}");
+
+            Provider.of<UserModel>(context, listen: false).updateUser(userx);
             setState(() {
               isLoading = false;
             });
@@ -223,7 +229,7 @@ class _StateUserUpdate extends BaseScreen<UserUpdateScreen> {
                                   fontWeight: FontWeight.w600,
                                   color:
                                       Theme.of(context).colorScheme.secondary,
-                                ),
+                                ),//
                               ),
                               const SizedBox(height: 8),
                               Container(

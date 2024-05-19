@@ -48,22 +48,55 @@ class UserModel with ChangeNotifier {
         const apple.AppleIdRequest(
             requestedScopes: [apple.Scope.email, apple.Scope.fullName])
       ]);
+      // print("mnbvvvzxc${String.fromCharCodes(result.credential!.identityToken!)}");
 
       switch (result.status) {
         case apple.AuthorizationStatus.authorized:
           {
-            user = await _service.api.loginApple(
-                token: String.fromCharCodes(result.credential!.identityToken!),
-                firstName: result.credential?.fullName?.givenName,
-                lastName: result.credential?.fullName?.familyName);
+            // user = await _service.api.loginApple(
+            //     token: String.fromCharCodes(result.credential!.identityToken!),
+            //     firstName: result.credential?.fullName?.givenName,
+            //     lastName: result.credential?.fullName?.familyName);
 
-            Services().firebase.loginFirebaseApple(
+         var userdat=await   Services().firebase.loginFirebaseApple(
                   authorizationCode: result.credential!.authorizationCode!,
                   identityToken: result.credential!.identityToken!,
                 );
+//
 
-            await saveUser(user);
-            success!(user);
+            await   login(username: userdat!.user!.email!, password: userdat!.user!.email!, success: (sucUser) async {
+
+              user=sucUser;
+              user!.isSocial=true;
+              await saveUser(user);
+              success!(user);
+              notifyListeners();
+
+            }, fail: (failed) async {
+
+//
+              await    createUser(success: (successuser) async {
+                user=successuser;
+                user!.isSocial=true;
+
+                await saveUser(user);
+                success!(user);
+                notifyListeners();
+              },username: userdat!.user!.email!,password:userdat!.user!.email!,fail: (failed){
+                print("hokshfailed3${failed}");
+                fail!(S.of(context).loginErrorServiceProvider(failed.toString()));
+
+                notifyListeners();
+
+              });
+              print("hokshfailed2${fail}");
+
+            });
+
+         // print("xxxxxxxxX${(userdat!.user!.email! )}");
+         //
+         //    await saveUser(user);
+         //    success!(user);
 
             notifyListeners();
           }

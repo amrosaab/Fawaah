@@ -338,8 +338,8 @@ Map<String, dynamic> environment = {
   ],
   "loginSetting": {
     "IsRequiredLogin": false,
-    "showAppleLogin": false,
-    "showFacebook": true,
+    "showAppleLogin": true,
+    "showFacebook": false,
     "showSMSLogin": true,
     "showGoogleLogin": true,
     "showPhoneNumberWhenRegister": false,

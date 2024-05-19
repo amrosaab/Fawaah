@@ -322,6 +322,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "commentSuccessfully": MessageLookupByLibrary.simpleMessage(
             "Comment successfully, please wait until your comment is approved"),
         "complete": MessageLookupByLibrary.simpleMessage("Complete"),
+        "con": MessageLookupByLibrary.simpleMessage("Country"),
         "confirm": MessageLookupByLibrary.simpleMessage("Confirm"),
         "confirmAccountDeletion":
             MessageLookupByLibrary.simpleMessage("Confirm Account Deletion"),
@@ -458,7 +459,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "emptyComment": MessageLookupByLibrary.simpleMessage(
             "Your comment can not be empty"),
         "emptySearch": MessageLookupByLibrary.simpleMessage(
-            "You haven\'t searched for items yet. Let\'s start now - we\'ll help you."),
+            "Start searching for products"),
         "emptyShippingMsg": MessageLookupByLibrary.simpleMessage(
             "There are no shipping options available. Please ensure that your address has been entered correctly, or contact us if you need any help."),
         "emptyUsername":
@@ -637,6 +638,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "khmer": MessageLookupByLibrary.simpleMessage("Khmer"),
         "korean": MessageLookupByLibrary.simpleMessage("korean"),
         "kurdish": MessageLookupByLibrary.simpleMessage("Kurdish"),
+        "lang": MessageLookupByLibrary.simpleMessage("Language"),
         "language": MessageLookupByLibrary.simpleMessage("Languages"),
         "languageSuccess": MessageLookupByLibrary.simpleMessage(
             "The Language is updated successfully"),
@@ -744,7 +746,7 @@ class MessageLookup extends MessageLookupByLibrary {
             "It will appear once your customers start chatting with you"),
         "noData": MessageLookupByLibrary.simpleMessage("No more Data"),
         "noFavoritesYet":
-            MessageLookupByLibrary.simpleMessage("No favorites yet."),
+            MessageLookupByLibrary.simpleMessage("No favorites yet"),
         "noFileToDownload":
             MessageLookupByLibrary.simpleMessage("No file to download."),
         "noForwardHistoryItem":
@@ -760,6 +762,8 @@ class MessageLookup extends MessageLookupByLibrary {
             "Opps, this page seems no longer exist!"),
         "noPrinters": MessageLookupByLibrary.simpleMessage("No Printers"),
         "noProduct": MessageLookupByLibrary.simpleMessage("No Product"),
+        "noProducts": MessageLookupByLibrary.simpleMessage(
+            "There are no products in the cart"),
         "noResultFound":
             MessageLookupByLibrary.simpleMessage("No Result Found"),
         "noReviews": MessageLookupByLibrary.simpleMessage("No Reviews"),
@@ -837,6 +841,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "orderTotal": MessageLookupByLibrary.simpleMessage("Order Total"),
         "orderTracking": MessageLookupByLibrary.simpleMessage("Order tracking"),
         "orders": MessageLookupByLibrary.simpleMessage("Orders"),
+        "ordersoon": MessageLookupByLibrary.simpleMessage(
+            "We\'ll process your order soon"),
         "otpVerification":
             MessageLookupByLibrary.simpleMessage("OTP Verification"),
         "ourBankDetails":
@@ -871,6 +877,8 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Phone Number Verification"),
         "pickADate": MessageLookupByLibrary.simpleMessage("Pick Date & Time"),
         "placeMyOrder": MessageLookupByLibrary.simpleMessage("Place My Order"),
+        "placedsucc": MessageLookupByLibrary.simpleMessage(
+            "Your order has been placed successfully"),
         "playAll": MessageLookupByLibrary.simpleMessage("Play All"),
         "pleaseAddPrice":
             MessageLookupByLibrary.simpleMessage("Please add price"),
@@ -1023,6 +1031,8 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Register failed"),
         "registerSuccess":
             MessageLookupByLibrary.simpleMessage("Register successfully"),
+        "registertotrack":
+            MessageLookupByLibrary.simpleMessage("Register to track orders"),
         "regularPrice": MessageLookupByLibrary.simpleMessage("Regular price"),
         "relatedLayoutTitle":
             MessageLookupByLibrary.simpleMessage("Things You Might Love"),
@@ -1130,6 +1140,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "shopOrders": MessageLookupByLibrary.simpleMessage("Shop Orders"),
         "shopPhone": MessageLookupByLibrary.simpleMessage("Shop phone"),
         "shopSlug": MessageLookupByLibrary.simpleMessage("Shop slug"),
+        "shopnoww": MessageLookupByLibrary.simpleMessage("Shop now"),
         "shoppingCartItems": m27,
         "shortDescription":
             MessageLookupByLibrary.simpleMessage("Short Description"),
@@ -1220,6 +1231,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Tap the mic to talk"),
         "tax": MessageLookupByLibrary.simpleMessage("Tax"),
         "thailand": MessageLookupByLibrary.simpleMessage("Thai"),
+        "thankyou": MessageLookupByLibrary.simpleMessage("THANK YOU"),
         "theFieldIsRequired": m29,
         "thisDateIsNotAvailable":
             MessageLookupByLibrary.simpleMessage("This date is not available"),
@@ -1321,6 +1333,8 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("View on Google Maps"),
         "viewRecentTransactions":
             MessageLookupByLibrary.simpleMessage("View recent transactions"),
+        "viewallorders":
+            MessageLookupByLibrary.simpleMessage("Track my orders"),
         "visible": MessageLookupByLibrary.simpleMessage("Visible"),
         "visitStore": MessageLookupByLibrary.simpleMessage("Visit Store"),
         "waitForLoad":

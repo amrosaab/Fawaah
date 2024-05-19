@@ -350,10 +350,10 @@ class S {
     );
   }
 
-  /// `No favorites yet.`
+  /// `No favorites yet`
   String get noFavoritesYet {
     return Intl.message(
-      'No favorites yet.',
+      'No favorites yet',
       name: 'noFavoritesYet',
       desc: '',
       args: [],
@@ -1630,6 +1630,26 @@ class S {
     );
   }
 
+  /// `We'll process your order soon`
+  String get ordersoon {
+    return Intl.message(
+      'We\'ll process your order soon',
+      name: 'ordersoon',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Track my orders`
+  String get viewallorders {
+    return Intl.message(
+      'Track my orders',
+      name: 'viewallorders',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `You've successfully placed the order`
   String get orderSuccessTitle1 {
     return Intl.message(
@@ -2690,6 +2710,36 @@ class S {
     );
   }
 
+  /// `Language`
+  String get lang {
+    return Intl.message(
+      'Language',
+      name: 'lang',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Country`
+  String get con {
+    return Intl.message(
+      'Country',
+      name: 'con',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Shop now`
+  String get shopnoww {
+    return Intl.message(
+      'Shop now',
+      name: 'shopnoww',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Download`
   String get download {
     return Intl.message(
@@ -3065,6 +3115,16 @@ class S {
     return Intl.message(
       'Hungarian',
       name: 'hungary',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `There are no products in the cart`
+  String get noProducts {
+    return Intl.message(
+      'There are no products in the cart',
+      name: 'noProducts',
       desc: '',
       args: [],
     );
@@ -5710,11 +5770,41 @@ class S {
     );
   }
 
-  /// `You haven't searched for items yet. Let's start now - we'll help you.`
+  /// `Start searching for products`
   String get emptySearch {
     return Intl.message(
-      'You haven\'t searched for items yet. Let\'s start now - we\'ll help you.',
+      'Start searching for products',
       name: 'emptySearch',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `THANK YOU`
+  String get thankyou {
+    return Intl.message(
+      'THANK YOU',
+      name: 'thankyou',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Register to track orders`
+  String get registertotrack {
+    return Intl.message(
+      'Register to track orders',
+      name: 'registertotrack',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Your order has been placed successfully`
+  String get placedsucc {
+    return Intl.message(
+      'Your order has been placed successfully',
+      name: 'placedsucc',
       desc: '',
       args: [],
     );

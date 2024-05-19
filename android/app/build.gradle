@@ -74,7 +74,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
-apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'
+//apply plugin: 'com.onesignal.androidsdk.onesignal-gradle-plugin'
 
 
 android {
@@ -109,8 +109,8 @@ android {
 //        versionCode flutterVersionCode.toInteger()
 //        versionName flutterVersionName
 
-        versionCode 83
-        versionName '6.1.13'
+        versionCode 86
+        versionName '6.1.16'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         resConfigs "en"

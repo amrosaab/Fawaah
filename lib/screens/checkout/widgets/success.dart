@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -143,42 +144,72 @@ class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
       children: <Widget>[
         Container(
           margin: const EdgeInsets.only(top: 20),
-          decoration: BoxDecoration(color: theme.primaryColorLight),
+          // decoration: BoxDecoration(color: theme.primaryColorLight),
           child: Padding(
             padding: const EdgeInsets.all(15.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 Text(
-                  S.of(context).itsOrdered,
-                  style: TextStyle(fontSize: 16, color: secondaryColor),
+                  S.of(context).thankyou,
+                  style: Theme.of(context).textTheme.displayMedium
                 ),
                 const SizedBox(height: 5),
-                if (order?.number != null)
-                  Row(
-                    children: <Widget>[
-                      Text(//
-                        S.of(context).orderNo,
-                        style: TextStyle(fontSize: 14, color: secondaryColor),
-                      ),
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Text(
-                          '#${order!.number}',
-                          style: TextStyle(fontSize: 14, color: secondaryColor),
-                        ),
-                      )
-                    ],
-                  ),
+
               ],
             ),
           ),
         ),
-
         const SizedBox(height: 16),
 
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+          Text(
+            S.of(context).orderSuccessTitle1,
+            style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.primary),
+          ),
+        ],),
+        const SizedBox(height: 16),
+
+        if (order?.number != null)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(//
+                 S.of(context).orderNo+":",
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(width: 5),
+               Text(
+                  '#${order!.number.toString().trim()}',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+
+              )
+            ],
+          ),
+
+        // const SizedBox(height: 10),
+    SvgPicture.asset(
+//////
+
+    color: Theme.of(context).colorScheme.primary,
+    width: 250,
+    height: 250,
+    'assets/images/Ordersucc.svg'),
         /// Thai PromptPay
         /// true: show Thank you message like on the web - https://tppr.me/xrNh1
+        ///
+        ///
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              S.of(context).ordersoon,
+              style: TextStyle(fontSize: 15),
+            ),
+          ],),
         Services().thaiPromptPayBuilder(showThankMsg: true, order: order),
         const SizedBox(height: 15),
 
@@ -203,73 +234,83 @@ class _OrderedSuccessState extends BaseScreen<OrderedSuccess> {
           const SizedBox(height: 16),
         ],
 
-        Text(
-          S.of(context).orderSuccessTitle1,
-          style: TextStyle(fontSize: 18, color: secondaryColor),
-        ),
-        const SizedBox(height: 15),
-        Text(
-          S.of(context).orderSuccessMsg1,
-          style: TextStyle(color: secondaryColor, height: 1.4, fontSize: 14),
-        ),
-        if (userModel.user != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 30),
-            child: Row(children: [
-              Expanded(
-                child: ButtonTheme(
-                  height: 45,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: theme.primaryColor,
-                      elevation: 0,
-                    ),
-                    onPressed: () {
-                      final user =
-                          Provider.of<UserModel>(context, listen: false).user;
-                      Navigator.of(context).pushNamed(
-                        RouteList.orders,
-                        arguments: user,
-                      );
-                    },
-                    child: Text(
 
-                      S.of(context).showAllMyOrdered.toUpperCase(),
-                      style: TextStyle(fontFamily: GoogleFonts.cairo().fontFamily),
-                    ),
-                  ),
-                ),
-              ),
-            ]),
-          ),
+        const SizedBox(height: 15),
+
+        // Text(
+        //   S.of(context).orderSuccessMsg1,
+        //   style: TextStyle(color: secondaryColor, height: 1.4, fontSize: 14),
+        // ),
+        // if (userModel.user != null)
+        //   Padding(
+        //     padding: const EdgeInsets.symmetric(vertical: 30),
+        //     child: Row(children: [
+        //       Expanded(
+        //         child: ButtonTheme(
+        //           height: 45,
+        //           child: ElevatedButton(
+        //             style: ElevatedButton.styleFrom(
+        //               foregroundColor: Colors.white,
+        //               backgroundColor: theme.primaryColor,
+        //               elevation: 0,
+        //             ),
+        //             onPressed: () {
+        //               final user =
+        //                   Provider.of<UserModel>(context, listen: false).user;
+        //               Navigator.of(context).pushNamed(
+        //                 RouteList.orders,
+        //                 arguments: user,
+        //               );
+        //             },
+        //             child: Text(
+        //
+        //               S.of(context).showAllMyOrdered.toUpperCase(),
+        //               style: TextStyle(fontFamily: GoogleFonts.cairo().fontFamily),
+        //             ),
+        //           ),
+        //         ),
+        //       ),
+        //     ]),
+        //   ),
         //const SizedBox(height: 40),
-        Text(
-          S.of(context).orderSuccessTitle2,
-          style: TextStyle(fontSize: 18, color: secondaryColor),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          S.of(context).orderSuccessMsg2,
-          style: TextStyle(color: secondaryColor, height: 1.4, fontSize: 14),
-        ),
+        // Text(
+        //   S.of(context).orderSuccessTitle2,
+        //   style: TextStyle(fontSize: 18, color: secondaryColor),
+        // ),
+        // const SizedBox(height: 10),
+        // Text(
+        //   S.of(context).orderSuccessMsg2,
+        //   style: TextStyle(color: secondaryColor, height: 1.4, fontSize: 14),
+        // ),
+
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 30),
           child: Row(
             children: [
               Expanded(
                 child: ButtonTheme(
-                  height: 45,
+
+                  // height: 45,
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      shape: const RoundedRectangleBorder(),
+                      padding: EdgeInsets.symmetric(vertical: 15),
+                      backgroundColor: theme.primaryColor,
+                      shape:  RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
                     onPressed: () {
-                      Navigator.of(context).popUntil((route) => route.isFirst);
+
+                     if( userModel.user != null){
+                       Navigator.of(context).popAndPushNamed(RouteList.orders);
+
+                     }else{
+                       Navigator.of(context).popAndPushNamed(RouteList.login);
+
+                     }
                     },
                     child: Text(
-                      S.of(context).backToShop.toUpperCase(),
-                      style: TextStyle(color: secondaryColor),
+    userModel.user != null?  S.of(context).viewallorders.toUpperCase():S.of(context).registertotrack.toUpperCase(),
+                      style: Theme.of(context).textTheme
+                      .titleMedium!.copyWith(color: Colors.white),
                     ),
                   ),
                 ),

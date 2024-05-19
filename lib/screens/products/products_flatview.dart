@@ -192,9 +192,21 @@ class _ProductFlatViewState extends State<ProductFlatView> with ProductsMixin {
   }
   FocusNode _searchFocusNode = FocusNode();
 
+
+  @override
+  void initState() {
+    super.initState();
+    if(widget.searchFieldController.text.isNotEmpty){
+      onSearch(widget.searchFieldController.text);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     /// using for the Search Screen UX
+    ///
+
+
     if (widget.enableSearchHistory) {
       return ProductSearchView(
         hasAppBar: widget.hasAppBar,

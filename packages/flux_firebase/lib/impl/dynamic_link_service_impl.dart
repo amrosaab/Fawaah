@@ -24,6 +24,8 @@ class DynamicLinkServiceImpl extends DynamicLinkService {
   Future<void> initUniLinks(context) async {
     // Subscribe to all events when app is started.
 // (Use allStringLinkStream to get it as [String])
+
+  print("xzczxcxzcx");
     final initialLink = await _appLinks.getInitialAppLink();
     if (initialLink != null) {
       await handleDynamicLink(initialLink, context);
@@ -38,7 +40,8 @@ class DynamicLinkServiceImpl extends DynamicLinkService {
 
   @override
   void initDynamicLinks(BuildContext context) async {
-    await initUniLinks(context);
+
+  // hokshedit await initUniLinks(context);
 
     // var initialLink = await FirebaseDynamicLinks.instance.getInitialLink();
 
@@ -123,6 +126,7 @@ class DynamicLinkServiceImpl extends DynamicLinkService {
   @override
   Future<void> handleDynamicLink(Uri uri, BuildContext context) async {
     try {
+      print("xzcxzcxzcxzc");
       _showLoading(context);
       var url = Uri.parse(uri.path).toString();
 

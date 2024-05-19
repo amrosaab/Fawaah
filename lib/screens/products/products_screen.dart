@@ -36,6 +36,8 @@ class ProductsScreen extends StatefulWidget {
   final ProductConfig? config;
   final Duration countdownDuration;
   final String? listingLocation;
+  final String? vendorname;
+
   final bool enableSearchHistory;
   final String? routeName;
   final bool autoFocusSearch;
@@ -46,6 +48,7 @@ class ProductsScreen extends StatefulWidget {
     this.countdownDuration = Duration.zero,
     this.listingLocation,
     this.config,
+    this.vendorname,
     this.enableSearchHistory = false,
     this.routeName,
     this.autoFocusSearch = true,
@@ -346,8 +349,8 @@ class ProductsScreenState extends State<ProductsScreen>
 
   @override
   Widget build(BuildContext context) {
-    print("xzxzxzxzx${productModel.categoryId}");
 
+    print("xzxzxzxzx${widget.vendorname}");
     // _currentTitle = productConfig.name ?? productModel.categoryName ?? S.of(context).results;
 
     Widget buildMain = LayoutBuilder(
@@ -374,13 +377,14 @@ class ProductsScreenState extends State<ProductsScreen>
                           categoryModel.categoryList[productModel.categoryId];
 
                       return ProductFlatView(
-                        searchFieldController: _searchFieldController,
+                        searchFieldController:widget.vendorname!=null&&widget.vendorname!.isNotEmpty? (_searchFieldController..text=widget.vendorname!): _searchFieldController,
                         hasAppBar: hasAppBar,
                         currentTitle:_currentTitle,
                         autoFocusSearch: widget.autoFocusSearch,
                         showfilter:()=>showBotomFilter(),
                         enableSearchHistory: widget.enableSearchHistory,
-                        builder: layout.isListView
+                        builder:
+                        layout.isListView
                             ? ProductList(
                                 scrollController: scrollController,
                                 products: model.productsList,

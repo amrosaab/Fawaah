@@ -75,9 +75,11 @@ class ProductTitle extends StatelessWidget {
       maxLines: maxLines ?? 2,
       style: style ??
           Theme.of(context).textTheme.titleMedium!.apply(
-                fontSizeFactor: 0.9,
+                 fontSizeFactor: .9,
               ),
       strutStyle: const StrutStyle(
+        height: 1.5,
+
         forceStrutHeight: true,
       ),
     );

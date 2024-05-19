@@ -127,9 +127,11 @@ class _SearchBoxState extends State<SearchBox> {
           ),//
           if (widget.showQRCode)
             Consumer<UserModel>(
-              builder: (_, model, __) => ScannerButton(
-                user: model.user,
-              ),
+              builder: (_, model, __) =>
+                  IconButton(onPressed: (){}, icon:  ScannerButton(
+                    user: model.user,
+                  ),)
+
             ),
         ],
       ),

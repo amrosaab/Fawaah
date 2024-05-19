@@ -12,8 +12,11 @@
 	<array>
 		<string>applinks:${websiteDomain}</string>
 		<string>applinks:${firebaseDynamicUrl}</string>
+		<string>webcredentials:example.com</string>
 	</array>
 	<key>com.apple.security.application-groups</key>
-	<array/>
+	<array>
+		<string>group.ios.app.fawaah.onesignal</string>
+	</array>
 </dict>
 </plist>

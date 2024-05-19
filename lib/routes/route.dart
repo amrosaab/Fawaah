@@ -67,6 +67,7 @@ class Routes {
       );
     },
     RouteList.products: (context) => const ProductsScreen(),
+    RouteList.productsbyvendor: (context) => const ProductsScreen(),
     RouteList.wishlist: (context) => Services().widget.renderWishListScreen(),
     RouteList.notify: (context) => NotificationScreen(),
     RouteList.language: (context) => LanguageScreen(),
@@ -248,6 +249,7 @@ class Routes {
                 productModel.setProductsList(products, notify: false);
 
                 return ProductsScreen(
+                  vendorname:arguments.vendor ,
                   products: products,
                   config: productConfig,
                   listingLocation: listingLocationId,
@@ -261,6 +263,8 @@ class Routes {
 
               return ProductsScreen(
                 products: products ?? [],
+                vendorname:arguments.vendor ,
+
                 config: productConfig,
                 countdownDuration: countdownDuration,
                 listingLocation: listingLocationId,

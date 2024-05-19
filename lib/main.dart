@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+
 import 'package:flux_firebase/index.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
@@ -83,6 +85,7 @@ void main() {
     }
 
     await GmsCheck().checkGmsAvailability(enableLog: foundation.kDebugMode);
+    const fatalError = true;
 
     try {
       if (isMobile) {
@@ -91,6 +94,29 @@ void main() {
         await Services().firebase.init();
         await Configurations().loadRemoteConfig();
         await BiometricsTools.instance.init();
+
+        FlutterError.onError = (errorDetails) {
+          if (fatalError) {
+            // If you want to record a "fatal" exception
+            FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+            // ignore: dead_code
+          } else {
+            // If you want to record a "non-fatal" exception
+            FirebaseCrashlytics.instance.recordFlutterError(errorDetails);
+          }
+        };
+        // Async exceptions
+        PlatformDispatcher.instance.onError = (error, stack) {
+          if (fatalError) {
+            // If you want to record a "fatal" exception
+            FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+            // ignore: dead_code
+          } else {
+            // If you want to record a "non-fatal" exception
+            FirebaseCrashlytics.instance.recordError(error, stack);
+          }
+          return true;
+        };
       }
     } catch (e) {
       printLog(e);

@@ -34,8 +34,9 @@ class ScannerButton extends StatelessWidget {
     // if (!ServerConfig().isWooType || ServerConfig().isListingType) {
     //   return const SizedBox();
     // }
-    return IconButton(
-        onPressed: () async {
+    return InkWell(
+
+        onTap: () async {
           if (!isIos && !isAndroid) {
             return FluxNavigate.push(
               MaterialPageRoute(builder: (_) => const FakeBarcodeScreen()),
@@ -68,7 +69,7 @@ class ScannerButton extends StatelessWidget {
           }
           return navigateToScanner();
         },
-        icon: Icon(customIcon ?? CupertinoIcons.barcode_viewfinder));
+        child: Icon(customIcon ?? CupertinoIcons.barcode_viewfinder));
   }
 }
 

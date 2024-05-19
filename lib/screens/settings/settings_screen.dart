@@ -760,6 +760,7 @@ class SettingScreenState extends State<SettingScreen>
           final loggedIn = model.loggedIn;
           return Column(children: [
             const SizedBox(height: 10.0),
+            //
             if (user != null && user.name != null)
               ListTile(
                 leading: (user.picture?.isNotEmpty ?? false)

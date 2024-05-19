@@ -29,7 +29,8 @@
 	"yourBagIsEmpty": "السلة فارغة",
 	"emptyCartSubtitle": "يبدو أنك لم تقم بإضافة أي سلع إلى السلة بعد. ابدأ التسوق الآن.",
 	"startShopping": "تسوق الان",
-	"noFavoritesYet": "قائمة المفضلة فارغة حالياً.",
+
+	"noFavoritesYet": "قائمة المفضلة فارغة حالياً",
 	"emptyWishlistSubtitle": "اضغط على أيقونة القلب بجوار المنتج لإضافته إلى قائمة منتجاتك المفضلة. سنقوم بحفظها لك هنا!",
 	"searchForItems": "البحث عن منتجات",
 	"shipping": "التوصيل",
@@ -263,9 +264,21 @@
 	"minutesAgo": "{minute} دقائق ماضية",
 	"secondsAgo": "{second} ثواني ماضية",
 	"rateThisApp": "تقييم التطبيق",
+	"viewallorders": "متابعة طلباتي",
+	"lang": "اللغة",
+	"con": "البلد",
+	"shopnoww": "تسوق الان",
+	"registertotrack": "سجل لمتابعة طلباتك",
+
+
+
 	"rateThisAppDescription": "إذا اعجبك التطبيق نرجو منك تقييم التطبيق، هذا بالتأكيد يساعدنا. ولن يأخذ سوى دقيقة من وقتك.",
 	"rate": "قيّم",
 	"noThanks": "لا شكراً",
+	"thankyou": " شكراً لك",
+	"ordersoon": "سنقوم بمعالجة طلبك قريبا",
+
+	"placedsucc": "لقد تم الطلب بنجاح",
 	"maybeLater": "بالإمكان لاحقاً",
 	"phone": "هاتف",
 	"phoneNumberVerification": "رمز تأكيد الرقم",
@@ -549,7 +562,7 @@
 	"createPost": "إنشاء مشاركة",
 	"dateASC": "تصاعدي التاريخ",
 	"emptyComment": "تعليقك لا يمكن أن يكون خالياً",
-	"emptySearch": "لم تبحث عن العناصر حتى الآن. لنبدأ الآن - سنساعدك.",
+	"emptySearch": "ابدأ البحث عن منتجات",
 	"hindi": "الهندية",
 	"imageFeature": "ميزة الصورة",
 	"loginToComment": "الرجاء تسجيل الدخول للتعليق",
@@ -580,6 +593,7 @@
 	"searchByName": "البحث بالاسم ...",
 	"deliveryNotificationError": "لايوجد بيانات.\nتمت إزالة هذا الطلب.",
 	"deliveryManagement": "توصيل",
+	"noProducts": "لا يوجد منتجات في السلة",
 	"deliveryBoy": "مندوب التوصيل:",
 	"atLeastThreeCharacters": "3 أحرف على الأقل ...",
 	"firstRenewal": "التجديد الأول",

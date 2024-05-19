@@ -7,21 +7,21 @@ import '../../models/entities/fstore_notification_item.dart';
 import '../../services/notification/notification_service.dart';
 
 class OneSignalNotificationService extends NotificationService {
-  final _instance = OneSignal.shared;
+  // final _instance = OneSignal;
   final String appID;
 
   OneSignalNotificationService({required this.appID}) {
-    _instance.setAppId(appID);
+    OneSignal.initialize(appID);
   }
 
   @override
   void disableNotification() {
-    _instance.disablePush(true);
+    OneSignal.Notifications.requestPermission(false);
   }
 
   @override
   void enableNotification() {
-    _instance.disablePush(false);
+    OneSignal.Notifications.requestPermission(true);
   }
 
   @override
@@ -29,14 +29,14 @@ class OneSignalNotificationService extends NotificationService {
     String? externalUserId,
     required NotificationDelegate notificationDelegate,
   }) {
-    _instance.setExternalUserId(externalUserId ?? '');
+    OneSignal.login(externalUserId ?? '');
     delegate = notificationDelegate;
     _setupOnMessageOpenedApp();
     _setupOnMessage();
   }
 
   void _setupOnMessageOpenedApp() {
-    _instance.setNotificationOpenedHandler((OSNotificationOpenedResult result) {
+    OneSignal.Notifications.addClickListener(( result) {
       final data = result.notification;
       delegate.onMessageOpenedApp(FStoreNotificationItem(
         id: data.notificationId,
@@ -49,14 +49,14 @@ class OneSignalNotificationService extends NotificationService {
   }
 
   void _setupOnMessage() {
-    _instance.setNotificationWillShowInForegroundHandler(
-        (OSNotificationReceivedEvent result) {
+    OneSignal.Notifications.addForegroundWillDisplayListener((
+        ( result) {
       final data = result.notification;
-
-      _instance.completeNotification(
-        result.notification.notificationId,
-        false,
-      );
+      //
+      // _instance.completeNotification(
+      //   result.notification.notificationId,
+      //   false,
+      // );
 
       flutterLocalNotificationsPlugin.show(
         data.hashCode,
@@ -74,18 +74,18 @@ class OneSignalNotificationService extends NotificationService {
           iOS: const DarwinNotificationDetails(),
         ),
       );
-    });
+    }));
   }
 
   @override
   void setExternalId(String? userId) async {
     if (userId != null) {
-      await _instance.setExternalUserId(userId);
+      await OneSignal.login(userId);
     }
   }
 
   @override
   void removeExternalId() async {
-    await _instance.removeExternalUserId();
+    OneSignal.logout();
   }
 }

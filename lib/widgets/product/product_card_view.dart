@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../common/constants.dart';
 import '../../common/tools.dart';
-import '../../models/index.dart' show CartModel, Product;
+import '../../models/index.dart' show BackDropArguments, CartModel, Product;
 import '../../modules/dynamic_layout/config/product_config.dart';
 import '../../modules/dynamic_layout/helper/helper.dart';
+import '../../routes/flux_navigate.dart';
 import '../../services/services.dart';
 import 'action_button_mixin.dart';
 import 'index.dart'
@@ -64,8 +66,18 @@ class _ProductCardState extends State<ProductCard> with ActionButtonMixin {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 0),
-        StoreName(product: widget.item, hide: widget.config.hideStore=false),
-
+        InkWell(
+          child:         StoreName(product: widget.item, hide: widget.config.hideStore=false),
+          onTap: (){
+            FluxNavigate.pushNamed(
+              RouteList.backdrop,
+              arguments: BackDropArguments(
+                vendor: widget.item.vendor
+                  // brandId:
+              ),
+            );
+          },
+        ),
         ProductTitle(
           product: widget.item,
           hide: widget.config.hideTitle,
@@ -349,6 +361,7 @@ class _ProductCardState2 extends State<ProductCard2> with ActionButtonMixin {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 0),
+
 
         StoreName(product: widget.item, hide: widget.config.hideStore=false),
 

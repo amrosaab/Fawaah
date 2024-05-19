@@ -112,7 +112,7 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
     const foundation.Factory(EagerGestureRecognizer.new)
   };
 
-  var astr;
+  var astr="";
   void onFinishLoading() {
     setState(() {
       selectedIndex = 0;
@@ -123,16 +123,6 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
 
     print("getcdcdccxczcx ${widget.script??"jjj"}");
 
-    controller.addJavaScriptChannel("ordernum", onMessageReceived: (mess){
-     // var aStr = mess.message.toString().replaceAll(new RegExp(r'[^0-9]'),''); // '23'
-   astr=   mess.message.toString();
-
-   astr= astr.substring(astr.indexOf("#")+1,astr.length);
-  print("testdata${astr}");
-    //  widget.onPageFinished?.call('thank_you2',astr);
-    //
-    //
-     });
 
   }
 
@@ -158,8 +148,35 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
               onFinishLoading();
             }
           },
-          onPageStarted: (String url) {},
-          onPageFinished: (String url) => widget.onPageFinished?.call(url,astr),
+          onPageStarted: (String url) {
+
+
+            if(url.contains("thank")) {
+              controller.addJavaScriptChannel(
+                  "ordernum", onMessageReceived: (mess) {
+                // var aStr = mess.message.toString().replaceAll(new RegExp(r'[^0-9]'),''); // '23'
+                astr = mess.message.toString();
+
+                astr = astr.substring(astr.indexOf("#") + 1, astr.length);
+
+                print("testdata${astr}");
+                widget.onPageFinished?.call(url,astr);
+                //
+                //
+              });
+            }
+
+          },
+           onPageFinished: (String url) {
+
+
+
+
+           //   widget.onPageFinished?.call(url,astr);
+
+
+
+           },
           onWebResourceError: (WebResourceError error) {},
           // onNavigationRequest: (NavigationRequest request) {},
         ),
@@ -354,7 +371,8 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
         index: selectedIndex,
         children: [
           Builder(builder: (BuildContext context) {
-            return flutter.WebViewWidget(controller: controller);
+             return flutter.WebViewWidget(controller: controller);
+           // return Container(child: Center(child: Text("asdsadsds"),),);
           }),
           Center(
             child: kLoadingWidget(context),

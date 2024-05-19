@@ -94,6 +94,7 @@ class HeaderSearch extends StatelessWidget {
                   ),
                 ),
 
+
                 Consumer<UserModel>(
                   builder: (_, model, __) => ScannerButton(
                     user: model.user,
