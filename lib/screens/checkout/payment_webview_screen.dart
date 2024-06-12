@@ -37,15 +37,19 @@ class PaymentWebviewState extends BaseScreen<PaymentWebview> with WebviewMixin {
       orderId = '0';
     }
 
-    if (url.contains('thank-you')) {
+    // if (url.contains('thank-you')) {
+    //   // orderId = '0';
+    //   orderId = ordernumber;
+    // }
+if (url.contains('thank')) {
       // orderId = '0';
       orderId = ordernumber;
     }
 
     // shopify url final checkout
-    if (url.contains('thank_you')) {
-      orderId = ordernumber;
-    }
+    // if (url.contains('thank_you')) {
+    //   orderId = ordernumber;
+    // }
     // if (url.contains('thank_you2')) {
     //   orderId="0";
     //   orderId2 = ordernumber;
@@ -123,7 +127,7 @@ class PaymentWebviewState extends BaseScreen<PaymentWebview> with WebviewMixin {
       script: '''
       
       
-        if (location.href.indexOf('thank_you')>-1){
+        if (location.href.indexOf('thank_you')>-1||location.href.indexOf('thank-you')>-1){
        var xx=document.getElementsByClassName("os-order-number")[0];
 console.log(xx.innerHTML.replace(/\D/g, ""));
     window.ordernum.postMessage(xx.innerHTML.replace(/\D/g, ""));

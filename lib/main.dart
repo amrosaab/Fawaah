@@ -25,11 +25,10 @@ import 'services/locale_service.dart';
 import 'services/services.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(dynamic message) async {
-  await Firebase.initializeApp();
-  printLog('Handling a background message ${message.messageId}');
+
 }
 
-void _setupApplication() {
+Future<void> _setupApplication() async {
   Configurations().setConfigurationValues(environment);
 
   /// Fix issue android sdk version 22 can not run the app.
@@ -51,6 +50,9 @@ void _setupApplication() {
     final license = await rootBundle.loadString('google_fonts/OFL.txt');
     yield LicenseEntryWithLineBreaks(['google_fonts'], license);
   });
+
+  var app=  await Firebase.initializeApp();
+  printLog('Handling a background message ${app.options}');
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 }

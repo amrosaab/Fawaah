@@ -39,6 +39,7 @@ class Services with ConfigMixin, ShopifyMixin, WordPressMixin {
     NotificationService notificationService = NotificationServiceImpl();
     if (isIos || isAndroid) {
       if (kOneSignalKey['enable'] ?? false) {
+        print("cvvcvcvcvc${kOneSignalKey['appID']}");
         notificationService =
             OneSignalNotificationService(appID: kOneSignalKey['appID']);
       } else {

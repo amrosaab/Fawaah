@@ -31,6 +31,7 @@ class _WishListState extends State<ProductWishListScreen> with AppBarMixin {
       routeName: RouteList.wishlist,
       secondAppBar: AppBar(
         elevation: 0.5,
+        centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.background,
         title: Text(
           S.of(context).myWishList,

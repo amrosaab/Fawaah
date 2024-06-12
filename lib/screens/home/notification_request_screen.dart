@@ -406,8 +406,8 @@ Spacer(),
 Row(
   children: [              Expanded(child:   ElevatedButton(
     style: ButtonStyle(
-        padding: MaterialStatePropertyAll(EdgeInsets.symmetric(vertical: 15)),
-        shape: MaterialStateProperty.all(RoundedRectangleBorder(
+        padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 15)),
+        shape: WidgetStateProperty.all(RoundedRectangleBorder(
       
       borderRadius: BorderRadius.circular(30)
     ))),

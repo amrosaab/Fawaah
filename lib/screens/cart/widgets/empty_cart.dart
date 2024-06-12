@@ -31,118 +31,15 @@ class EmptyCart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    return SizedBox(
-      width: screenSize.width,
-      child: FittedBox(
-        fit: BoxFit.cover,
-        child: SizedBox(
-          width:
-              screenSize.width / (2 / (screenSize.height / screenSize.width)),
-          child: Stack(
-            children: <Widget>[
-              // Center(
-              //   child: Image.asset(
-              //     'assets/images/empty_search.png',
-              //     width: 120,
-              //     height: 120,
-              //   ),
-              // ),
-              Positioned(
-                left: 1,
-                right: 1,
-                top: 80,
-                child:    SvgPicture.asset(
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SvgPicture.asset(
 ////
-                  color: Theme.of(context).colorScheme.primary,
-                  width: 300,
-                  height: 300,
-                  'assets/images/emptycart.svg'),),
-
-              Column(
-                children: <Widget>[
-
-                  const SizedBox(height: 320),
-                  Center(child:  Text(S.of(context).noProducts,
-                      style: Theme.of(context).textTheme.titleLarge,
-                      textAlign: TextAlign.center),)
-                 ,
-
-
-                  const SizedBox(height: 20),
-                  // Padding(
-                  //   padding: const EdgeInsets.symmetric(horizontal: 30),
-                  //   child: Text(S.of(context).emptyCartSubtitle,
-                  //       style: Theme.of(context).textTheme.bodyMedium,
-                  //       textAlign: TextAlign.center),
-                  // ),
-                  const SizedBox(height: 50),
-                  SizedBox(width: screenSize.width,)
-                  // Padding(
-                  //   padding: const EdgeInsets.only(
-                  //     top: 16.0,
-                  //     right: 16,
-                  //     left: 16,
-                  //   ),
-                  //   child: SizedBox(
-                  //     height: 45,
-                  //     child: ElevatedButton(
-                  //       onPressed: () => _openShopping(context),
-                  //       style: ElevatedButton.styleFrom(
-                  //         minimumSize: const Size.fromHeight(50),
-                  //         backgroundColor: Theme.of(context).primaryColor,
-                  //         foregroundColor: Colors.white,
-                  //
-                  //         // textStyle: const TextStyle(
-                  //         //   letterSpacing: 0.8,
-                  //         //   // fontSize: 11,
-                  //         //   // fontWeight: FontWeight.w600,
-                  //         // ),
-                  //         elevation: 0,
-                  //       ),
-                  //       child: Row(
-                  //         mainAxisSize: MainAxisSize.min,
-                  //         children: [
-                  //           Text(S.of(context).startShopping.toUpperCase(),style: Theme.of(context).textTheme.bodySmall?.copyWith(color:Colors.white )
-                  //     ),
-                  //           const Icon(Icons.navigate_next, size: 16),
-                  //         ],
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
-                  // Padding(
-                  //   padding: const EdgeInsets.all(16.0),
-                  //   child: SizedBox(
-                  //     height: 45,
-                  //     child: ButtonTheme(
-                  //       height: 44,
-                  //       child: ElevatedButton(
-                  //         style: ElevatedButton.styleFrom(
-                  //           elevation: 0,
-                  //           minimumSize: const Size.fromHeight(50),
-                  //           // foregroundColor: kGrey400,
-                  //           backgroundColor: Theme.of(context).brightness == Brightness.dark?Color(0xff292d39):Colors.white,
-                  //         ),
-                  //         onPressed: () {
-                  //           NavigateTools.navigateToRootTab(
-                  //             context,
-                  //             RouteList.search,
-                  //           );
-                  //         },
-                  //         child:
-                  //             Text(S.of(context).searchForItems.toUpperCase(),style: Theme.of(context).textTheme.bodySmall?.copyWith(color:
-                  //             Theme.of(context).brightness == Brightness.dark?Colors.white:Colors.teal[900],)
-                  //             ),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
-                ],
-              )
-            ],
-          ),
-        ),
-      ),
-    );
+            color: Theme.of(context).colorScheme.primary,
+            width: 400,
+            height: 400,
+            'assets/images/Cart.svg')
+      ],);
   }
 }

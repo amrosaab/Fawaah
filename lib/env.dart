@@ -24,8 +24,8 @@ Map<String, dynamic> environment = {
 
   /// ➡️ lib/common/config/general.dart
   "defaultDarkTheme": false,
-  "enableRemoteConfigFirebase": false,
-  "enableFirebaseAnalytics": false,
+  "enableRemoteConfigFirebase": true,
+  "enableFirebaseAnalytics": true,
   "loginSMSConstants": {
     "countryCodeDefault": "KW",
     "dialCodeDefault": "+965",
@@ -338,10 +338,10 @@ Map<String, dynamic> environment = {
   ],
   "loginSetting": {
     "IsRequiredLogin": false,
-    "showAppleLogin": true,
+    "showAppleLogin": false,
     "showFacebook": false,
-    "showSMSLogin": true,
-    "showGoogleLogin": true,
+    "showSMSLogin": false,
+    "showGoogleLogin": false,
     "showPhoneNumberWhenRegister": false,
     "requirePhoneNumberWhenRegister": false,
     "isResetPasswordSupported": true,
@@ -1563,7 +1563,7 @@ Map<String, dynamic> environment = {
         return {
           if (province != null) 'province': province,
           if (city != null) 'city': city,
-          'address1': ' Area: $province2,Block: ${sector??''}, Street: $street, Building: $block,${block2!=null && block2.isNotEmpty?'Floor: $block2,':''}  ${apartment!=null&&apartment.isNotEmpty?'Flat: $apartment':""} ',
+          'address1': ' Area: $province2, Block: ${sector??''}, Street: $street, Building: $block,${block2!=null && block2.isNotEmpty?' Floor: $block2,':''}  ${apartment!=null&&apartment.isNotEmpty?' Flat: $apartment':""} ',
           // 'address2': '${block!}, ${block2 ?? ''}',
           'address2': '',
         };

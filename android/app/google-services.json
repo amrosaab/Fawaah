@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "637255430447",
+    "firebase_url": "https://fawaah-5c6cc-default-rtdb.europe-west1.firebasedatabase.app",
     "project_id": "fawaah-5c6cc",
     "storage_bucket": "fawaah-5c6cc.appspot.com"
   },
@@ -14,7 +15,23 @@
       },
       "oauth_client": [
         {
-          "client_id": "637255430447-hfomoalktpdsevdm6g1vi6ejrjpoq225.apps.googleusercontent.com",
+          "client_id": "637255430447-60jfdu35ajlpufvh5ef7qi4tgg9a6avo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fawaah.android.app",
+            "certificate_hash": "dee7f83ccf6dfb1bb75755b31b11f9f25a8a35c2"
+          }
+        },
+        {
+          "client_id": "637255430447-6isa6c6n9ui48naiatba1mu8ns92o04m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fawaah.android.app",
+            "certificate_hash": "291b7dfa6b9d3b8edbd1fb3b144ae20baf017e32"
+          }
+        },
+        {
+          "client_id": "637255430447-9itaa3e92kfvi4f2ah7vc594si1dfa3a.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -27,8 +44,16 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "637255430447-hfomoalktpdsevdm6g1vi6ejrjpoq225.apps.googleusercontent.com",
+              "client_id": "637255430447-9itaa3e92kfvi4f2ah7vc594si1dfa3a.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "637255430447-4r9s0pugkpc688abs8br80bfc2mkcl68.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "ios.app.fawaah",
+                "app_store_id": "1633440879"
+              }
             }
           ]
         }

@@ -586,7 +586,7 @@ class _ShippingAddressState extends State<ShippingAddress> {
             ),
           ),
           keyboardType: getKeyboardType(currentFieldType),
-          textCapitalization: TextCapitalization.words,
+          textCapitalization:currentFieldType ==AddressFieldType.email? TextCapitalization.none:TextCapitalization.sentences,
           textInputAction:
           hasNext ? TextInputAction.next : TextInputAction.done,
           validator: (val) {

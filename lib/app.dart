@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 
 // ignore: depend_on_referenced_packages
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:inspireui/inspireui.dart';
 
 // import 'package:openai/localizations.dart';
@@ -115,7 +116,7 @@ class AppState extends State<App>
     var startTime = DateTime.now();
 
     Future.delayed(
-      const Duration(milliseconds: 200),
+      const Duration(milliseconds: 5000),
       () {
         _user.delegate = this;
         _user.getUser();
@@ -508,6 +509,11 @@ class AppState extends State<App>
   @override
   void onMessageOpenedApp(FStoreNotificationItem notification) async {
     final url = notification.dynamicLink;
+    // Fluttertoast.showToast(msg: url!,textColor: Colors.red);
+
+    // print("contexxx${ModalRoute.of(App.fluxStoreNavigatorKey.currentContext!)!.settings.name}");
+
+
     if (url != null) {
       await FirebaseServices().dynamicLinks?.handleDynamicLink(
           Uri.parse(url), App.fluxStoreNavigatorKey.currentContext!);

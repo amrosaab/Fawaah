@@ -600,8 +600,11 @@ query {
   ''';
 
   static String getProductByHandle = '''
-   query (\$handle: String!) {
-      productByHandle(handle: \$handle) {
+   query (\$handle: String!,
+     \$langCode: LanguageCode
+    ) @inContext(language: \$langCode) {
+   
+      productByHandle(handle: \$handle ) {
         ...productInformation
       }
    }

@@ -6,7 +6,7 @@ description: Mobile commerce app by Flutter
 # A version number is three numbers separated by dots, like 1.2.43 - followed by an optional build number separated by a +.
 # In Android, build-name is used as versionName while build-number used as versionCode.Read more about Android versioning at https://developer.android.com/studio/publish/versioning
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion. Read more about iOS versioning at https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 6.1.16+86
+version: 6.1.20+90
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -15,7 +15,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  inspireui: 1.6.0
+  inspireui: 2.1.0
 
   flutterflow:
     path: packages/flutterflow/
@@ -24,11 +24,11 @@ dependencies:
 
   # Base
   flutter_localization: ^0.1.12
-  intl: ^0.18.0
+  intl: ^0.19.0
   crypto: 3.0.2
   path_provider: 2.1.0
   url_launcher: 6.1.11
-  flutter_secure_storage: 8.0.0
+  flutter_secure_storage: ^9.2.2
   hive: 2.2.3
   hive_flutter: 1.1.0
   http: ^1.1.0
@@ -46,7 +46,7 @@ dependencies:
   flutter_svg: 2.0.6
   notification_permissions: 0.6.1
   flutter_local_notifications: 14.1.1
-  onesignal_flutter: 5.1.6
+  onesignal_flutter: ^5.2.0
   new_version_plus: ^0.0.10
 
   # STATE MANAGEMENT
@@ -81,7 +81,7 @@ dependencies:
   # MAP
   google_maps_flutter: 2.3.0
   geocode: 1.0.3
-  location: 4.4.0
+  location: 6.0.2
 
   # AUTHENTICATION
   local_auth: 2.1.6
@@ -90,7 +90,7 @@ dependencies:
   google_sign_in: 6.1.4
   sms_autofill: 2.3.1
   permission_handler: 10.3.0
-
+  fluttertoast: ^8.2.6
   # FILES, IMAGES
   file_picker: 5.3.2
   cached_network_image: 3.3.1
@@ -107,7 +107,7 @@ dependencies:
   random_string: 2.3.1
   json_annotation: 4.8.1
   freezed_annotation: 2.2.0
-  timeago: 3.4.0 # depend on intl
+  timeago: 3.6.1 # depend on intl
   universal_platform: 1.0.0+1
   uuid: 3.0.7
   easy_debounce: 2.0.3
@@ -135,7 +135,7 @@ dependencies:
   dotted_decoration: 2.0.0
   awesome_card: 1.1.7
   qr_code_scanner: 1.0.1
-  flutter_calendar_carousel: 2.4.2 # use intl 0.18.0
+  flutter_calendar_carousel: 2.4.3 # use intl 0.18.0
   sticky_headers: 0.3.0+2
   jumping_dot: 0.0.6
   fl_chart: 0.63.0
@@ -206,7 +206,8 @@ dependencies:
   ### Uncomment file lib/common/tools/in_app_update_for_android.dart
   in_app_update: 4.1.3
   app_links: ^6.0.2
-
+dependency_overrides:
+  intl: ^0.18.0
 dev_dependencies:
   flutter_lints: 2.0.1
   flutter_native_splash: 2.3.0

@@ -138,6 +138,9 @@ class DynamicLinkServiceImpl extends DynamicLinkService {
       if (url.contains('/product/') ||
           url.contains('/shop/') ||
           url.contains('/products/')) {
+        print("sasasasascx${url}");
+
+
         /// Note: the deepLink URL will look like: https://mstore.io/product/stitch-detail-tunic-dress/
         final product = await Services().api.getProductByPermalink(url);
         if (product != null) {

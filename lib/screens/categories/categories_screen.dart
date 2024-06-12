@@ -133,7 +133,7 @@ class HeaderCategory extends StatelessWidget {
       color: Theme.of(context).colorScheme.background,
       width: screenSize.width,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (ModalRoute.of(context)?.canPop ?? false)
             GestureDetector(
@@ -152,8 +152,8 @@ class HeaderCategory extends StatelessWidget {
               S.of(context).category,
               style: Theme.of(context)
                   .textTheme
-                  .headlineSmall!
-                  .copyWith(fontWeight: FontWeight.w700),
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           if (showSearch)

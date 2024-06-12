@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -231,6 +232,7 @@ class _NotificationScreenState extends State<NotificationScreen>
   }
 
   void onTapMessage(FStoreNotificationItem data) async {
+
     final url = data.dynamicLink;
     if (url != null) {
       await FirebaseServices()

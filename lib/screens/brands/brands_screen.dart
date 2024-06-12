@@ -101,11 +101,10 @@ class _BrandsScreenState extends State<BrandsScreen> {
         title: Center(
           child: Text(
             S.of(context).allBrands,
-            style: TextStyle(
-              fontSize: 18.0,
-              fontWeight: FontWeight.w800,
-              fontFamily: GoogleFonts.cairo().fontFamily,
-            ),
+           style: Theme.of(context)
+              .textTheme
+              .headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         bottom: PreferredSize(

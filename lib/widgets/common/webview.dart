@@ -114,14 +114,14 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
 
   var astr="";
   void onFinishLoading() {
+    // print("getcdcdccxczcx ${widget.script??"jjj"}");
+
     setState(() {
       selectedIndex = 0;
     });
-    controller.runJavaScript(widget.script.isEmptyOrNull
-        ? kAdvanceConfig.webViewScript
-        : widget.script);
 
-    print("getcdcdccxczcx ${widget.script??"jjj"}");
+
+
 
 
   }
@@ -138,9 +138,24 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
 
     // Fixme: webview refactor
     // if (isAndroid) flutter.WebView.platform = flutter.SurfaceAndroidWebView();
+
+
+
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
+
+      ..addJavaScriptChannel( "ordernum", onMessageReceived: (mess) {
+    // var aStr = mess.message.toString().replaceAll(new RegExp(r'[^0-9]'),''); // '23'
+    astr = mess.message.toString();
+
+    astr = astr.substring(astr.indexOf("#") + 1, astr.length);
+
+    print("testdata${astr}");
+    widget.onPageFinished?.call('thank',astr);
+    //
+    //
+    })
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (int progress) {
@@ -148,31 +163,38 @@ class _WebViewState extends State<WebView> with WebviewMixin, AppBarMixin {
               onFinishLoading();
             }
           },
+
           onPageStarted: (String url) {
 
-
             if(url.contains("thank")) {
-              controller.addJavaScriptChannel(
-                  "ordernum", onMessageReceived: (mess) {
-                // var aStr = mess.message.toString().replaceAll(new RegExp(r'[^0-9]'),''); // '23'
-                astr = mess.message.toString();
-
-                astr = astr.substring(astr.indexOf("#") + 1, astr.length);
-
-                print("testdata${astr}");
-                widget.onPageFinished?.call(url,astr);
-                //
-                //
-              });
+              // print("thnkssddddd");
+              //   controller.addJavaScriptChannel(
+              //       "ordernum", onMessageReceived: (mess) {
+              //     // var aStr = mess.message.toString().replaceAll(new RegExp(r'[^0-9]'),''); // '23'
+              //     astr = mess.message.toString();
+              //
+              //     astr = astr.substring(astr.indexOf("#") + 1, astr.length);
+              //
+              //     print("testdata${astr}");
+              //     widget.onPageFinished?.call(url,astr);
+              //     //
+              //     //
+              //   });
+              // }
             }
-
           },
            onPageFinished: (String url) {
 
+            if(url.contains('thank')){
+
+              controller.runJavaScript(widget.script.isEmptyOrNull
+                  ? kAdvanceConfig.webViewScript
+                  : widget.script);
+            }
 
 
 
-           //   widget.onPageFinished?.call(url,astr);
+              // widget.onPageFinished?.call(url,astr);
 
 
 

@@ -1617,14 +1617,20 @@ print("serattt${search}");
   Future<Product?> getProductByPermalink(String productPermalink) async {
     final handle =
         productPermalink.substring(productPermalink.lastIndexOf('/') + 1);
-    printLog('::::request getProduct $productPermalink');
+
+    // final getlang= productPermalink.substring(productPermalink.indexOf('/') + 1);
+    // final getlang= productPermalink.substring(productPermalink.indexOf('/') + 1,productPermalink.indexOf('/pro'));
+
+    // final getlang=productPermalink.contains("/ar/")?"AR":"EN";
+    // printLog('::::request getProduct $getlang');
 
     const nRepositories = 50;
     final options = QueryOptions(
       document: gql(ShopifyQuery.getProductByHandle),
       variables: <String, dynamic>{
         'nRepositories': nRepositories,
-        'handle': handle
+        'handle': handle,
+        'langCode':languageCode
       },
     );
     final result = await client.query(options);

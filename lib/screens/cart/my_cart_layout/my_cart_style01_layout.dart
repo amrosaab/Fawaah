@@ -105,7 +105,83 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
             body: Selector<CartModel, int>(
                 selector: (_, cartModel) => cartModel.totalCartQuantity,
                 builder: (context, totalCartQuantity, child) {
-                  return Column(
+                  return   totalCartQuantity == 0?
+
+                Container(
+                  width: MediaQuery.of(context).size.width,
+
+                  height: MediaQuery.of(context).size.height,
+                  child:
+                Column(
+                  children: [
+                    Flexible(
+                      flex: 1,
+                        child:     AppBar(
+                          centerTitle: true,
+                          elevation: 1,
+                          leading: widget.isModal == true
+                              ? CloseButton(
+                            onPressed: () => onPressedClose(
+                                layoutType, widget.isBuyNow),
+                          )
+                              : canPop
+                              ? const BackButton()
+                              : null,
+                          backgroundColor:
+                          Theme.of(context).colorScheme.background,
+                          actions: [
+                            Container(
+                              margin: const EdgeInsets.only(
+                                  right: 16, left: 16),
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (totalCartQuantity > 0) {
+                                    clearCartPopup(context);
+                                  }
+                                },
+                                child: Image.asset(
+                                  'assets/images/trash.png',
+                                  width: 20.0,
+                                  color:  Theme.of(context).brightness == Brightness.dark?const Color(0xff3fc1be):Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                          title: Text(
+                            S.of(context).myCart,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall!
+                                .copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        )),
+
+
+                    Flexible(
+                      flex: 9,
+
+
+                        child: EmptyCart(),
+
+
+                    ),
+
+                    Flexible(
+                      flex: 2,
+                      child: SizedBox(
+                        child:  RenderTotalPrice(
+                          isModal: widget.isModal ?? false,
+                          isLoading: isLoading,
+                          onCheckout: () => shouldShowLoginDialog(cartModel),
+
+                      ),
+                      ) ),
+                  ],
+                ),):
+
+
+
+                    Column(
 
                     children: [
                       Expanded(
@@ -157,8 +233,9 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
                                 child: SingleChildScrollView(
                                   child: Padding(
                                     padding:
-                                        const EdgeInsets.only(bottom: 80.0),
+                                        const EdgeInsets.only(bottom: 0.0),
                                     child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       crossAxisAlignment:
                                           CrossAxisAlignment.center,
                                       children: <Widget>[
@@ -186,8 +263,7 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
                                           showPrice: false,
                                           cartStyle: CartStyle.style01,
                                         ),
-                                        if (totalCartQuantity == 0)
-                                          const EmptyCart(),
+
                                         if (errMsg.isNotEmpty)
                                           Padding(
                                             padding: const EdgeInsets.symmetric(

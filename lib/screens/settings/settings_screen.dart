@@ -932,7 +932,9 @@ class SettingScreenState extends State<SettingScreen>
             expandedHeight: bannerHigh,
             floating: true,
             pinned: true,
+
             flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true,
               title: Text(
                 S.of(context).settings,
                 style: const TextStyle(
