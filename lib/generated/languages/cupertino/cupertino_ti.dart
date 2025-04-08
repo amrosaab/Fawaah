@@ -6,7 +6,7 @@ class CupertinoLocalizationTi extends GlobalCupertinoLocalizations {
   /// Create an instance of the translation bundle for English.
   ///
   /// For details on the meaning of the arguments, see [GlobalCupertinoLocalizations].
-  const CupertinoLocalizationTi({
+  CupertinoLocalizationTi({
     String localeName = 'ti',
     required intl.DateFormat fullYearFormat,
     required intl.DateFormat dayFormat,
@@ -17,16 +17,17 @@ class CupertinoLocalizationTi extends GlobalCupertinoLocalizations {
     required intl.DateFormat singleDigitSecondFormat,
     required intl.NumberFormat decimalFormat,
   }) : super(
-          localeName: localeName,
-          fullYearFormat: fullYearFormat,
-          dayFormat: dayFormat,
-          mediumDateFormat: mediumDateFormat,
-          singleDigitHourFormat: singleDigitHourFormat,
-          singleDigitMinuteFormat: singleDigitMinuteFormat,
-          doubleDigitMinuteFormat: doubleDigitMinuteFormat,
-          singleDigitSecondFormat: singleDigitSecondFormat,
-          decimalFormat: decimalFormat,
-        );
+      localeName: localeName,
+      fullYearFormat: fullYearFormat,
+      dayFormat: dayFormat,
+      mediumDateFormat: mediumDateFormat,
+      singleDigitHourFormat: singleDigitHourFormat,
+      singleDigitMinuteFormat: singleDigitMinuteFormat,
+      doubleDigitMinuteFormat: doubleDigitMinuteFormat,
+      singleDigitSecondFormat: singleDigitSecondFormat,
+      decimalFormat: decimalFormat,
+      weekdayFormat: intl.DateFormat.EEEE(localeName)
+  );
 
   String get firstPageTooltip => '';
 
@@ -37,6 +38,19 @@ class CupertinoLocalizationTi extends GlobalCupertinoLocalizations {
 
   @override
   String get anteMeridiemAbbreviation => 'AM';
+  @override
+  String weekdayFormat(int weekdayIndex) {
+    const weekdays = [
+      'Sunday',    // 1
+      'Monday',    // 2
+      'Tuesday',   // 3
+      'Wednesday', // 4
+      'Thursday',  // 5
+      'Friday',    // 6
+      'Saturday',  // 7
+    ];
+    return weekdays[weekdayIndex - 1];
+  }
 
   @override
   String get copyButtonLabel => 'Copy';

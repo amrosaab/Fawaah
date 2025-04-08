@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 
 import '../../constants/keys.dart';
 import 'chat_user.dart';
@@ -75,7 +74,7 @@ extension ChatRoomExtension on ChatRoom {
     if (currentUserEmail.isEmpty) {
       throw ArgumentError('currentUserEmail cannot be empty');
     }
-    return users.firstWhereOrNull(
+    return users.firstWhere(
       (e) {
         return e.email != currentUserEmail;
       },

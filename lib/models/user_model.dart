@@ -171,10 +171,10 @@ class UserModel with ChangeNotifier {
 
         case LoginStatus.success:
           final accessToken = await FacebookAuth.instance.accessToken;
-          Services().firebase.loginFirebaseFacebook(token: accessToken!.token);
+          Services().firebase.loginFirebaseFacebook(token:  accessToken?.tokenString);
 
 
-          await   login(username:           accessToken.userId+"@fawaah.com", password:  accessToken.userId+"@fawaah.com", success: (sucUser) async {
+          await   login(username:           accessToken!.tokenString+"@fawaah.com", password:  accessToken!.tokenString+"@fawaah.com", success: (sucUser) async {
 
             user=sucUser;
             user!.isSocial=true;
@@ -192,7 +192,7 @@ class UserModel with ChangeNotifier {
               await saveUser(user);
               success!(user);
               notifyListeners();
-            },username:  accessToken.userId+"@fawaah.com",password:  accessToken.userId+"@fawaah.com",fail: (failed){
+            },username:   accessToken.tokenString+"@fawaah.com",password:   accessToken.tokenString+"@fawaah.com",fail: (failed){
               print("hokshfailed3${fail}");
 
             });

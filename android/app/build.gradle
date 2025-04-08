@@ -109,8 +109,8 @@ android {
 //        versionCode flutterVersionCode.toInteger()
 //        versionName flutterVersionName
 
-        versionCode 91
-        versionName '6.1.21'
+        versionCode 92
+        versionName '6.1.22'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
         resConfigs "en"
