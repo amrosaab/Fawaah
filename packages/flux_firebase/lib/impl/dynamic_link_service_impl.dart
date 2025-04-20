@@ -25,17 +25,17 @@ class DynamicLinkServiceImpl extends DynamicLinkService {
     // Subscribe to all events when app is started.
 // (Use allStringLinkStream to get it as [String])
 
-    final initialLink = await _appLinks.getInitialLink();
-
-    if (initialLink != null) {
-    //  await handleDynamicLink(initialLink, context);
-    }
+    // final initialLink = await _appLinks.getInitialLink();
+    //
+    // if (initialLink != null) {
+    // //  await handleDynamicLink(initialLink, context);
+    // }
 
     _appLinks.uriLinkStream.listen((uri) async {
-      if(uri.toString().contains("request_ip_version")){
-        return;
-
-      }
+      // if(uri.toString().contains("request_ip_version")){
+      //   return;
+      //
+      // }
       await handleDynamicLink(uri, context);
 
       // Do something (navigation, ...)

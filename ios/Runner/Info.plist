@@ -131,6 +131,8 @@
 	<false/>
 	<key>FirebaseScreenReportingEnabled</key>
 	<true/>
+	 <key>FlutterDeepLinkingEnabled</key>
+     <false/>
 	<key>GADApplicationIdentifier</key>
 	<string>${adMobAppIdIos}</string>
 	<key>GOOGLE_API_KEY</key>

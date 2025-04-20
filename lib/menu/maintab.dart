@@ -80,37 +80,62 @@ class MainTabsState extends CustomOverlayState<MainTabs>
   StreamSubscription? _subCloseCustomDrawer;
   StreamSubscription? _subLoadedAppConfig;
 
+  checkapp()
+  async {
+    final newVersionPlus = NewVersionPlus(androidId: 'fawaah.android.app',iOSId: 'ios.app.fawaah',androidHtmlReleaseNotes: true);
+    final status = await newVersionPlus.getVersionStatus();
+
+    if (status != null) {
+      if (status.canUpdate) {
+        newVersionPlus.showUpdateDialog(
+          context: context,
+          versionStatus: status,
+          // dialogTitle: 'Custom dialog title',
+          // dialogText: 'Custom dialog text',
+          // updateButtonText: 'Custom update button text',
+          // dismissButtonText: 'Custom dismiss button text',
+          allowDismissal: false,
+        );
+      }
+    }
+    // NewVersionPlus().showAlertIfNecessary(
+    //   context: context,
+    //   launchModeVersion: LaunchModeVersion.external,
+    // );
+  }
+
   @override
   Future<void> afterFirstLayout(BuildContext context) async {
     _initListenEvent(context);
     _initTabDelegate();
     _initTabData(context);
-
+    checkapp();
     // In App Update For Android will have higher priority than Enable Version Check
-    if (isAndroid && kAdvanceConfig.inAppUpdateForAndroid.enable) {
-      unawaited(InAppUpdateForAndroid().checkForUpdate());
-    } else if (kAdvanceConfig.versionCheck.enable) {
-      final newVersionPlus = NewVersionPlus();
-      final status = await newVersionPlus.getVersionStatus();
-
-      if (status != null) {
-        if (status.canUpdate) {
-          newVersionPlus.showUpdateDialog(
-            context: context,
-            versionStatus: status,
-            // dialogTitle: 'Custom dialog title',
-            // dialogText: 'Custom dialog text',
-            // updateButtonText: 'Custom update button text',
-            // dismissButtonText: 'Custom dismiss button text',
-            allowDismissal: false,
-          );
-        }
-      }
-      // NewVersionPlus().showAlertIfNecessary(
-      //   context: context,
-      //   launchModeVersion: LaunchModeVersion.external,
-      // );
-    }
+    // if (isAndroid && kAdvanceConfig.inAppUpdateForAndroid.enable) {
+    //   unawaited(InAppUpdateForAndroid().checkForUpdate());
+    // }
+    // else if (kAdvanceConfig.versionCheck.enable) {
+    //   final newVersionPlus = NewVersionPlus(androidId: 'fawaah.android.app',iOSId: 'ios.app.fawaah',androidHtmlReleaseNotes: true);
+    //   final status = await newVersionPlus.getVersionStatus();
+    //
+    //   if (status != null) {
+    //     if (status.canUpdate) {
+    //       newVersionPlus.showUpdateDialog(
+    //         context: context,
+    //         versionStatus: status,
+    //         // dialogTitle: 'Custom dialog title',
+    //         // dialogText: 'Custom dialog text',
+    //         // updateButtonText: 'Custom update button text',
+    //         // dismissButtonText: 'Custom dismiss button text',
+    //         allowDismissal: false,
+    //       );
+    //     }
+    //   }
+    //   // NewVersionPlus().showAlertIfNecessary(
+    //   //   context: context,
+    //   //   launchModeVersion: LaunchModeVersion.external,
+    //   // );
+    // }
 
     if (appSetting.ageRestrictionConfig.enable &&
         (appSetting.ageRestrictionConfig.alwaysShowUponOpen ||

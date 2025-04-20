@@ -1332,7 +1332,7 @@ print("serattt${search}");
       }
       print("cartxxxx${cartData}");
 
-      return CheckoutCart.fromJsonShopify(cartData);
+      return CheckoutCart.fromJsonShopify(cartData,langCode: languageCode);
 
     } catch (e, stack) {
       printLog('Error in addItemsToCart: $e');
