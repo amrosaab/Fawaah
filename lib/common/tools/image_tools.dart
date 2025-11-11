@@ -6,7 +6,7 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_native_image/flutter_native_image.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -174,59 +174,44 @@ class ImageTools {
   }
 
   static Future<String> compressImage(dynamic image) async {
-    var base64 = '';
-    //const quality = 60;
+    String base64 = '';
 
-    /// Disable cause the build issue on Flutter 2.2
-    /// https://github.com/OpenFlutter/flutter_image_compress/issues/180
+    Uint8List? byteData;
 
-    if (image is AssetEntity && isAndroid) {
-      var file = await image.file;
-      if (file?.path != null) {
-        final compressedFile = await FlutterNativeImage.compressImage(
-          file!.path,
-        );
-        final bytes = compressedFile.readAsBytesSync();
-        return base64Encode(bytes);
-      }
+    // ✅ AssetEntity (from photo_manager)
+    if (image is AssetEntity) {
+      byteData = await image.originBytes;
     }
 
-    if (image is AssetEntity || image is file.File) {
-      Uint8List? byteData;
-
-      if (image is AssetEntity) {
-        byteData = await image.originBytes;
-      } else if (image is file.File) {
-        byteData = await image.readAsBytes();
-      }
-
-      if (byteData != null) {
-        final tmpFile = await writeToFile(byteData);
-
-        final compressedFile = await FlutterNativeImage.compressImage(
-          tmpFile.path,
-        );
-        final bytes = compressedFile.readAsBytesSync();
-        base64 += base64Encode(bytes);
-      }
+    // ✅ file.File
+    else if (image is file.File) {
+      byteData = await image.readAsBytes();
     }
 
-    if (image is XFile) {
-      final compressedFile = await FlutterNativeImage.compressImage(
-        image.path,
+    // ✅ XFile
+    else if (image is XFile) {
+      byteData = await image.readAsBytes();
+    }
+
+    // ✅ Remote string image (URL)
+    else if (image is String && image.contains('http')) {
+      return image;
+    }
+
+    if (byteData != null) {
+      // Compress using flutter_image_compress
+      final result = await FlutterImageCompress.compressWithList(
+        byteData,
+        minWidth: 720,
+        minHeight: 720,
+        quality: 60,
       );
-      final bytes = compressedFile.readAsBytesSync();
-      base64 += base64Encode(bytes);
+
+      base64 = base64Encode(result);
     }
 
-    if (image is String) {
-      if (image.contains('http')) {
-        base64 += image;
-      }
-    }
     return base64;
   }
-
   static Future<String> compressAndConvertImagesForUploading(
       List<dynamic> images) async {
     var base64 = StringBuffer();

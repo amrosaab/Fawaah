@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:fstore/common/typesdef.dart';
 import 'package:graphql/client.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
@@ -907,11 +909,54 @@ print("serattt${search}");
     }
   }
 
+
+  Future<String?> getShopId() async {
+    try {
+      const query = '''
+      query {
+        shop {
+          id
+          name
+        }
+      }
+    ''';
+
+      final options = QueryOptions(
+        document: gql(query),
+        fetchPolicy: FetchPolicy.networkOnly,
+      );
+
+      final result = await client.query(options);
+
+      if (result.hasException) {
+        print('Error getting shop info: ${result.exception}');
+        return null;
+      }
+
+      final shopData = result.data?['shop'];
+      print('Shop data: $shopData');
+
+      // Extract numeric ID from the GraphQL ID
+      final graphqlId = shopData['id']; // e.g., "gid://shopify/Shop/60989374644"
+      final shopId = graphqlId.split('/').last; // Extract "60989374644"
+
+      print('Shop ID: $shopId');
+      print('Shop domain: ${shopData['myshopifyDomain']}');
+
+      return shopId;
+    } catch (e) {
+      print('Error getting shop ID: $e');
+      return null;
+    }
+  }
+
+
   @override
   Future<User?> getUserInfo(cookie) async {
     try {
       printLog('::::request getUserInfo');
 
+    //  getShopId();
       const nRepositories = 50;
       final options = QueryOptions(
           document: gql(ShopifyQuery.getCustomerInfo),
@@ -940,6 +985,112 @@ print("serattt${search}");
     }
   }
 
+  // Get user info from new Customer Account API
+  @override
+  Future<User?>? getUserInfoFromNewAPI(accessToken) async {
+    try {
+      // Clean the access token - extract only the shcat_ part
+      String cleanToken = accessToken;
+      // if (accessToken.contains('shcat_')) {
+      //   final shcatIndex = accessToken.indexOf('shcat_');
+      //   cleanToken = accessToken.substring(shcatIndex);
+      // }
+
+      print('==================== DEBUG TOKEN ====================');
+      print('Cleaned token length: ${cleanToken.length}');
+      print('Token starts with shcat_: ${cleanToken.startsWith('shcat_')}');
+      print('First 50 chars: ${cleanToken.substring(0, math.min(50, cleanToken.length))}');
+      print('====================================================');
+
+      const query = '''
+        query {
+          customer {
+            id
+            emailAddress {
+              emailAddress
+            }
+            firstName
+            lastName
+            displayName
+          }
+        }
+      ''';
+
+      final apiUrl = 'https://account.fawaah.com/customer/api/unstable/graphql?operation=Profile';
+
+      print('Making request to: $apiUrl');
+      print('Authorization header: Bearer ${cleanToken.substring(0, math.min(30, cleanToken.length))}...');
+
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': ' $cleanToken',
+          'User-Agent': 'FawaahApp/1.0',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'query': query,
+        }),
+      );
+
+      print('==================== API RESPONSE ====================');
+      print('Status Code: ${response.statusCode}');
+      print('Response Headers: ${response.headers}');
+      print('Response Body: ${response.body}');
+      print('====================================================');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        if (data['errors'] != null) {
+          print('GraphQL Errors: ${data['errors']}');
+          return null;
+        }
+
+        final customerData = data['data']?['customer'];
+
+        if (customerData != null) {
+          print('Customer data found: $customerData');
+
+          // Safely extract data with proper type casting
+          final String? id = customerData['id']?.toString();
+          final String? firstName = customerData['firstName']?.toString();
+          final String? lastName = customerData['lastName']?.toString();
+          final String? displayName = customerData['displayName']?.toString();
+
+          // Handle nested emailAddress object
+          String? email = '';
+          if (customerData['emailAddress'] != null) {
+            final emailData = customerData['emailAddress'];
+            if (emailData is Map<String, dynamic>) {
+              email = emailData['emailAddress']?.toString() ?? '';
+            }
+          }
+User user=User();
+          user.id=id;
+          user.email=email;
+          user.cookie=cleanToken;
+          user.isSocial=false;
+
+          // user.id=customerData['id'];
+          return user;
+          // return {
+          //   'id': customerData['id'],
+          //   'email': customerData['emailAddress']?['emailAddress'] ?? '',
+          //   'firstName': customerData['firstName'] ?? '',
+          //   'lastName': customerData['lastName'] ?? '',
+          //   'displayName': customerData['displayName'] ?? '',
+          // };
+        }
+      }
+
+      return null;
+    } catch (e) {
+      print('Exception in _getUserInfoFromCustomerAPI: $e');
+      return null;
+    }
+  }
   @override
   Future<Map<String, dynamic>> updateUserInfo(
       Map<String, dynamic> json, String? token) async {
@@ -1009,6 +1160,86 @@ print("serattt${search}");
       rethrow;
     }
   }
+
+  @override
+  Future<bool?>? sendVerificationCode(String email) async {
+
+    final mutation = gql(r'''
+    mutation customerSendEmailVerificationCode($email: String!) {
+      customerSendEmailVerificationCode(email: $email) {
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  ''');
+
+    final result = await client.mutate(MutationOptions(
+      document: mutation,
+      variables: {'email': email},
+    ));
+
+    print("testtttt${result}");
+    if (result.hasException) {
+      print('Send OTP error: ${result.exception}');
+      return false;
+    }
+
+    final errors = result.data?['customerSendEmailVerificationCode']['userErrors'];
+    if (errors != null && errors.isNotEmpty) {
+      print('User error: ${errors[0]['message']}');
+      return false;
+    }
+
+    return true;
+  }
+  @override
+  Future<String?> loginWithCode(String email, String code) async {
+
+    final mutation = gql(r'''
+    mutation customerAccessTokenCreateWithCode($email: String!, $code: String!) {
+      customerAccessTokenCreateWithCode(email: $email, code: $code) {
+        customerAccessToken {
+          accessToken
+          expiresAt
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  ''');
+
+    final result = await client.mutate(MutationOptions(
+      document: mutation,
+      variables: {'email': email, 'code': code},
+    ));
+
+    if (result.hasException) {
+      print('Login error: ${result.exception}');
+      return null;
+    }
+
+    final data = result.data?['customerAccessTokenCreateWithCode'];
+    final errors = data['userErrors'];
+
+    if (errors != null && errors.isNotEmpty) {
+      print('User error: ${errors[0]['message']}');
+      return null;
+    }
+
+    final token = data['customerAccessToken']['accessToken'];
+    print('Access token: $token');
+
+    return token;
+  }
+
+
+
+
+
 
   @override
   Future<User?> login({username, password}) async {
@@ -1653,48 +1884,368 @@ print("serattt${search}");
   }
 
   @override
+  // Future<PagingResponse<Order>> getMyOrders({
+  //   User? user,
+  //   dynamic cursor,
+  //   String? cartId,
+  // })
+  // async {
+  //   try {
+  //     const nRepositories = 50;
+  //     final options = QueryOptions(
+  //       document: gql(ShopifyQuery.getOrder),
+  //       fetchPolicy: FetchPolicy.noCache,
+  //       variables: <String, dynamic>{
+  //         'nRepositories': nRepositories,
+  //         'customerAccessToken': user!.cookie,
+  //         if (cursor != null) 'cursor': cursor,
+  //         'pageSize': 50
+  //       },
+  //     );
+  //     final result = await client.query(options);
+  //
+  //     if (result.hasException) {
+  //       printLog(result.exception.toString());
+  //     }
+  //
+  //     var list = <Order>[];
+  //     String? lastCursor;
+  //
+  //     for (var item in result.data!['customer']['orders']['edges']) {
+  //       lastCursor = item['cursor'];
+  //       var order = item['node'];
+  //       list.add(Order.fromJson(order));
+  //     }
+  //     return PagingResponse(
+  //       cursor: lastCursor,
+  //       data: list,
+  //     );
+  //   } catch (e) {
+  //     printLog('::::getMyOrders shopify error');
+  //     printLog(e.toString());
+  //     return const PagingResponse();
+  //   }
+  // }
+
+  Future<String?> exchangeForCustomerAccessToken(String accessToken) async {
+    try {
+      // This is a hypothetical endpoint - you'd need to check Fawaah's documentation
+      final response = await http.post(
+        Uri.parse('https://60989374644.myshopify.com/customer/api/token/exchange'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': ' $accessToken',
+        },
+        body: json.encode({
+          'tokenType': 'customerAccessToken',
+        }),
+      );
+
+      print('asdsadsadsd ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['customerAccessToken'];
+      }
+
+      return null;
+    } catch (e) {
+      print('Token exchange failed: $e');
+      return null;
+    }
+  }
+
+  Map<String, dynamic> convertCustomerAccountAPIToStorefront(Map<String, dynamic> newApiOrder) {
+    try {
+      // Convert line items from new format to old format
+      List<Map<String, dynamic>> convertedLineItems = [];
+
+      var lineItemContainers = newApiOrder['lineItems'] as List<dynamic>? ?? [];
+      for (var container in lineItemContainers) {
+        if (container['__typename'] == 'RemainingLineItemContainer') {
+          var items = container['lineItems']['nodes'] as List<dynamic>? ?? [];
+
+          for (var item in items) {
+            var lineItemData = item['lineItem'];
+
+            // Convert to old format structure
+            convertedLineItems.add({
+              'node': {
+                'id': lineItemData['id'],
+                'title': lineItemData['name'],
+                'quantity': lineItemData['quantity'],
+                'variant': {
+                  'id': lineItemData['id'], // Use lineItem id as variant id
+                  'title': lineItemData['name'],
+                  'image': lineItemData['image'],
+                  'price': {
+                    'amount': '0.00', // Price not available in new API
+                    'currencyCode': newApiOrder['totalPrice']['currencyCode']
+                  }
+                }
+              }
+            });
+          }
+        }
+      }
+
+      // Map customerFulfillmentStatus to financialStatus
+      String convertedStatus = convertFulfillmentStatus(newApiOrder['customerFulfillmentStatus']);
+
+      // Create the converted order in old format
+      return {
+        'id': newApiOrder['id'],
+        'orderNumber': extractOrderNumber(newApiOrder['name']), // Extract number from "#59392"
+        'financialStatus': convertedStatus,
+        'currencyCode': newApiOrder['totalPrice']['currencyCode'],
+        'processedAt': newApiOrder['processedAt'],
+        'totalPrice': {
+          'amount': newApiOrder['totalPrice']['amount'].toString()
+        },
+        'totalShippingPrice': {
+          'amount': '0.00' // Not available in new API
+        },
+        'totalTax': {
+          'amount': '0.00' // Not available in new API
+        },
+        'subtotalPrice': {
+          'amount': newApiOrder['totalPrice']['amount'].toString() // Use total as subtotal
+        },
+        'lineItems': {
+          'edges': convertedLineItems
+        },
+        'shippingAddress': null, // Not available in current response
+        'statusUrl': '', // Not available in new API
+      };
+
+    } catch (e) {
+      print('Error converting API response: $e');
+      return {};
+    }
+  }
+
+// Extract order number from name field (e.g., "#59392" -> "59392")
+  String extractOrderNumber(String? name) {
+    if (name == null) return '';
+    return name.replaceAll('#', '');
+  }
+
+// Convert customerFulfillmentStatus to financialStatus
+  String convertFulfillmentStatus(String? status) {
+    switch (status?.toUpperCase()) {
+      case 'FULFILLED':
+        return 'PAID';
+      case 'PARTIALLY_FULFILLED':
+        return 'PARTIALLY_PAID';
+      case 'UNFULFILLED':
+        return 'PENDING';
+      case 'CANCELLED':
+        return 'VOIDED';
+      case 'RESTOCKED':
+        return 'REFUNDED';
+      default:
+        return 'PENDING';
+    }
+  }
+
+
   Future<PagingResponse<Order>> getMyOrders({
     User? user,
     dynamic cursor,
     String? cartId,
   }) async {
     try {
-      const nRepositories = 50;
+      // Exchange cookie for customer access token
+      var customerAccessToken = user?.cookie ;
+
+      print("asdasdsad$customerAccessToken");
+      // Configure GraphQL client for Customer Account API with correct URL
+      final httpLink = HttpLink('https://account.fawaah.com/customer/api/unstable/graphql?operation=Orders');
+
+      final authLink = AuthLink(
+        headerKey: 'authorization', // lowercase as seen in the request
+        getToken: () async => customerAccessToken, // Use token directly (already has 'shcat_' prefix)
+      );
+
+      final client = GraphQLClient(
+        cache: GraphQLCache(),
+        link: authLink.concat(httpLink),
+      );
+
+      // Exact GraphQL query from the API request
+      const String getOrdersQuery = '''
+      query Orders(\$isBusinessCustomer: Boolean!, \$before: String, \$after: String, \$first: Int, \$last: Int, \$query: String, \$personalAccountSortKey: OrderSortKeys, \$reverse: Boolean!) {
+        customer @skip(if: \$isBusinessCustomer) {
+          id
+          orders(
+            first: \$first
+            last: \$last
+            before: \$before
+            after: \$after
+            sortKey: \$personalAccountSortKey
+            reverse: \$reverse
+            query: \$query
+          ) {
+            nodes {
+              id
+              name
+              confirmationNumber
+              customerFulfillmentStatus
+              totalPrice {
+                amount
+                currencyCode
+              }
+              processedAt
+              cancelledAt
+              lineItems: lineItemContainers {
+                ... on RemainingLineItemContainer {
+                  id
+                  lineItems(first: 4) {
+                    nodes {
+                      id
+                      lineItem {
+                        id
+                        name
+                        quantity
+                        image {
+                          id
+                          altText
+                          url
+                        }
+                      }
+                    }
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                  }
+                }
+              }
+            }
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+          }
+        }
+      }
+    ''';
+
       final options = QueryOptions(
-        document: gql(ShopifyQuery.getOrder),
+        document: gql(getOrdersQuery),
         fetchPolicy: FetchPolicy.noCache,
         variables: <String, dynamic>{
-          'nRepositories': nRepositories,
-          'customerAccessToken': user!.cookie,
-          if (cursor != null) 'cursor': cursor,
-          'pageSize': 50
+          'isBusinessCustomer': false,
+          'first': 50,
+          'businessAccountSortKey': 'PROCESSED_AT',
+          'personalAccountSortKey': 'PROCESSED_AT',
+          'reverse': true,
+          'companyId': 'gid://shopify/Company/0',
+          'query': '(purchasing_entity:Customer)',
+          if (cursor != null) 'after': cursor,
         },
       );
+
       final result = await client.query(options);
 
+      print("Query result: ${result.data}");
+
       if (result.hasException) {
-        printLog(result.exception.toString());
+        print('GraphQL Exception: ${result.exception}');
+        if (result.exception?.graphqlErrors != null) {
+          for (var error in result.exception!.graphqlErrors) {
+            print('GraphQL Error: ${error.message}');
+            print('Error location: ${error.locations}');
+            print('Error path: ${error.path}');
+          }
+        }
+        return const PagingResponse();
       }
 
       var list = <Order>[];
       String? lastCursor;
+      bool hasNextPage = false;
 
-      for (var item in result.data!['customer']['orders']['edges']) {
-        lastCursor = item['cursor'];
-        var order = item['node'];
-        list.add(Order.fromJson(order));
+      // Parse orders from Customer Account API response
+      if (result.data != null && result.data!['customer'] != null) {
+        final ordersData = result.data!['customer']['orders'];
+
+        for (var orderNode in ordersData['nodes']) {
+          // Convert new API format to old format
+          var convertedOrderData = convertCustomerAccountAPIToStorefront(orderNode);
+
+          // Use your existing parsing method
+          list.add( Order.fromJson(convertedOrderData));
+        }
+
+        hasNextPage = ordersData['pageInfo']['hasNextPage'] ?? false;
+        lastCursor = ordersData['pageInfo']['endCursor'];
       }
+
       return PagingResponse(
         cursor: lastCursor,
         data: list,
       );
-    } catch (e) {
-      printLog('::::getMyOrders shopify error');
-      printLog(e.toString());
+
+    }
+    catch (e) {
+      print('getMyOrders error: $e');
       return const PagingResponse();
     }
   }
 
+
+
+//   Future<PagingResponse<Order>> getMyOrders({
+//     User? user,
+//     dynamic cursor,
+//     String? cartId,
+//   })
+//   async {
+//     try {
+//
+//       var ddddd=await exchangeForCustomerAccessToken(user?.cookie??'');
+//
+//       print('asdsadsadsad${ user!.cookie}');
+//       const nRepositories = 50;
+//       final options = QueryOptions(
+//         document: gql(ShopifyQuery.getOrder),
+//         fetchPolicy: FetchPolicy.noCache,
+//         variables: <String, dynamic>{
+//           'nRepositories': nRepositories,
+//           'customerAccessToken': user!.cookie,
+//           if (cursor != null) 'cursor': cursor,
+//           'pageSize': 50
+//         },
+//       );
+//       //
+//       final result = await client.query(options);
+// //
+//       print("asdsadssda${result}");
+//       if (result.hasException) {
+//         printLog(result.exception.toString());
+//       }
+//
+//       var list = <Order>[];
+//       String? lastCursor;
+//
+//       for (var item in result.data!['customer']['orders']['edges']) {
+//         lastCursor = item['cursor'];
+//         var order = item['node'];
+//         list.add(Order.fromJson(order));
+//       }
+//       return PagingResponse(
+//         cursor: lastCursor,
+//         data: list,
+//       );
+//     } catch (e) {
+//       printLog('::::getMyOrders shopify error');
+//       printLog(e.toString());
+//       return const PagingResponse();
+//     }
+//   }
   @override
   Future<String> submitForgotPassword({
     String? forgotPwLink,

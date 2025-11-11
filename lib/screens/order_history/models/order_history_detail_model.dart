@@ -38,10 +38,10 @@ class OrderHistoryDetailModel extends ChangeNotifier {
   }
 
   Future<void> fetchImage() async {
-    final firstProduct = _order.lineItems.first;
-    if (firstProduct.featuredImage?.isEmpty ?? true) {
+    final firstProduct = _order.lineItems?.first;
+    if (firstProduct?.featuredImage?.isEmpty ?? true) {
       final listImage =
-          await _services.api.getImagesByProductId(firstProduct.productId!);
+          await _services.api.getImagesByProductId(firstProduct!.productId!);
       if (listImage.isNotEmpty) {
         firstProduct.featuredImage = listImage.first;
       }

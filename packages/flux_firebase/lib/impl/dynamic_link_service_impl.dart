@@ -14,7 +14,7 @@ import 'package:fstore/services/firebase/dynamic_link_service.dart';
 import 'package:fstore/services/service_config.dart';
 import 'package:fstore/services/services.dart';
 import 'package:fstore/widgets/common/webview.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 
 final _appLinks = AppLinks();
 
@@ -72,8 +72,8 @@ class DynamicLinkServiceImpl extends DynamicLinkService {
     /// we don't use fire base, so we install
     /// app_links library instead
 
-    await Share.share(
-      productUrl,
+    await SharePlus.instance.share(
+      ShareParams(uri: Uri.parse(productUrl)),
     );
     return;
     // print('productUrl: $productUrl');

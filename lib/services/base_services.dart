@@ -173,6 +173,7 @@ abstract class BaseServices {
       null;
 
   Future<User?>? getUserInfo(cookie) => null;
+  Future<User?>? getUserInfoFromNewAPI(cookie) => null;
 
   Future<User?>? createUser({
     String? firstName,
@@ -193,8 +194,10 @@ abstract class BaseServices {
     password,
   }) =>
       null;
+ Future<bool?>? sendVerificationCode(String username) => null;
+  Future<String?> ? loginWithCode(String email, String code) =>null;
 
-  Future<Product?>? getProduct(id, {lang}) => null;
+    Future<Product?>? getProduct(id, {lang}) => null;
 
   /// The `overrideGetProduct` function use same as [getProduct] function on all
   /// platforms. But this must be used because in case listing app loads of

@@ -551,6 +551,8 @@ class SettingScreenState extends State<SettingScreen>
         }
       case 'order':
         {
+          final user = Provider.of<UserModel>(context, listen: false).user;
+
           var items = UserBox().orders;
           if (user == null && items.isEmpty) {
             return const SizedBox();

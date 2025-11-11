@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:notification_permissions/notification_permissions.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
 
 import '../../common/constants.dart';
@@ -17,84 +16,65 @@ abstract class NotificationService {
   }
 
   NotificationService() {
-    var initSetting = const InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-      iOS: DarwinInitializationSettings(),
-    );
-
-    flutterLocalNotificationsPlugin.initialize(
-      initSetting,
-      onDidReceiveNotificationResponse: (notificationResponse) {
-        delegate.onMessageOpenedApp(
-          FStoreNotificationItem(
-            id: notificationResponse.id?.toString() ?? '',
-            title: '',
-            body: '',
-            additionalData: jsonDecode(notificationResponse.payload ?? ''),
-            date: DateTime.now(),
-          ),
-        );
-      },
-    );
-
-    flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+    _initializeLocalNotifications();
   }
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
 
-  final channel = const AndroidNotificationChannel(
-    'high_importance_channel', // id
-    'High Importance Notifications', // title
-    description:
-        'This channel is used for important notifications.', // description
+  final AndroidNotificationChannel channel = const AndroidNotificationChannel(
+    'high_importance_channel', // ID
+    'High Importance Notifications', // Name
+    description: 'This channel is used for important notifications.',
     importance: Importance.max,
   );
 
   late final NotificationDelegate delegate;
 
   void init({
-    /// OneSignal only
     String? externalUserId,
     required NotificationDelegate notificationDelegate,
   });
 
-  Future<bool> requestPermission() async {
-    if (kIsWeb) {
-      return false;
-    }
+  Future<void> _initializeLocalNotifications() async {
+    const initSettings = InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(),
+    );
 
-    /// Case unknown - First time open the app
-    var granted = (await NotificationPermissions.requestNotificationPermissions(
-          iosSettings: const NotificationSettingsIos(
-            sound: true,
-            badge: true,
-            alert: true,
+    await flutterLocalNotificationsPlugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (notificationResponse) {
+        final payload = notificationResponse.payload ?? '{}';
+        delegate.onMessageOpenedApp(
+          FStoreNotificationItem(
+            id: notificationResponse.id?.toString() ?? '',
+            title: '',
+            body: '',
+            additionalData: jsonDecode(payload),
+            date: DateTime.now(),
           ),
-        )) ==
-        PermissionStatus.granted;
+        );
+      },
+    );
 
-    /// To support POST_NOTIFICATION on Android 13.
-    /// Requires permission_handler 10+.
-    if (isAndroid) {
-      granted = (await ph.Permission.notification.request()) ==
-          ph.PermissionStatus.granted;
-    }
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+  }
 
-    return granted;
+  Future<bool> requestPermission() async {
+    if (kIsWeb) return false;
+
+    // Handles both Android & iOS
+    final status = await ph.Permission.notification.request();
+    return status.isGranted;
   }
 
   Future<bool> isGranted() async {
     if (kIsWeb) return false;
-    final status =
-        await NotificationPermissions.getNotificationPermissionStatus();
-    if (status == PermissionStatus.granted) {
-      return true;
-    }
-    return false;
+    return await ph.Permission.notification.isGranted;
   }
 
   void disableNotification();
@@ -105,7 +85,6 @@ abstract class NotificationService {
 
   void removeExternalId();
 }
-
 mixin NotificationDelegate {
   void onMessage(FStoreNotificationItem notification);
 

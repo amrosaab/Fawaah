@@ -9,7 +9,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:quiver/strings.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../../common/config.dart';
 import '../../../common/constants.dart';
@@ -570,29 +569,29 @@ class _PaymentMethodsState extends State<PaymentMethods> with RazorDelegate {
       final availablePayTm = kPayTmConfig['paymentMethodId'] != null &&
           (kPayTmConfig['enabled'] ?? false) &&
           paymentMethod.id!.contains(kPayTmConfig['paymentMethodId']);
-      if (!isSubscriptionProduct && availablePayTm) {
-        createOrderOnWebsite(
-            paid: false,
-            onFinish: (Order? order) async {
-              if (order != null) {
-                final paytmServices = PayTmServices(
-                  amount: cartModel.getTotal()!.toString(),
-                  orderId: order.id!,
-                  email: cartModel.address?.email,
-                );
-                try {
-                  await paytmServices.openPayment();
-                  widget.onFinish!(order);
-                } catch (e) {
-                  Tools.showSnackBar(
-                      ScaffoldMessenger.of(context), e.toString());
-                  isPaying = false;
-                  unawaited(_deletePendingOrder(order.id));
-                }
-              }
-            });
-        return;
-      }
+      // if (!isSubscriptionProduct && availablePayTm) {
+      //   createOrderOnWebsite(
+      //       paid: false,
+      //       onFinish: (Order? order) async {
+      //         if (order != null) {
+      //           final paytmServices = PayTmServices(
+      //             amount: cartModel.getTotal()!.toString(),
+      //             orderId: order.id!,
+      //             email: cartModel.address?.email,
+      //           );
+      //           try {
+      //             await paytmServices.openPayment();
+      //             widget.onFinish!(order);
+      //           } catch (e) {
+      //             Tools.showSnackBar(
+      //                 ScaffoldMessenger.of(context), e.toString());
+      //             isPaying = false;
+      //             unawaited(_deletePendingOrder(order.id));
+      //           }
+      //         }
+      //       });
+      //   return;
+      // }
 
       /// PayStack payment.
       final availablePayStack = kPayStackConfig['paymentMethodId'] != null &&
@@ -606,27 +605,27 @@ class _PaymentMethodsState extends State<PaymentMethods> with RazorDelegate {
                         cartModel.currencyCode?.toLowerCase()) !=
                 null;
         if (isSupported) {
-          createOrderOnWebsite(
-              paid: false,
-              onFinish: (Order? order) async {
-                if (order != null) {
-                  final payStackServices = PayStackServices(
-                    amount: cartModel.getTotal()!.toString(),
-                    orderId: order.id!,
-                    email: cartModel.address?.email,
-                  );
-                  try {
-                    await payStackServices.openPayment(
-                        context, widget.onLoading!);
-                    widget.onFinish!(order);
-                  } catch (e) {
-                    Tools.showSnackBar(
-                        ScaffoldMessenger.of(context), e.toString());
-                    isPaying = false;
-                    unawaited(_deletePendingOrder(order.id));
-                  }
-                }
-              });
+          // createOrderOnWebsite(
+          //     paid: false,
+          //     onFinish: (Order? order) async {
+          //       if (order != null) {
+          //         final payStackServices = PayStackServices(
+          //           amount: cartModel.getTotal()!.toString(),
+          //           orderId: order.id!,
+          //           email: cartModel.address?.email,
+          //         );
+          //         try {
+          //           await payStackServices.openPayment(
+          //               context, widget.onLoading!);
+          //           widget.onFinish!(order);
+          //         } catch (e) {
+          //           Tools.showSnackBar(
+          //               ScaffoldMessenger.of(context), e.toString());
+          //           isPaying = false;
+          //           unawaited(_deletePendingOrder(order.id));
+          //         }
+          //       }
+          //     });
         } else {
           isPaying = false;
           widget.onLoading?.call(false);
@@ -759,26 +758,26 @@ class _PaymentMethodsState extends State<PaymentMethods> with RazorDelegate {
     } catch (_) {}
   }
 
-  @override
-  void handlePaymentSuccess(PaymentSuccessResponse response) {
-    createOrder(paid: true, transactionId: response.paymentId).then((value) {
-      widget.onLoading?.call(false);
-      isPaying = false;
-    });
-  }
+  // @override
+  // void handlePaymentSuccess(PaymentSuccessResponse response) {
+  //   createOrder(paid: true, transactionId: response.paymentId).then((value) {
+  //     widget.onLoading?.call(false);
+  //     isPaying = false;
+  //   });
+  // }
 
-  @override
-  void handlePaymentFailure(PaymentFailureResponse response) {
-    widget.onLoading?.call(false);
-    isPaying = false;
-    final body = convert.jsonDecode(response.message!);
-    if (body['error'] != null &&
-        body['error']['reason'] != 'payment_cancelled') {
-      Tools.showSnackBar(
-          ScaffoldMessenger.of(context), body['error']['description']);
-    }
-    printLog(response.message);
-  }
+  // @override
+  // void handlePaymentFailure(PaymentFailureResponse response) {
+  //   widget.onLoading?.call(false);
+  //   isPaying = false;
+  //   final body = convert.jsonDecode(response.message!);
+  //   if (body['error'] != null &&
+  //       body['error']['reason'] != 'payment_cancelled') {
+  //     Tools.showSnackBar(
+  //         ScaffoldMessenger.of(context), body['error']['description']);
+  //   }
+  //   printLog(response.message);
+  // }
 
   String formatPrice(String? price) {
     if (isNotBlank(price)) {

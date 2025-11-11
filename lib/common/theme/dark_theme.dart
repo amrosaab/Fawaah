@@ -64,7 +64,7 @@ ThemeData buildDarkTheme(String? language, [fontFamily, fontHeader]) {
       TargetPlatform.iOS: FadeUpwardsPageTransitionsBuilder(),
       TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
     }),
-    tabBarTheme: const TabBarTheme(
+    tabBarTheme: const TabBarThemeData(
       labelColor: Colors.white,
       unselectedLabelColor: Colors.white,
       labelPadding: EdgeInsets.zero,

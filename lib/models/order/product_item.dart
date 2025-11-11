@@ -250,6 +250,10 @@ class ProductItem {
     }
   }
 
+
+
+
+
   ProductItem.fromPrestaJson(Map parsedJson) {
     try {
       productId = parsedJson['product_id'];
