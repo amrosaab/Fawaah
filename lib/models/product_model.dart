@@ -194,7 +194,7 @@ class ProductModel with ChangeNotifier {
           cursor = productsList!.last.id;
         }
       }
-
+//
       _cancelLoadProduct =
           CancelableOperation.fromFuture(_service.api.fetchProductsByCategory(
         categoryId: categoryId,
@@ -337,6 +337,7 @@ class ProductModel with ChangeNotifier {
     Brand? brandByParams,
   }) async {
     try {
+      //
       await FluxNavigate.pushNamed(
         RouteList.backdrop,
         arguments: BackDropArguments(

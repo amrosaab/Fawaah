@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
@@ -20,27 +21,36 @@ import '../../../models/entities/filter_tags.dart';
 import '../../../models/entities/index.dart';
 import '../../../models/index.dart'
     show
-        Address,
-        CartModel,
-        Category,
-        CheckoutCart,
-        Order,
-        PaymentMethod,
-        PaymentSettings,
-        PaymentSettingsModel,
-        PaymentShopify,
-        Product,
-        ProductModel,
-        ProductVariation,
-        RatingCount,
-        ShippingMethod,
-        User;
+    Address,
+    CartModel,
+    Category,
+    CheckoutCart,
+    Order,
+    PaymentMethod,
+    PaymentSettings,
+    PaymentSettingsModel,
+    PaymentShopify,
+    Product,
+    ProductModel,
+    ProductVariation,
+    RatingCount,
+    ShippingMethod,
+    User;
 import '../../../models/vendor/store_model.dart' as store_model;
 import '../../../services/base_services.dart';
 import 'shopify_query.dart';
 import 'shopify_storage.dart';
+import 'shopify_token_store.dart';
 
-const _apiVersion = '2023-07';
+// ─── API version constants ────────────────────────────────────────────────────
+const _storefrontApiVersion = '2026-01';
+
+// ─── Customer Account API credentials ────────────────────────────────────────
+// client_id: from Shopify Partner Dashboard → Apps → Customer Account API
+// client_secret: from same location — required for confidential client token exchange
+const _kShopifyClientId     = 'eba394e8-4043-4d28-a9d5-6f31068c0fbc';
+const _kShopifyClientSecret = 'YOUR_CLIENT_SECRET_HERE'; // ← paste from Partner Dashboard
+const _kShopifyRedirectUri  = 'https://account.fawaah.com/callback';
 
 class ShopifyService extends BaseServices {
   ShopifyService({
@@ -48,64 +58,1149 @@ class ShopifyService extends BaseServices {
     String? blogDomain,
     required String accessToken,
     super.reviewService,
-  })  : client = _getClient(
-          accessToken: accessToken,
-          domain: domain,
-          version: _apiVersion,
-        ),
+  })  : client = _getStorefrontClient(
+    accessToken: accessToken,
+    domain: domain,
+    version: _storefrontApiVersion,
+  ),
         super(domain: domain, blogDomain: blogDomain);
 
+  /// Storefront API client — catalog, cart, checkout, password auth
   final GraphQLClient client;
 
   ShopifyStorage shopifyStorage = ShopifyStorage();
 
   @override
   String get languageCode => super.languageCode.toUpperCase();
-
   String? get countryCode => SettingsBox().countryCode;
 
   final _cacheCursorWithCategories = <String, String?>{};
   final _cacheCursorWithSearch = <String, String?>{};
 
-  static GraphQLClient _getClient({
+  // ── Customer Account API GraphQL endpoint ────────────────────────────────
+  // Confirmed by browser devtools: Shopify's own account portal uses:
+  //   POST https://account.fawaah.com/customer/api/unstable/graphql
+  //   Authorization: Bearer shcat_...
+  //
+  // IMPORTANT: `domain` is the Storefront domain (www.fawaah.com) — the CA API
+  // lives on the account subdomain (account.fawaah.com), so we hardcode it.
+  // The /.well-known discovery returns '2026-01' which rejects shcat_ tokens.
+  // 'unstable' is what Shopify's own JS uses and is the only version that works.
+  static const _kCaApiUrl =
+      'https://account.fawaah.com/customer/api/unstable/graphql';
+
+  String? _resolvedCustomerAccountApiUrl;
+
+  Future<String> _getCustomerAccountApiUrl() async {
+    _resolvedCustomerAccountApiUrl ??= _kCaApiUrl;
+    printLog('CA API url: $_resolvedCustomerAccountApiUrl');
+    return _resolvedCustomerAccountApiUrl!;
+  }
+
+  // ── Client factories ──────────────────────────────────────────────────────
+
+  static GraphQLClient _getStorefrontClient({
     required String accessToken,
     required String domain,
     String? version,
   }) {
-    var httpLink;
-    if (version == null) {
-      httpLink = HttpLink('$domain/api/graphql');
-    } else {
-      httpLink = HttpLink('$domain/api/$version/graphql.json');
-    }
+    final httpLink = version == null
+        ? HttpLink('$domain/api/graphql')
+        : HttpLink('$domain/api/$version/graphql.json');
     final authLink = AuthLink(
       headerKey: 'X-Shopify-Storefront-Access-Token',
       getToken: () async => accessToken,
     );
+    return GraphQLClient(cache: GraphQLCache(), link: authLink.concat(httpLink));
+  }
+
+  Future<GraphQLClient> _customerAccountClient(String token) async {
+    final url = await _getCustomerAccountApiUrl();
+    final preview = token.substring(0, math.min(30, token.length));
+    printLog('CA API client url: $url');
+    printLog('CA API token preview: "$preview..."');
+
+    // Shopify CA API expects the raw token with no "Bearer" prefix —
+    // confirmed from browser devtools: authorization: shcat_eyJ... (no Bearer).
+    final authLink = AuthLink(
+      headerKey: 'Authorization',
+      getToken: () async => token,   // raw shcat_ token, no "Bearer " prefix
+    );
+    final httpLink = HttpLink(url);
     return GraphQLClient(
       cache: GraphQLCache(),
       link: authLink.concat(httpLink),
     );
   }
 
-  // Future<void> getCookie() async {
-  //   final storage = injector<LocalStorage>();
-  //   try {
-  //     final json = storage.getItem(LocalStorageKey.shopifyCookie);
-  //     if (json != null) {
-  //       cookie = json;
-  //     } else {
-  //       cookie = 'OCSESSID=' +
-  //           randomNumeric(30) +
-  //           '; PHPSESSID=' +
-  //           randomNumeric(30);
-  //       await storage.setItem(LocalStorageKey.shopifyCookie, cookie);
-  //     }
-  //     printLog('Cookie storage: $cookie');
-  //   } catch (err) {
-  //     printLog(err);
-  //   }
-  // }
+  // ── Token refresh (Customer Account API) ──────────────────────────────────
+
+  /// Returns a valid shcat_ token for [cookie]:
+  /// - If [cookie] is not a CA token, returns it unchanged.
+  /// - If not expired (per ShopifyTokenStore), returns [cookie] as-is.
+  /// - If expired, attempts silent refresh via refresh_token.
+  /// - If refresh fails, returns null → caller should trigger re-login.
+  /// Called when silent refresh succeeds — update user.cookie in UserModel.
+  void Function(String newToken)? onTokenRefreshed;
+
+  /// Called when token is expired AND refresh failed — trigger logout.
+  void Function()? onTokenExpired;
+
+  Future<String?> _validCaToken(String cookie) async {
+    if (!_isCaToken(cookie)) return cookie;
+
+    // Check if stored token is still valid
+    final stored = await ShopifyTokenStore.validAccessToken();
+    if (stored != null) return stored;
+
+    // Try to refresh
+    printLog('shcat_ token expired — attempting refresh');
+    final newToken = await _refreshAccessToken();
+    if (newToken != null) {
+      printLog('Token refresh succeeded');
+      onTokenRefreshed?.call(newToken);
+      return newToken;
+    }
+
+    // Refresh failed — clear stale tokens and force re-login
+    printLog('Token refresh failed — clearing session, forcing re-login');
+    await ShopifyTokenStore.clear();
+    onTokenExpired?.call();
+    return null;
+  }
+
+  /// Exchanges the stored refresh_token for a new access_token.
+  /// Returns the new shcat_ token on success, or null on failure.
+  Future<String?> _refreshAccessToken() async {
+    try {
+      final storedRefresh = await ShopifyTokenStore.refreshToken();
+      if (storedRefresh == null) {
+        printLog('_refreshAccessToken: no refresh token stored');
+        return null;
+      }
+
+      final oidcResponse = await http
+          .get(Uri.parse('$domain/.well-known/openid-configuration'))
+          .timeout(const Duration(seconds: 5));
+      if (oidcResponse.statusCode != 200) return null;
+
+      final oidcConfig = jsonDecode(oidcResponse.body) as Map<String, dynamic>;
+      final tokenEndpoint = oidcConfig['token_endpoint'] as String?;
+      if (tokenEndpoint == null) return null;
+
+      final response = await http
+          .post(
+        Uri.parse(tokenEndpoint),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
+          'grant_type':    'refresh_token',
+          'refresh_token': storedRefresh,
+          'client_id':     _kShopifyClientId,
+        },
+      )
+          .timeout(const Duration(seconds: 10));
+
+      printLog('_refreshAccessToken: status=${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final newAccess = data['access_token'] as String?;
+        if (newAccess != null && newAccess.startsWith('shcat_')) {
+          final newRefresh = data['refresh_token'] as String?;
+          final expiresIn = (data['expires_in'] as num?)?.toInt() ?? 7200;
+          await ShopifyTokenStore.save(
+            accessToken: newAccess,
+            refreshToken: newRefresh ?? storedRefresh, // keep old if not rotated
+            expiresIn: expiresIn,
+          );
+          return newAccess;
+        }
+      }
+      return null;
+    } catch (e) {
+      printLog('_refreshAccessToken error: $e');
+      return null;
+    }
+  }
+
+  // ── OTP login (Storefront API) ────────────────────────────────────────────
+
+  @override
+  Future<bool?> sendVerificationCode(String email) async {
+    try {
+      printLog('sendVerificationCode: $email');
+      final result = await client.mutate(
+        MutationOptions(
+          document: gql(ShopifyQuery.sendEmailVerificationCode),
+          variables: {'email': email},
+        ),
+      );
+      if (result.hasException) {
+        printLog('sendVerificationCode error: ${result.exception}');
+        return false;
+      }
+      final errors = result.data?['customerSendEmailVerificationCode']
+      ?['userErrors'] as List?;
+      if (errors != null && errors.isNotEmpty) {
+        printLog('sendVerificationCode userErrors: ${errors[0]['message']}');
+        return false;
+      }
+      printLog('sendVerificationCode: OTP sent');
+      return true;
+    } catch (e) {
+      printLog('sendVerificationCode exception: $e');
+      return false;
+    }
+  }
+
+  @override
+  Future<String?> loginWithCode(String email, String code) async {
+    try {
+      printLog('loginWithCode: $email');
+      final result = await client.mutate(
+        MutationOptions(
+          document: gql(ShopifyQuery.loginWithCode),
+          variables: {'email': email, 'verificationCode': code},
+        ),
+      );
+      if (result.hasException) {
+        printLog('loginWithCode error: ${result.exception}');
+        return null;
+      }
+      final errors = result.data?['customerAccessTokenCreateWithCode']
+      ?['userErrors'] as List?;
+      if (errors != null && errors.isNotEmpty) {
+        printLog('loginWithCode userErrors: ${errors[0]['message']}');
+        return null;
+      }
+      final token = result.data?['customerAccessTokenCreateWithCode']
+      ?['customerAccessToken']?['accessToken'] as String?;
+      printLog(
+          'loginWithCode: token=${token?.substring(0, token!.length.clamp(0, 20))}...');
+      return token;
+    } catch (e) {
+      printLog('loginWithCode exception: $e');
+      return null;
+    }
+  }
+
+  // ── Password-based auth (Storefront API) ──────────────────────────────────
+
+  @override
+  Future<User> createUser({
+    String? firstName,
+    String? lastName,
+    String? username,
+    String? password,
+    String? phoneNumber,
+    bool isVendor = false,
+  }) async {
+    try {
+      final result = await client.query(QueryOptions(
+        document: gql(ShopifyQuery.createCustomer),
+        variables: <String, dynamic>{
+          'nRepositories': 50,
+          'input': {
+            'firstName': firstName,
+            'lastName': lastName,
+            'email': username,
+            'password': password,
+          },
+        },
+      ));
+      if (result.hasException) throw Exception(result.exception.toString());
+      final listError =
+      List.from(result.data?['customerCreate']?['userErrors'] ?? []);
+      if (listError.isNotEmpty) {
+        throw listError.map((e) => e['message']).join(', ');
+      }
+      final userInfo = result.data!['customerCreate']['customer'];
+      final token =
+      await createAccessToken(username: username, password: password);
+      return User.fromShopifyJson(userInfo, token);
+    } catch (e) {
+      printLog('createUser error $e');
+      rethrow;
+    }
+  }
+
+  Future<String?> createAccessToken({username, password}) async {
+    try {
+      final result = await client.query(QueryOptions(
+        document: gql(ShopifyQuery.createCustomerToken),
+        fetchPolicy: FetchPolicy.networkOnly,
+        variables: <String, dynamic>{
+          'nRepositories': 50,
+          'input': {'email': username, 'password': password},
+        },
+      ));
+      if (result.hasException) throw Exception(result.exception.toString());
+      return result.data!['customerAccessTokenCreate']['customerAccessToken']
+      ['accessToken'];
+    } catch (e) {
+      printLog('createAccessToken error $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<User?> login({username, password}) async {
+    try {
+      final accessToken =
+      await createAccessToken(username: username, password: password);
+      return await getUserInfo(accessToken);
+    } catch (e) {
+      throw Exception(
+          'Please check your username or password and try again. If the problem persists, please contact support!');
+    }
+  }
+
+  // ── Customer Account API token exchange ───────────────────────────────────
+  // The OAuth callback delivers a `shcac_` code. This must be exchanged for a
+  // proper `shcat_` access token via POST to the token endpoint before any
+  // Customer Account API GraphQL calls can be made.
+
+  /// Exchanges a `shcac_` authorization code for a `shcat_` access token.
+  /// Returns the `shcat_` token on success, or null on failure.
+  /// Exchange an OAuth `shcac_` authorization code (+ PKCE verifier) for a
+  /// `shcat_` Customer Account API access token.
+  ///
+  /// [codeVerifier] must be the exact verifier that was used to compute the
+  /// code_challenge when building the authorization URL — without it Shopify
+  /// returns 401 "client credentials invalid".
+  /// Exchange a `shcac_` authorization code for a `shcat_` access token.
+  ///
+  /// [sessionCookie] — the value of the `_shopify_essential` cookie captured
+  /// from the WebView after the user completes login. Shopify's token endpoint
+  /// validates the session server-side, so this cookie must accompany the POST.
+  /// Without it the endpoint returns 401 "client credentials invalid".
+  Future<String?> exchangeCustomerAccountToken(
+      String shcacCode, {String? sessionCookie}) async {
+    try {
+      final oidcResponse = await http
+          .get(Uri.parse('$domain/.well-known/openid-configuration'))
+          .timeout(const Duration(seconds: 5));
+
+      if (oidcResponse.statusCode != 200) {
+        printLog('CA token exchange: OIDC discovery failed ' + oidcResponse.statusCode.toString());
+        return null;
+      }
+
+      final oidcConfig = jsonDecode(oidcResponse.body) as Map<String, dynamic>;
+      final tokenEndpoint = oidcConfig['token_endpoint'] as String?;
+      if (tokenEndpoint == null) {
+        printLog('CA token exchange: no token_endpoint in OIDC config');
+        return null;
+      }
+      printLog('CA token exchange: endpoint=' + tokenEndpoint);
+
+      final headers = <String, String>{
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Origin': domain,
+        'Referer': domain + '/',
+      };
+      if (sessionCookie != null && sessionCookie.isNotEmpty) {
+        headers['Cookie'] = '_shopify_essential=' + sessionCookie;
+        printLog('CA token exchange: attaching session cookie (' + sessionCookie.length.toString() + ' chars)');
+      } else {
+        printLog('CA token exchange: WARNING no session cookie — exchange may fail');
+      }
+
+      final response = await http
+          .post(
+        Uri.parse(tokenEndpoint),
+        headers: headers,
+        body: {
+          'grant_type':   'authorization_code',
+          'code':         shcacCode,
+          'redirect_uri': _kShopifyRedirectUri,
+          'client_id':    _kShopifyClientId,
+        },
+      )
+          .timeout(const Duration(seconds: 10));
+
+      printLog('CA token exchange: status=' + response.statusCode.toString() + ' body=' + response.body);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final accessToken = data['access_token'] as String?;
+        if (accessToken != null && accessToken.startsWith('shcat_')) {
+          printLog('CA token exchange: SUCCESS ' + accessToken.substring(0, math.min(20, accessToken.length)) + '...');
+          // Persist access + refresh tokens for future auto-refresh
+          final refreshToken = data['refresh_token'] as String?;
+          final expiresIn = (data['expires_in'] as num?)?.toInt() ?? 7200;
+          await ShopifyTokenStore.save(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            expiresIn: expiresIn,
+          );
+          printLog('CA token exchange: saved to store, expiresIn=${expiresIn}s, hasRefresh=${refreshToken != null}');
+          return accessToken;
+        }
+        printLog('CA token exchange: unexpected format: ' + (accessToken ?? 'null'));
+        return null;
+      }
+
+      printLog('CA token exchange: FAILED status=' + response.statusCode.toString() + ' body=' + response.body);
+      return null;
+    } catch (e) {
+      printLog('CA token exchange exception: ' + e.toString());
+      return null;
+    }
+  }
+
+  /// Called from LoginScreen after the OAuth WebView delivers a `shcac_` code.
+  /// [sessionCookie] must be the `_shopify_essential` cookie from the WebView.
+  Future<User?> loginWithOAuthCode(String shcacCode, {String? sessionCookie}) async {
+    final shcatToken = await exchangeCustomerAccountToken(
+        shcacCode, sessionCookie: sessionCookie);
+    if (shcatToken == null) {
+      printLog('loginWithOAuthCode: token exchange failed');
+      return null;
+    }
+    return _getUserInfoCustomerAccount(shcatToken);
+  }
+
+  // ── User profile ──────────────────────────────────────────────────────────
+  // getUserInfo is called for persisted tokens (shcat_) and password tokens.
+  // For the initial OAuth login use loginWithOAuthCode() instead.
+
+  @override
+  Future<User?> getUserInfo(cookie) async {
+    final token = cookie as String?;
+    if (token == null || token.isEmpty) return null;
+
+    printLog('getUserInfo: prefix=' + token.substring(0, math.min(10, token.length)) + ' len=' + token.length.toString());
+
+    if (token.startsWith('shcat_')) {
+      return _getUserInfoCustomerAccount(token);
+    }
+
+    // Password-based Storefront API token
+    return _getUserInfoStorefront(token);
+  }
+
+  Future<User?> _getUserInfoCustomerAccount(String rawToken) async {
+    try {
+      final token = await _validCaToken(rawToken);
+      if (token == null) {
+        printLog('_getUserInfoCustomerAccount: token expired and refresh failed');
+        return null;
+      }
+      // ── Raw HTTP sanity check ──────────────────────────────────────────────
+      // Test the token + endpoint with a plain http.post before using GraphQL.
+      // This lets us see the exact response without GraphQL client interference.
+      final rawResp = await http.post(
+        Uri.parse(_kCaApiUrl),
+        headers: {
+          'Authorization': token,  // CA API: raw token, no Bearer prefix
+          'Content-Type': 'application/json',
+        },
+        body: '{"query":"{ customer { id emailAddress { emailAddress } firstName lastName } }"}',
+      ).timeout(const Duration(seconds: 10));
+      printLog('CA raw HTTP status: ' + rawResp.statusCode.toString());
+      printLog('CA raw HTTP body: ' + rawResp.body.substring(0, math.min(500, rawResp.body.length)));
+      // ── End sanity check ──────────────────────────────────────────────────
+
+      final caClient = await _customerAccountClient(token);
+      final result = await caClient.query(
+        QueryOptions(
+          document: gql(r'''
+            query {
+              customer {
+                id
+                emailAddress { emailAddress }
+                firstName
+                lastName
+                displayName
+                phoneNumber { phoneNumber }
+                defaultAddress {
+                  address1 address2 city firstName id lastName zip
+                  phoneNumber name province country zoneCode territoryCode
+                }
+                addresses(first: 10) {
+                  edges {
+                    node {
+                      address1 address2 city firstName id lastName zip
+                      phoneNumber name province country zoneCode territoryCode
+                    }
+                  }
+                }
+              }
+            }
+          '''),
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      printLog('CA getUserInfo hasException=${result.hasException}');
+      if (result.hasException) {
+        printLog('CA getUserInfo exception=${result.exception}');
+      }
+      printLog('CA getUserInfo data=${result.data}');
+
+      if (result.hasException || result.data?['customer'] == null) {
+        printLog('CA getUserInfo failed — customer is null or exception');
+        return null;
+      }
+
+      final user = _userFromCustomerAccountData(
+          result.data!['customer'] as Map<String, dynamic>, token);
+      printLog('CA getUserInfo success: ${user.email} / ${user.name}');
+      return user;
+    } catch (e, s) {
+      printLog('CA getUserInfo exception: $e\n$s');
+      return null;
+    }
+  }
+
+  Future<User?> _getUserInfoStorefront(String cookie) async {
+    try {
+      final result = await client.query(QueryOptions(
+        document: gql(ShopifyQuery.getCustomerInfo),
+        fetchPolicy: FetchPolicy.networkOnly,
+        variables: <String, dynamic>{
+          'nRepositories': 50,
+          'accessToken': cookie,
+        },
+      ));
+      if (result.hasException) throw Exception(result.exception.toString());
+      final user =
+      User.fromShopifyJson(result.data?['customer'] ?? {}, cookie);
+      return user.cookie == null ? null : user;
+    } catch (e) {
+      printLog('_getUserInfoStorefront error: $e');
+      return null;
+    }
+  }
+
+  User _userFromCustomerAccountData(Map<String, dynamic> c, String cookie) {
+    final emailData = c['emailAddress'];
+    final email =
+    emailData is Map ? emailData['emailAddress'] as String? : null;
+    final phoneData = c['phoneNumber'];
+    final phone =
+    phoneData is Map ? phoneData['phoneNumber'] as String? : null;
+
+    final addressEdges =
+    (c['addresses']?['edges'] as List? ?? []).map((e) {
+      return {'node': _normalizeAddress(e['node'] as Map<String, dynamic>)};
+    }).toList();
+
+    return User.fromShopifyJson(
+      {
+        'id': c['id'],
+        'email': email,
+        'firstName': c['firstName'],
+        'lastName': c['lastName'],
+        'displayName': c['displayName'],
+        'phone': phone,
+        'defaultAddress': c['defaultAddress'] != null
+            ? _normalizeAddress(c['defaultAddress'] as Map<String, dynamic>)
+            : null,
+        'addresses': {'edges': addressEdges},
+        'createdAt': null,
+      },
+      cookie,
+    );
+  }
+
+  Map<String, dynamic> _normalizeAddress(Map<String, dynamic> a) => {
+    'id': a['id'],
+    'address1': a['address1'],
+    'address2': a['address2'],
+    'city': a['city'],
+    'firstName': a['firstName'],
+    'lastName': a['lastName'],
+    'zip': a['zip'],
+    'phone': a['phoneNumber'] ?? a['phone'],
+    'province': a['province'] ?? a['zoneCode'],
+    'country': a['country'] ?? a['territoryCode'],
+    'name': a['name'],
+    'latitude': a['latitude'],
+    'longitude': a['longitude'],
+    'countryCode': a['territoryCode'] ?? a['countryCode'],
+  };
+
+  @override
+  Future<User?>? getUserInfoFromNewAPI(accessToken) => getUserInfo(accessToken);
+
+  /// Update profile — Customer Account API, Storefront fallback.
+  @override
+  Future<Map<String, dynamic>> updateUserInfo(
+      Map<String, dynamic> json, String? token)
+  async {
+    json.removeWhere((key, value) => key == 'deviceToken');
+    try {
+      final input = <String, dynamic>{};
+      if (json['firstName'] != null) input['firstName'] = json['firstName'];
+      if (json['lastName'] != null) input['lastName'] = json['lastName'];
+      if (json['phone'] != null) {
+        input['phoneNumber'] = {'phoneNumber': json['phone']};
+      }
+      if (json['email'] != null) {
+        input['emailAddress'] = {'emailAddress': json['email']};
+      }
+
+      final caClient = await _customerAccountClient(token!);
+      final result = await caClient.mutate(
+        MutationOptions(
+          document: gql(r'''
+            mutation customerUpdate($input: CustomerUpdateInput!) {
+              customerUpdate(input: $input) {
+                customer {
+                  id
+                  emailAddress { emailAddress }
+                  firstName lastName displayName
+                  phoneNumber { phoneNumber }
+                }
+                userErrors { field message code }
+              }
+            }
+          '''),
+          variables: {'input': input},
+        ),
+      );
+      if (result.hasException) throw Exception(result.exception.toString());
+      final errors =
+          result.data?['customerUpdate']?['userErrors'] as List? ?? [];
+      if (errors.isNotEmpty) throw errors.map((e) => e['message']).join(', ');
+      final c = result.data?['customerUpdate']?['customer']
+      as Map<String, dynamic>? ??
+          {};
+      return _userFromCustomerAccountData(c, token).toJson();
+    } catch (e) {
+      printLog('updateUserInfo CA error: $e — trying Storefront fallback');
+      final options = QueryOptions(
+        document: gql(ShopifyQuery.customerUpdate),
+        fetchPolicy: FetchPolicy.networkOnly,
+        variables: <String, dynamic>{
+          'nRepositories': 50,
+          'customerAccessToken': token,
+          'customer': json,
+        },
+      );
+      final result = await client.query(options);
+      if (result.hasException) throw Exception(result.exception.toString());
+      final userData = result.data?['customerUpdate']['customer'];
+      final newToken = result.data?['customerUpdate']['customerAccessToken']
+      ?['accessToken'];
+      return User.fromShopifyJson(userData, newToken).toJson();
+    }
+  }
+
+  // ── Orders (Customer Account API) ─────────────────────────────────────────
+
+  @override
+  Future<PagingResponse<Order>> getMyOrders({
+    User? user,
+    dynamic cursor,
+    String? cartId,
+  }) async {
+    try {
+      final rawToken = user?.cookie;
+      if (rawToken == null || rawToken.isEmpty) return const PagingResponse();
+
+      final token = await _validCaToken(rawToken);
+      if (token == null) {
+        printLog('getMyOrders: token expired and refresh failed — re-login required');
+        return const PagingResponse();
+      }
+
+      final caClient = await _customerAccountClient(token);
+      final result = await caClient.query(
+        QueryOptions(
+          document: gql(r'''
+            query Orders($first: Int, $after: String) {
+              customer {
+                orders(first: $first, after: $after, sortKey: PROCESSED_AT, reverse: true) {
+                  nodes {
+                    id
+                    name
+                    confirmationNumber
+                    customerFulfillmentStatus
+                    totalPrice { amount currencyCode }
+                    processedAt
+                    cancelledAt
+                    paymentInformation { paymentStatus }
+                    lineItems: lineItemContainers {
+                      ... on RemainingLineItemContainer {
+                        id
+                        lineItems(first: 50) {
+                          nodes {
+                            id
+                            lineItem {
+                              id name quantity
+                              image {
+                                altText
+                                thumbnail: url(transform: { maxWidth: 400, maxHeight: 400 })
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                  pageInfo { hasNextPage endCursor }
+                }
+              }
+            }
+          '''),
+          fetchPolicy: FetchPolicy.noCache,
+          variables: <String, dynamic>{
+            'first': 50,
+            if (cursor != null) 'after': cursor,
+          },
+        ),
+      );
+
+      if (result.hasException) {
+        printLog('getMyOrders exception: ${result.exception}');
+        return const PagingResponse();
+      }
+
+      final customerData = result.data?['customer'];
+      if (customerData == null) {
+        printLog('getMyOrders: customer null — token expired?');
+        return const PagingResponse();
+      }
+
+      final nodes = customerData['orders']?['nodes'] as List? ?? [];
+      printLog('getMyOrders: ${nodes.length} orders');
+
+      final list = nodes.map((n) {
+        final converted =
+        _convertCustomerAccountOrder(n as Map<String, dynamic>);
+        return converted.isNotEmpty ? Order.fromJson(converted) : null;
+      }).whereType<Order>().toList();
+
+      return PagingResponse(
+        cursor: customerData['orders']?['pageInfo']?['endCursor'] as String?,
+        data: list,
+      );
+    } catch (e, s) {
+      printLog('getMyOrders error: $e\n$s');
+      return const PagingResponse();
+    }
+  }
+
+  @override
+  Future<Order?> getLatestOrder({required String cookie}) async {
+    try {
+      final token = await _validCaToken(cookie);
+      if (token == null) {
+        printLog('getLatestOrder: token expired and refresh failed');
+        return null;
+      }
+      final caClient = await _customerAccountClient(token);
+      final result = await caClient.query(
+        QueryOptions(
+          document: gql(r'''
+            query {
+              customer {
+                orders(first: 1, sortKey: PROCESSED_AT, reverse: true) {
+                  nodes {
+                    id
+                    name
+                    confirmationNumber
+                    customerFulfillmentStatus
+                    totalPrice { amount currencyCode }
+                    processedAt
+                    cancelledAt
+                    paymentInformation { paymentStatus }
+                    lineItems: lineItemContainers {
+                      ... on RemainingLineItemContainer {
+                        id
+                        lineItems(first: 50) {
+                          nodes {
+                            id
+                            lineItem {
+                              id name quantity
+                              image {
+                                altText
+                                thumbnail: url(transform: { maxWidth: 400, maxHeight: 400 })
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          '''),
+          fetchPolicy: FetchPolicy.noCache,
+        ),
+      );
+      if (result.hasException) return null;
+      final nodes = result.data?['customer']?['orders']?['nodes'] as List?;
+      if (nodes == null || nodes.isEmpty) return null;
+      final converted =
+      _convertCustomerAccountOrder(nodes.first as Map<String, dynamic>);
+      return converted.isNotEmpty ? Order.fromJson(converted) : null;
+    } catch (e) {
+      printLog('getLatestOrder error: $e');
+      return null;
+    }
+  }
+
+  /// Fetch a single order by its GID (e.g. "gid://shopify/Order/123456789")
+  /// Called by the order-detail screen — mirrors the browser's `OrderDetails` operation.
+  @override
+  Future<Order?> getOrderById({
+    required String id,
+    String? cookie,
+  }) async {
+    try {
+      final rawToken = cookie;
+      if (rawToken == null || rawToken.isEmpty) return null;
+
+      final token = await _validCaToken(rawToken);
+      if (token == null) {
+        printLog('getOrderById: token expired and refresh failed');
+        return null;
+      }
+
+      final caClient = await _customerAccountClient(token);
+      final result = await caClient.query(
+        QueryOptions(
+          document: gql(r'''
+            query OrderDetails($id: ID!) {
+              order(id: $id) {
+                id
+                name
+                confirmationNumber
+                customerFulfillmentStatus
+                totalPrice { amount currencyCode }
+                totalShippingPrice { amount currencyCode }
+                totalTax { amount currencyCode }
+                subtotalPrice { amount currencyCode }
+                processedAt
+                cancelledAt
+                paymentInformation { paymentStatus }
+                shippingAddress {
+                  firstName
+                  lastName
+                  address1
+                  address2
+                  city
+                  province
+                  zip
+                  country
+                  phone
+                }
+                lineItems: lineItemContainers {
+                  ... on RemainingLineItemContainer {
+                    id
+                    lineItems(first: 50) {
+                      nodes {
+                        id
+                        lineItem {
+                          id name quantity
+                          price { amount currencyCode }
+                          image {
+                            altText
+                            thumbnail: url(transform: { maxWidth: 400, maxHeight: 400 })
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          '''),
+          variables: {'id': id},
+          fetchPolicy: FetchPolicy.noCache,
+        ),
+      );
+
+      if (result.hasException) {
+        printLog('getOrderById exception: ${result.exception}');
+        return null;
+      }
+
+      final node = result.data?['order'] as Map<String, dynamic>?;
+      if (node == null) return null;
+
+      final converted = _convertCustomerAccountOrderDetail(node);
+      return converted.isNotEmpty ? Order.fromJson(converted) : null;
+    } catch (e, s) {
+      printLog('getOrderById error: $e\n$s');
+      return null;
+    }
+  }
+
+  /// Like [_convertCustomerAccountOrder] but also maps shipping address,
+  /// per-item price, and the extra totals returned by the OrderDetails query.
+  Map<String, dynamic> _convertCustomerAccountOrderDetail(
+      Map<String, dynamic> node) {
+    try {
+      final currencyCode =
+          node['totalPrice']?['currencyCode'] as String? ?? '';
+      final totalAmount = (node['totalPrice']?['amount'] ?? '0').toString();
+      final totalShipping =
+      (node['totalShippingPrice']?['amount'] ?? '0').toString();
+      final totalTax = (node['totalTax']?['amount'] ?? '0').toString();
+      final subtotal = (node['subtotalPrice']?['amount'] ?? '0').toString();
+
+      // Build line-item edges from lineItemContainers
+      final containers = node['lineItems'] as List? ?? [];
+      final List<Map<String, dynamic>> convertedEdges = [];
+
+      for (final container in containers) {
+        if (container is! Map) continue;
+        final containerLineItems = container['lineItems'];
+        if (containerLineItems == null) continue;
+        final containerNodes = containerLineItems['nodes'] as List? ?? [];
+        for (final wrapper in containerNodes) {
+          final lineItem = wrapper['lineItem'] as Map<String, dynamic>?;
+          if (lineItem == null) continue;
+          final image = lineItem['image'] as Map<String, dynamic>?;
+          final itemPrice =
+          (lineItem['price']?['amount'] ?? '0.00').toString();
+          convertedEdges.add({
+            'node': {
+              'id': lineItem['id'],
+              'title': lineItem['name'],
+              'quantity': lineItem['quantity'] ?? 1,
+              'cost': {
+                'totalAmount': {'amount': itemPrice, 'currencyCode': currencyCode}
+              },
+              'variant': {
+                'id': '',
+                'title': lineItem['name'] ?? '',
+                'image': image != null
+                    ? {'altText': image['altText'], 'url': image['thumbnail']}
+                    : null,
+                'price': {'amount': itemPrice, 'currencyCode': currencyCode},
+                'selectedOptions': [],
+                'product': null,
+              },
+            }
+          });
+        }
+      }
+
+      // Status
+      final paymentStatus =
+      node['paymentInformation']?['paymentStatus'] as String?;
+      final fulfillmentStatus =
+      node['customerFulfillmentStatus'] as String?;
+      final financialStatus = (paymentStatus?.isNotEmpty ?? false)
+          ? paymentStatus!
+          : _convertFulfillmentStatus(fulfillmentStatus);
+
+      // Shipping address — CA API returns it directly on the order
+      final addr = node['shippingAddress'] as Map<String, dynamic>?;
+
+      return {
+        'id': node['id'],
+        'orderNumber': (node['name'] as String?)?.replaceAll('#', '') ?? '',
+        'financialStatus': financialStatus,
+        'currencyCode': currencyCode,
+        'processedAt': node['processedAt'],
+        'totalPrice': {'amount': totalAmount},
+        'totalShippingPrice': {'amount': totalShipping},
+        'totalTax': {'amount': totalTax},
+        'subtotalPrice': {'amount': subtotal},
+        'lineItems': {'edges': convertedEdges},
+        'shippingAddress': addr != null
+            ? {
+          'firstName': addr['firstName'] ?? '',
+          'lastName': addr['lastName'] ?? '',
+          'address1': addr['address1'] ?? '',
+          'address2': addr['address2'] ?? '',
+          'city': addr['city'] ?? '',
+          'province': addr['province'] ?? '',
+          'zip': addr['zip'] ?? '',
+          'country': addr['country'] ?? '',
+          'phone': addr['phone'] ?? '',
+        }
+            : null,
+        'statusUrl': '',
+      };
+    } catch (e) {
+      printLog('_convertCustomerAccountOrderDetail error: $e');
+      return {};
+    }
+  }
+
+  Map<String, dynamic> _convertCustomerAccountOrder(
+      Map<String, dynamic> node) {
+    try {
+      final currencyCode =
+          node['totalPrice']?['currencyCode'] as String? ?? '';
+      final totalAmount =
+      (node['totalPrice']?['amount'] ?? '0').toString();
+
+      // lineItems is lineItemContainers — an array of container types.
+      // We only care about RemainingLineItemContainer entries (have 'lineItems').
+      final containers = node['lineItems'] as List? ?? [];
+      final List<Map<String, dynamic>> convertedEdges = [];
+
+      for (final container in containers) {
+        if (container is! Map) continue;
+        final containerLineItems = container['lineItems'];
+        if (containerLineItems == null) continue; // not RemainingLineItemContainer
+        final containerNodes = containerLineItems['nodes'] as List? ?? [];
+        for (final wrapper in containerNodes) {
+          final lineItem = wrapper['lineItem'] as Map<String, dynamic>?;
+          if (lineItem == null) continue;
+          final image = lineItem['image'] as Map<String, dynamic>?;
+          convertedEdges.add({
+            'node': {
+              'id': lineItem['id'],
+              'title': lineItem['name'],
+              'quantity': lineItem['quantity'] ?? 1,
+              'cost': {
+                'totalAmount': {'amount': '0.00', 'currencyCode': currencyCode}
+              },
+              'variant': {
+                'id': '',
+                'title': lineItem['name'] ?? '',
+                'image': image != null
+                    ? {'altText': image['altText'], 'url': image['thumbnail']}
+                    : null,
+                'price': {'amount': '0.00', 'currencyCode': currencyCode},
+                'selectedOptions': [],
+                'product': null,
+              },
+            }
+          });
+        }
+      }
+
+      // paymentStatus from paymentInformation, fall back to fulfillment status
+      final paymentStatus =
+      node['paymentInformation']?['paymentStatus'] as String?;
+      final fulfillmentStatus =
+      node['customerFulfillmentStatus'] as String?;
+      final financialStatus = (paymentStatus?.isNotEmpty ?? false)
+          ? paymentStatus!
+          : _convertFulfillmentStatus(fulfillmentStatus);
+
+      return {
+        'id': node['id'],
+        'orderNumber': (node['name'] as String?)?.replaceAll('#', '') ?? '',
+        'financialStatus': financialStatus,
+        'currencyCode': currencyCode,
+        'processedAt': node['processedAt'],
+        'totalPrice': {'amount': totalAmount},
+        'totalShippingPrice': {'amount': '0.00'},
+        'totalTax': {'amount': '0.00'},
+        'subtotalPrice': {'amount': totalAmount},
+        'lineItems': {'edges': convertedEdges},
+        'shippingAddress': null,
+        'statusUrl': '',
+      };
+    } catch (e) {
+      printLog('_convertCustomerAccountOrder error: $e');
+      return {};
+    }
+  }
+
+  String _convertFulfillmentStatus(String? status) {
+    switch (status?.toUpperCase()) {
+      case 'FULFILLED':
+        return 'PAID';
+      case 'PARTIALLY_FULFILLED':
+        return 'PARTIALLY_PAID';
+      case 'UNFULFILLED':
+        return 'PENDING';
+      case 'CANCELLED':
+        return 'VOIDED';
+      case 'RESTOCKED':
+        return 'REFUNDED';
+      default:
+        return 'PENDING';
+    }
+  }
+
+  // ── Logout ────────────────────────────────────────────────────────────────
+
+  @override
+  Future logout(String? token) async {
+    // Always clear the persisted token store on logout
+    await ShopifyTokenStore.clear();
+    if (token == null) return;
+    // shcat_ = proper CA API access token — revoke via end_session
+    // shcac_ = raw OAuth code, was never exchanged — nothing to revoke
+    // anything else = Storefront password token
+    if (token.startsWith('shcat_')) {
+      await _logoutCustomerAccountToken(token);
+    } else if (!token.startsWith('shcac_')) {
+      await _logoutStorefrontToken(token);
+    }
+  }
+
+  Future<void> _logoutCustomerAccountToken(String token) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$domain/.well-known/openid-configuration'))
+          .timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        final config = jsonDecode(response.body) as Map<String, dynamic>;
+        final endSessionEndpoint = config['end_session_endpoint'] as String?;
+        if (endSessionEndpoint != null) {
+          await http
+              .post(
+            Uri.parse(endSessionEndpoint),
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: {'id_token_hint': token},
+          )
+              .timeout(const Duration(seconds: 5));
+          printLog('CA logout: end_session called');
+          return;
+        }
+      }
+    } catch (e) {
+      printLog('CA logout error (non-fatal): $e');
+    }
+  }
+
+  Future<void> _logoutStorefrontToken(String token) async {
+    try {
+      await client.mutate(
+        MutationOptions(
+          document: gql(ShopifyQuery.deleteToken),
+          variables: {'customerAccessToken': token},
+        ),
+      );
+    } catch (e) {
+      printLog('Storefront logout error (non-fatal): $e');
+    }
+  }
+
+  // ── Password reset (Storefront API) ───────────────────────────────────────
+
+  @override
+  Future<String> submitForgotPassword({
+    String? forgotPwLink,
+    Map<String, dynamic>? data,
+  }) async {
+    final result = await client.mutate(MutationOptions(
+      document: gql(ShopifyQuery.resetPassword),
+      variables: {'email': data!['email']},
+    ));
+    if (result.hasException) {
+      throw result.exception?.graphqlErrors.firstOrNull?.message ??
+          S.current.somethingWrong;
+    }
+    final errors =
+    result.data!['customerRecover']['customerUserErrors'] as List?;
+    if (errors?.isNotEmpty ?? false) {
+      if (errors!.any((e) => e['code'] == 'UNIDENTIFIED_CUSTOMER')) {
+        throw Exception('UNIDENTIFIED_CUSTOMER');
+      }
+    }
+    return '';
+  }
+
+  // ── Categories (Storefront API) ───────────────────────────────────────────
 
   Future<List<Category>> getCategoriesByCursor({
     List<Category>? categories,
@@ -113,42 +1208,32 @@ class ShopifyService extends BaseServices {
     langCode,
   }) async {
     try {
-      const nRepositories = 50;
-      var variables = <String, dynamic>{'nRepositories': nRepositories};
-      if (cursor != null) {
-        variables['cursor'] = cursor;
-      }
-      variables['pageSize'] = 250;
-      variables['langCode'] = langCode?.toString().toUpperCase();
-      variables['countryCode'] = countryCode?.toString().toUpperCase();
-      final options = QueryOptions(
+      var variables = <String, dynamic>{
+        'nRepositories': 50,
+        'pageSize': 250,
+        'langCode': langCode?.toString().toUpperCase(),
+        'countryCode': countryCode?.toString().toUpperCase(),
+      };
+      if (cursor != null) variables['cursor'] = cursor;
+
+      final result = await client.query(QueryOptions(
         fetchPolicy: FetchPolicy.networkOnly,
         document: gql(ShopifyQuery.getCollections),
         variables: variables,
-      );
-      final result = await client.query(options);
+      ));
+      if (result.hasException) printLog(result.exception.toString());
 
-      if (result.hasException) {
-        printLog(result.exception.toString());
-      }
-
-      var list = categories ?? <Category>[];
-
+      final list = categories ?? <Category>[];
       for (var item in result.data!['collections']['edges']) {
-        var category = item['node'];
-
-        list.add(Category.fromJsonShopify(category));
+        list.add(Category.fromJsonShopify(item['node']));
       }
+
       if (result.data?['collections']?['pageInfo']?['hasNextPage'] ?? false) {
-        var lastCategory = result.data!['collections']['edges'].last;
-        String? cursor = lastCategory['cursor'];
-        if (cursor != null) {
-          printLog('::::getCategories shopify by cursor $cursor');
-          return await getCategoriesByCursor(
-            categories: list,
-            cursor: cursor,
-            langCode: langCode,
-          );
+        final lastCursor =
+        result.data!['collections']['edges'].last['cursor'] as String?;
+        if (lastCursor != null) {
+          return getCategoriesByCursor(
+              categories: list, cursor: lastCursor, langCode: langCode);
         }
       }
       return list;
@@ -160,12 +1245,9 @@ class ShopifyService extends BaseServices {
   @override
   Future<List<Category>> getCategories({lang}) async {
     try {
-      printLog('::::request category');
-      var categories = await getCategoriesByCursor(langCode: lang);
-      return categories;
+      return await getCategoriesByCursor(langCode: lang);
     } catch (e) {
-      printLog('::::getCategories shopify error');
-      printLog(e.toString());
+      printLog('getCategories error $e');
       rethrow;
     }
   }
@@ -177,38 +1259,29 @@ class ShopifyService extends BaseServices {
     int limit = 25,
     required String? parentId,
   }) async {
-    final cursor = page;
     try {
-      const nRepositories = 50;
-      var variables = <String, dynamic>{'nRepositories': nRepositories};
-      if (cursor != null) {
-        variables['cursor'] = cursor;
-      }
-      variables['pageSize'] = limit;
-      final options = QueryOptions(
+      final result = await client.query(QueryOptions(
         document: gql(ShopifyQuery.getCollections),
-        variables: variables,
-      );
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-      }
-
-      var list = <Category>[];
-
+        variables: <String, dynamic>{
+          'nRepositories': 50,
+          'pageSize': limit,
+          if (page != null) 'cursor': page,
+        },
+      ));
+      if (result.hasException) printLog(result.exception.toString());
+      final list = <Category>[];
       String? lastCursor;
       for (var item in result.data!['collections']['edges']) {
-        var category = item['node'];
-        lastCursor = item['cursor'];
-        list.add(Category.fromJsonShopify(category));
+        lastCursor = item['cursor'] as String?;
+        list.add(Category.fromJsonShopify(item['node']));
       }
-
       return PagingResponse(data: list, cursor: lastCursor);
     } catch (e) {
       return const PagingResponse(data: <Category>[]);
     }
   }
+
+  // ── Products (Storefront API) ─────────────────────────────────────────────
 
   Future<List<Product>?> fetchProducts({
     String? lang,
@@ -217,14 +1290,11 @@ class ShopifyService extends BaseServices {
     String? order,
     String? orderBy,
   }) async {
-    String? currentCursor;
     final sortKey = getProductSortKey(orderBy);
     final reverse = getOrderDirection(order);
     try {
-      var list = <Product>[];
-      const nRepositories = 50;
-      var variables = <String, dynamic>{
-        'nRepositories': nRepositories,
+      final variables = <String, dynamic>{
+        'nRepositories': 50,
         'pageSize': limit ?? apiPageSize,
         'sortKey': sortKey,
         'reverse': reverse,
@@ -232,123 +1302,78 @@ class ShopifyService extends BaseServices {
         'countryCode': countryCode,
       };
       final markCategory = variables.toString();
-      if (page == 1) {
-        _cacheCursorWithCategories[markCategory] = null;
-      }
-
-      currentCursor = _cacheCursorWithCategories[markCategory];
+      if (page == 1) _cacheCursorWithCategories[markCategory] = null;
+      final currentCursor = _cacheCursorWithCategories[markCategory];
       if (currentCursor?.isNotEmpty ?? false) {
         variables['cursor'] = currentCursor;
       }
-      printLog('::::request fetchProducts');
-      final options = QueryOptions(
+
+      final result = await client.query(QueryOptions(
         document: gql(ShopifyQuery.getProducts),
         fetchPolicy: FetchPolicy.networkOnly,
         variables: variables,
-      );
-      final result = await client.query(options);
-      if (result.hasException) {
-        throw (result.exception.toString());
-      }
+      ));
+      if (result.hasException) throw result.exception.toString();
 
-      var productResp = result.data?['products'];
-
-      if (productResp != null) {
-        var edges = productResp['edges'];
-        if (edges is List && edges.isNotEmpty) {
-          printLog('fetchProducts with products length ${edges.length}');
-          var lastItem = edges.last;
-          var lastCursor = lastItem['cursor'];
-          _cacheCursorWithCategories[markCategory] = lastCursor;
-          for (var item in edges) {
-            var product = item['node'];
-
-            /// Hide out of stock.
-            if ((kAdvanceConfig.hideOutOfStock) &&
-                product['availableForSale'] == false) {
-              continue;
-            }
-            list.add(Product.fromShopify(product));
-          }
+      final list = <Product>[];
+      final edges = result.data?['products']?['edges'];
+      if (edges is List && edges.isNotEmpty) {
+        _cacheCursorWithCategories[markCategory] = edges.last['cursor'];
+        for (var item in edges) {
+          final product = item['node'];
+          if (kAdvanceConfig.hideOutOfStock &&
+              product['availableForSale'] == false) continue;
+          list.add(Product.fromShopify(product));
         }
       }
       return list;
     } catch (e) {
-      printError('::::fetchProducts shopify error $e');
-      printError(e.toString());
+      printError('fetchProducts error $e');
       rethrow;
     }
   }
 
   @override
   Future<PagingResponse<Product>> getProductsByCategoryId(
-    String categoryId, {
-    String? langCode,
-    dynamic page,
-    int limit = 25,
-    String? orderBy,
-    String? order,
-  }) async {
+      String categoryId, {
+        String? langCode,
+        dynamic page,
+        int limit = 25,
+        String? orderBy,
+        String? order,
+      }) async {
     try {
-      final currentCursor = page;
-      printLog(
-          '::::request fetchProductsByCategory with cursor $currentCursor');
-      const nRepositories = 50;
-
-      final sortKey = getProductCollectionSortKey(orderBy);
-      final reverse = getOrderDirection(order);
-
-      var variables = <String, dynamic>{
-        'nRepositories': nRepositories,
-        'categoryId': categoryId.toString(),
-        'pageSize': limit,
-        'query': '',
-        'sortKey': sortKey,
-        'reverse': reverse,
-        'cursor': currentCursor != '' ? currentCursor : null,
-        'langCode': languageCode,
-        'countryCode': countryCode,
-      };
-      final options = QueryOptions(
+      final result = await client.query(QueryOptions(
         document: gql(ShopifyQuery.getProductByCollection),
         fetchPolicy: FetchPolicy.networkOnly,
-        variables: variables,
-      );
-      final result = await client.query(options);
-      var list = <Product>[];
-      var lastCursor = '';
+        variables: <String, dynamic>{
+          'nRepositories': 50,
+          'categoryId': categoryId.toString(),
+          'pageSize': limit,
+          'query': '',
+          'sortKey': getProductCollectionSortKey(orderBy),
+          'reverse': getOrderDirection(order),
+          'cursor': (page != null && page != '') ? page : null,
+          'langCode': languageCode,
+          'countryCode': countryCode,
+        },
+      ));
+      if (result.hasException) printLog(result.exception.toString());
 
-      if (result.hasException) {
-        printLog(result.exception.toString());
-      }
-
-      var node = result.data?['node'];
-
+      final list = <Product>[];
+      String lastCursor = '';
+      final node = result.data?['node'];
       if (node != null) {
-        var productResp = node['products'];
-        var edges = productResp['edges'];
-
-        printLog(
-            'fetchProductsByCategory with products length ${edges.length}');
-
-        if (edges.length != 0) {
-          var lastItem = edges.last;
-          lastCursor = lastItem['cursor'];
-        }
-
-        for (var item in result.data!['node']['products']['edges']) {
-          var product = item['node'];
+        final edges = node['products']['edges'];
+        if (edges.isNotEmpty) lastCursor = edges.last['cursor'];
+        for (var item in edges) {
+          final product = item['node'];
           product['categoryId'] = categoryId;
-
-          /// Hide out of stock.
-          if ((kAdvanceConfig.hideOutOfStock) &&
-              product['availableForSale'] == false) {
-            continue;
-          }
+          if (kAdvanceConfig.hideOutOfStock &&
+              product['availableForSale'] == false) continue;
           list.add(Product.fromShopify(product));
         }
       }
-
       return PagingResponse(data: list, cursor: lastCursor);
     } catch (e) {
       return const PagingResponse(data: []);
@@ -356,19 +1381,16 @@ class ShopifyService extends BaseServices {
   }
 
   @override
-  Future<List<Product>?> fetchProductsLayout(
-      {required config,
-      lang,
-      ProductModel? productModel,
-      userId,
-      bool refreshCache = false}) async {
+  Future<List<Product>?> fetchProductsLayout({
+    required config,
+    lang,
+    ProductModel? productModel,
+    userId,
+    bool refreshCache = false,
+  }) async {
     try {
-      var list = <Product>[];
       if (config['layout'] == 'imageBanner' ||
-          config['layout'] == 'circleCategory') {
-        return list;
-      }
-
+          config['layout'] == 'circleCategory') return <Product>[];
       return await fetchProductsByCategory(
         categoryId: config['category'],
         orderBy: config['orderby'].toString(),
@@ -378,41 +1400,27 @@ class ShopifyService extends BaseServices {
         limit: config['limit'],
       );
     } catch (e) {
-      printLog('::::fetchProductsLayout shopify error');
-      printLog(e.toString());
+      printLog('fetchProductsLayout error $e');
       return null;
     }
   }
 
   String getProductCollectionSortKey(orderBy) {
-    // if (onSale == true) return 'BEST_SELLING';
-
     if (orderBy == 'price') return 'PRICE';
-
     if (orderBy == 'date') return 'CREATED';
-
     if (orderBy == 'title') return 'TITLE';
-
     return 'COLLECTION_DEFAULT';
   }
 
   String getProductSortKey(orderBy) {
-    // if (onSale == true) return 'BEST_SELLING';
-
     if (orderBy == 'price') return 'PRICE';
-
     if (orderBy == 'date') return 'UPDATED_AT';
-
     if (orderBy == 'title') return 'TITLE';
-
     return 'RELEVANCE';
   }
 
   @override
-  bool getOrderDirection(order) {
-    if (order == 'desc') return true;
-    return false;
-  }
+  bool getOrderDirection(order) => order == 'desc';
 
   @override
   Future<List<Product>?> fetchProductsByCategory({
@@ -437,295 +1445,101 @@ class ShopifyService extends BaseServices {
     bool? productType,
     limit,
   }) async {
-    if (categoryId is String? && (categoryId?.isEmpty ?? true)) {
-      return await fetchProducts(
+    print('tagiidd/d${tagId}');
+    if (categoryId is String? && (categoryId?.isEmpty ?? true&&tagId==null)) {
+      return fetchProducts(
         orderBy: orderBy,
         lang: lang,
+
         page: page,
         limit: limit,
         order: order,
       );
     }
-    String? currentCursor;
+
+    print('tagIdssss${tagId}');
+////
     if (tagId != null) {
       search = (search?.isNotEmpty ?? false)
           ? '$search AND tag:$tagId'
           : 'tag:$tagId';
     }
 
-    if (search == null && categoryId == null) {
-      return <Product>[];
-    }
-
-    var sortKey = getProductCollectionSortKey(orderBy);
-    final reverse = getOrderDirection(order);
+    if (search == null && categoryId == null) return <Product>[];
 
     try {
-      var list = <Product>[];
-
-      /// change category id
       if (page == 1) {
         _cacheCursorWithCategories['$categoryId'] = null;
         _cacheCursorWithSearch['$search'] = null;
       }
 
-      currentCursor = _cacheCursorWithCategories['$categoryId'];
-      const nRepositories = 50;
-
-print("serattt${search}");
-      var variables = <String, dynamic>{
-        'nRepositories': nRepositories,
-        'categoryId': categoryId,
-        'pageSize': limit ?? apiPageSize,
-        'query': search ?? '',
-        'sortKey': sortKey,
-
-
-        'reverse': reverse,
-        'langCode': languageCode,
-        'countryCode': countryCode,
-        'cursor': currentCursor != '' ? currentCursor : null,
-      };
-      printLog(
-          '::::request fetchProductsByCategory with category id $categoryId --- search $search');
-
-      if (search != null && search.isNotEmpty ||
+      // Route to Searchanise for text/tag search or empty category
+      if ((search != null && search.isNotEmpty) ||
           categoryId == kEmptyCategoryID) {
-        currentCursor = _cacheCursorWithSearch['$search'];
-        printLog(
-            '::::request fetchProductsByCategory with cursor $currentCursor');
-
-        final result = await searchProductsSearchanise(
+        final currentCursor = _cacheCursorWithSearch['$search'];
+        final result = await searchProducts(
           name: search,
           page: currentCursor,
           sortKey: orderBy,
-          reverse: reverse,
+          reverse: getOrderDirection(order),
         );
+        print('asdsadsxxxxx${search}');
         _cacheCursorWithSearch['$search'] = result.cursor;
         return result.data;
       }
 
-      printLog(
-          '::::request fetchProductsByCategory with cursor $currentCursor');
-      final options = QueryOptions(
+      // Route to Shopify collection query
+      final currentCursor = _cacheCursorWithCategories['$categoryId'];
+      final result = await client.query(QueryOptions(
         document: gql(ShopifyQuery.getProductByCollection),
         fetchPolicy: FetchPolicy.networkOnly,
-        variables: variables,
-      );
-      final result = await client.query(options);
+        variables: <String, dynamic>{
+          'categoryId': categoryId,
+          'pageSize': limit ?? apiPageSize,
+          'sortKey': getProductCollectionSortKey(orderBy),
+          'reverse': getOrderDirection(order),
+          'langCode': languageCode,
+          'countryCode': countryCode,
+          'cursor': (currentCursor?.isNotEmpty ?? false) ? currentCursor : null,
+        },
+      ));
 
-      if (result.hasException) {
-        throw (result.exception.toString());
-      }
+      if (result.hasException) throw result.exception.toString();
 
-      var node = result.data?['node'];
+      final list = <Product>[];
+      final node = result.data?['node'];
 
       if (node != null) {
-        var productResp = node['products'];
-        var edges = productResp['edges'];
-
-        printLog(
-            'fetchProductsByCategory with products length ${node}');
-
-        if (edges.length != 0) {
-          var lastItem = edges.last;
-          var lastCursor = lastItem['cursor'];
-          _cacheCursorWithCategories['$categoryId'] = lastCursor;
+        final edges = node['products']['edges'] as List;
+        if (edges.isNotEmpty) {
+          _cacheCursorWithCategories['$categoryId'] = edges.last['cursor'];
         }
-
-        for (var item in result.data!['node']['products']['edges']) {
-          var product = item['node'];
+        for (final item in edges) {
+          final product = item['node'] as Map<String, dynamic>;
           product['categoryId'] = categoryId;
-
-          /// Hide out of stock.
-          if ((kAdvanceConfig.hideOutOfStock) &&
-              product['availableForSale'] == false) {
-            continue;
-          }
+          if (kAdvanceConfig.hideOutOfStock &&
+              product['availableForSale'] == false) continue;
           list.add(Product.fromShopify(product));
         }
-
-
       }
 
-      if(maxPrice!=null&&minPrice!=null){
-        final List<Product> filteredProducts = list.where((product) {
-          final double price = double.parse(product.price!);
-          return price >= minPrice && price <= maxPrice; // Set your price range here
-        }).toList();
-
-        filteredProducts.sort((a, b) =>double.parse(a.price??'0.0').compareTo(double.parse(b.price??'0.0')));
-
-
-        return filteredProducts;
-      }
-
-      return list;
-    } catch (e) {
-      printError('::::fetchProductsByCategory shopify error $e');
-      printError(e.toString());
-      rethrow;
-    }
-  }
-
-  // Future<Address?> updateShippingAddress(
-  //     {Address? address, String? checkoutId}) async {
-  //   try {
-  //     final options = MutationOptions(
-  //       document: gql(ShopifyQuery.updateShippingAddress),
-  //       variables: {'shippingAddress': address, 'checkoutId': checkoutId},
-  //     );
-  //
-  //     final result = await client.mutate(options);
-  //
-  //     if (result.hasException) {
-  //       printLog(result.exception.toString());
-  //       throw Exception(result.exception.toString());
-  //     }
-  //
-  //     printLog('updateShippingAddress $result');
-  //
-  //     return null;
-  //   } catch (e) {
-  //     printLog('::::updateShippingAddress shopify error');
-  //     printLog(e.toString());
-  //     rethrow;
-  //   }
-  // }
-
-  @override
-  Future<List<ShippingMethod>> getShippingMethods(
-
-      {CartModel? cartModel,
-      String? token,
-      String? checkoutId,
-      store_model.Store? store,
-        FormatAddress? formatAddress,
-
-        String? langCode}) async {
-    try {
-      var list = <ShippingMethod>[];
-      var newAddress = cartModel!.address!.toShopifyJson(
-        formatAddress: formatAddress,
-      )['address'];
-
-
-      printLog('getShippingMethods with checkoutId $checkoutId');
-
-      final options = MutationOptions(
-        document: gql(ShopifyQuery.updateShippingAddress),
-        fetchPolicy: FetchPolicy.noCache,
-        variables: {'shippingAddress': newAddress, 'checkoutId': checkoutId},
-      );
-
-      final result = await client.mutate(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-        throw ('So sorry, We do not support shipping to your address.');
-      }
-
-      final checkout = await getCheckout(checkoutId: checkoutId);
-
-      final availableShippingRates = checkout['availableShippingRates'];
-
-      if (availableShippingRates != null && availableShippingRates['ready']) {
-        for (var item in availableShippingRates['shippingRates']) {
-          list.add(ShippingMethod.fromShopifyJson(item));
-        }
-      } else {
-        await Future.delayed(const Duration(milliseconds: 500));
-        final checkoutData = await getCheckout(checkoutId: checkoutId);
-        for (var item in checkoutData['availableShippingRates']
-            ['shippingRates']) {
-          list.add(ShippingMethod.fromShopifyJson(item));
-        }
-      }
-
-      // update checkout
-      CheckoutCart.fromJsonShopify(checkout);
-
-      printLog(
-          '::::getShippingMethods ${list.map((e) => e.toString()).join(', ')}');
-
-      return list;
-    } catch (e) {
-      printLog('::::getShippingMethods shopify error');
-      printLog(e.toString());
-      throw ('So sorry, We do not support shipping to your address.');
-    }
-  }
-
-  Future<Map<String, dynamic>> getCheckout({String? checkoutId}) async {
-    try {
-      final options = QueryOptions(
-        document: gql(ShopifyQuery.getCheckout),
-        fetchPolicy: FetchPolicy.noCache,
-        variables: {'checkoutId': checkoutId},
-      );
-
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-        throw Exception(result.exception.toString());
-      }
-
-      printLog('getCheckout $result');
-
-      return result.data?['node'];
-    } catch (e) {
-      printLog('::::getCheckout shopify error');
-      printLog(e.toString());
-      rethrow;
-    }
-  }
-
-  @override
-  Future<List<PaymentMethod>> getPaymentMethods(
-      {CartModel? cartModel,
-      ShippingMethod? shippingMethod,
-      String? token,
-      String? langCode}) async {
-    try {
-      var list = <PaymentMethod>[];
-
-      list.add(PaymentMethod.fromJson({
-        'id': '0',
-        'title': 'Checkout Free',
-        'description': '',
-        'enabled': true,
-      }));
-
-      if (kShopifyPaymentConfig.paymentCardConfig.enable) {
-        list.add(PaymentMethod.fromJson({
-          'id': PaymentMethod.stripeCard,
-          'title': 'Checkout Credit card',
-          'description': '',
-          'enabled': true,
-        }));
-      }
-
-      if (kShopifyPaymentConfig.applePayConfig.enable && isIos) {
-        list.add(PaymentMethod.fromJson({
-          'id': PaymentMethod.stripeApplePay,
-          'title': 'Checkout with ApplePay',
-          'description': '',
-          'enabled': true,
-        }));
-      }
-
-      if (kShopifyPaymentConfig.googlePayConfig.enable && isAndroid) {
-        list.add(PaymentMethod.fromJson({
-          'id': PaymentMethod.stripeGooglePay,
-          'title': 'Checkout with GooglePay',
-          'description': '',
-          'enabled': true,
-        }));
+      if (maxPrice != null && minPrice != null) {
+        return list
+            .where((p) {
+          final price = double.tryParse(p.price ?? '') ?? 0.0;
+          return price >= minPrice && price <= maxPrice;
+        })
+            .toList()
+          ..sort((a, b) {
+            final aPrice = double.tryParse(a.price ?? '') ?? 0.0;
+            final bPrice = double.tryParse(b.price ?? '') ?? 0.0;
+            return aPrice.compareTo(bPrice);
+          });
       }
 
       return list;
     } catch (e) {
+      printError('fetchProductsByCategory error: $e');
       rethrow;
     }
   }
@@ -746,46 +1560,30 @@ print("serattt${search}");
     bool reverse = false,
   }) async {
     try {
-      printLog('::::request searchProducts');
-      const pageSize = 25;
-      const nRepositories = 50;
-      final options = QueryOptions(
+      final result = await client.query(QueryOptions(
         document: gql(ShopifyQuery.getProductByName),
         variables: <String, dynamic>{
-          'nRepositories': nRepositories,
+          'nRepositories': 50,
           'query': '$name $categoryName',
           if (page != null) 'cursor': page,
-          'pageSize': pageSize,
+          'pageSize': 25,
           'sortKey': getProductSortKey(sortKey),
           'reverse': reverse,
           'langCode': lang?.toString().toUpperCase(),
         },
-      );
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        throw (result.exception.toString());
-      }
-
-      var list = <Product>[];
+      ));
+      if (result.hasException) throw result.exception.toString();
+      final list = <Product>[];
       String? lastCursor;
       for (var item in result.data?['products']['edges']) {
         lastCursor = item['cursor'];
-
-        /// Hide out of stock.
-        if ((kAdvanceConfig.hideOutOfStock) &&
-            item['node']?['availableForSale'] == false) {
-          continue;
-        }
+        if (kAdvanceConfig.hideOutOfStock &&
+            item['node']?['availableForSale'] == false) continue;
         list.add(Product.fromShopify(item['node']));
       }
-
-      printLog(list);
-
       return PagingResponse(data: list, cursor: lastCursor);
     } catch (e) {
-      printLog('::::searchProducts shopify error');
-      printLog(e.toString());
+      printLog('searchProducts error $e');
       rethrow;
     }
   }
@@ -805,21 +1603,14 @@ print("serattt${search}");
     bool reverse = false,
   }) async {
     try {
-      // search Products Searchanise API HERE
-      printLog('::::request searchProductsSearchanise');
-      const pageSize = 10;
-      Dio dio;
-      dio = Dio(
-        BaseOptions(
-          baseUrl: 'https://searchserverapi.com',
-          headers: {'Content-Type': 'application/json'},
-        ),
-      );
-
+      final dio = Dio(BaseOptions(
+        baseUrl: 'https://searchserverapi.com',
+        headers: {'Content-Type': 'application/json'},
+      ));
       final result = await dio.get('/search', queryParameters: {
         'api_key': '9D0C1B6f1s',
         'q': name,
-        'maxResults': pageSize,
+        'maxResults': 10,
         'startIndex': page == null ? 0 : int.parse(page),
         'items': true,
         'pages': false,
@@ -833,820 +1624,1165 @@ print("serattt${search}");
         'categoryStartIndex': 0,
         'categoriesMaxResults': 0,
         'suggestionsMaxResults': 0,
-        'output': 'jsonp'
+        'output': 'jsonp',
       });
-
-      final data = result.data;
-      Map dataMap = Map<String, dynamic>.from(jsonDecode(data));
+      final dataMap = Map<String, dynamic>.from(jsonDecode(result.data));
       final items = dataMap['items'];
-
       final list = await Future.wait<Product>(
-        items.map<Future<Product>>((item) => getProduct(item['product_id'])),
+        (items as List)
+            .map<Future<Product>>((item) => getProduct(item['product_id'])),
       );
-
-      printLog(list);
-      var cursor = page == null ? 1 : int.parse(page) + 1;
+      final cursor = page == null ? 1 : int.parse(page) + 1;
       return PagingResponse(data: list, cursor: '$cursor');
     } catch (e) {
-      printLog('::::searchProducts shopify error');
-      printLog(e.toString());
+      printLog('searchProductsSearchanise error $e');
       rethrow;
-    }
-  }
-
-
-  @override
-  Future<User> createUser({
-    String? firstName,
-    String? lastName,
-    String? username,
-    String? password,
-    String? phoneNumber,
-    bool isVendor = false,
-  }) async {
-    try {
-      printLog('::::request createUser');
-
-      const nRepositories = 50;
-      final options = QueryOptions(
-          document: gql(ShopifyQuery.createCustomer),
-          variables: <String, dynamic>{
-            'nRepositories': nRepositories,
-            'input': {
-              'firstName': firstName,
-              'lastName': lastName,
-              'email': username,
-              'password': password
-            }
-          });
-
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-        throw Exception(result.exception.toString());
-      }
-
-      final listError =
-          List.from(result.data?['customerCreate']?['userErrors'] ?? []);
-      if (listError.isNotEmpty) {
-        final message = listError.map((e) => e['message']).join(', ');
-        throw ('$message!');
-      }
-
-      printLog('createUser ${result.data}');
-
-      var userInfo = result.data!['customerCreate']['customer'];
-      final token =
-          await createAccessToken(username: username, password: password);
-      var user = User.fromShopifyJson(userInfo, token);
-
-      return user;
-    } catch (e) {
-      printLog('::::createUser shopify error');
-      printLog(e.toString());
-      rethrow ;
-    }
-  }
-
-
-  Future<String?> getShopId() async {
-    try {
-      const query = '''
-      query {
-        shop {
-          id
-          name
-        }
-      }
-    ''';
-
-      final options = QueryOptions(
-        document: gql(query),
-        fetchPolicy: FetchPolicy.networkOnly,
-      );
-
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        print('Error getting shop info: ${result.exception}');
-        return null;
-      }
-
-      final shopData = result.data?['shop'];
-      print('Shop data: $shopData');
-
-      // Extract numeric ID from the GraphQL ID
-      final graphqlId = shopData['id']; // e.g., "gid://shopify/Shop/60989374644"
-      final shopId = graphqlId.split('/').last; // Extract "60989374644"
-
-      print('Shop ID: $shopId');
-      print('Shop domain: ${shopData['myshopifyDomain']}');
-
-      return shopId;
-    } catch (e) {
-      print('Error getting shop ID: $e');
-      return null;
-    }
-  }
-
-
-  @override
-  Future<User?> getUserInfo(cookie) async {
-    try {
-      printLog('::::request getUserInfo');
-
-    //  getShopId();
-      const nRepositories = 50;
-      final options = QueryOptions(
-          document: gql(ShopifyQuery.getCustomerInfo),
-          fetchPolicy: FetchPolicy.networkOnly,
-          variables: <String, dynamic>{
-            'nRepositories': nRepositories,
-            'accessToken': cookie
-          });
-
-      final result = await client.query(options);
-
-      printLog('result ${result.data}');
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-        throw Exception(result.exception.toString());
-      }
-
-      var user = User.fromShopifyJson(result.data?['customer'] ?? {}, cookie);
-      if (user.cookie == null) return null;
-      return user;
-    } catch (e) {
-      printLog('::::getUserInfo shopify error');
-      printLog(e.toString());
-      rethrow;
-    }
-  }
-
-  // Get user info from new Customer Account API
-  @override
-  Future<User?>? getUserInfoFromNewAPI(accessToken) async {
-    try {
-      // Clean the access token - extract only the shcat_ part
-      String cleanToken = accessToken;
-      // if (accessToken.contains('shcat_')) {
-      //   final shcatIndex = accessToken.indexOf('shcat_');
-      //   cleanToken = accessToken.substring(shcatIndex);
-      // }
-
-      print('==================== DEBUG TOKEN ====================');
-      print('Cleaned token length: ${cleanToken.length}');
-      print('Token starts with shcat_: ${cleanToken.startsWith('shcat_')}');
-      print('First 50 chars: ${cleanToken.substring(0, math.min(50, cleanToken.length))}');
-      print('====================================================');
-
-      const query = '''
-        query {
-          customer {
-            id
-            emailAddress {
-              emailAddress
-            }
-            firstName
-            lastName
-            displayName
-          }
-        }
-      ''';
-
-      final apiUrl = 'https://account.fawaah.com/customer/api/unstable/graphql?operation=Profile';
-
-      print('Making request to: $apiUrl');
-      print('Authorization header: Bearer ${cleanToken.substring(0, math.min(30, cleanToken.length))}...');
-
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': ' $cleanToken',
-          'User-Agent': 'FawaahApp/1.0',
-          'Accept': 'application/json',
-        },
-        body: json.encode({
-          'query': query,
-        }),
-      );
-
-      print('==================== API RESPONSE ====================');
-      print('Status Code: ${response.statusCode}');
-      print('Response Headers: ${response.headers}');
-      print('Response Body: ${response.body}');
-      print('====================================================');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        if (data['errors'] != null) {
-          print('GraphQL Errors: ${data['errors']}');
-          return null;
-        }
-
-        final customerData = data['data']?['customer'];
-
-        if (customerData != null) {
-          print('Customer data found: $customerData');
-
-          // Safely extract data with proper type casting
-          final String? id = customerData['id']?.toString();
-          final String? firstName = customerData['firstName']?.toString();
-          final String? lastName = customerData['lastName']?.toString();
-          final String? displayName = customerData['displayName']?.toString();
-
-          // Handle nested emailAddress object
-          String? email = '';
-          if (customerData['emailAddress'] != null) {
-            final emailData = customerData['emailAddress'];
-            if (emailData is Map<String, dynamic>) {
-              email = emailData['emailAddress']?.toString() ?? '';
-            }
-          }
-User user=User();
-          user.id=id;
-          user.email=email;
-          user.cookie=cleanToken;
-          user.isSocial=false;
-
-          // user.id=customerData['id'];
-          return user;
-          // return {
-          //   'id': customerData['id'],
-          //   'email': customerData['emailAddress']?['emailAddress'] ?? '',
-          //   'firstName': customerData['firstName'] ?? '',
-          //   'lastName': customerData['lastName'] ?? '',
-          //   'displayName': customerData['displayName'] ?? '',
-          // };
-        }
-      }
-
-      return null;
-    } catch (e) {
-      print('Exception in _getUserInfoFromCustomerAPI: $e');
-      return null;
-    }
-  }
-  @override
-  Future<Map<String, dynamic>> updateUserInfo(
-      Map<String, dynamic> json, String? token) async {
-    try {
-      printLog('::::request updateUser');
-
-      const nRepositories = 50;
-      json.removeWhere((key, value) => key == 'deviceToken');
-      final options = QueryOptions(
-          document: gql(ShopifyQuery.customerUpdate),
-          fetchPolicy: FetchPolicy.networkOnly,
-          variables: <String, dynamic>{
-            'nRepositories': nRepositories,
-            'customerAccessToken': token,
-            'customer': json,
-          });
-
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-        throw Exception(result.exception.toString());
-      }
-
-      // When update password, full user info will get null
-      final userData = result.data?['customerUpdate']['customer'];
-      final newToken =
-          result.data?['customerUpdate']['customerAccessToken']?['accessToken'];
-      final user = User.fromShopifyJson(userData, newToken);
-      return user.toJson();
-    } catch (e) {
-      printLog('::::updateUser shopify error');
-      printLog(e.toString());
-      rethrow;
-    }
-  }
-
-  Future<String?> createAccessToken({username, password}) async {
-    try {
-      printLog('::::request createAccessToken');
-
-      const nRepositories = 50;
-      final options = QueryOptions(
-          document: gql(ShopifyQuery.createCustomerToken),
-          fetchPolicy: FetchPolicy.networkOnly,
-          variables: <String, dynamic>{
-            'nRepositories': nRepositories,
-            'input': {'email': username, 'password': password}
-          });
-
-      final result = await client.query(options);
-
-      printLog('result ${result.data}');
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-        throw Exception(result.exception.toString());
-      }
-      var json =
-          result.data!['customerAccessTokenCreate']['customerAccessToken'];
-      printLog("json['accessToken'] ${json['accessToken']}");
-
-      return json['accessToken'];
-    } catch (e) {
-      printLog('::::createAccessToken shopify error');
-      printLog(e.toString());
-      rethrow;
-    }
-  }
-
-  @override
-  Future<bool?>? sendVerificationCode(String email) async {
-
-    final mutation = gql(r'''
-    mutation customerSendEmailVerificationCode($email: String!) {
-      customerSendEmailVerificationCode(email: $email) {
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-  ''');
-
-    final result = await client.mutate(MutationOptions(
-      document: mutation,
-      variables: {'email': email},
-    ));
-
-    print("testtttt${result}");
-    if (result.hasException) {
-      print('Send OTP error: ${result.exception}');
-      return false;
-    }
-
-    final errors = result.data?['customerSendEmailVerificationCode']['userErrors'];
-    if (errors != null && errors.isNotEmpty) {
-      print('User error: ${errors[0]['message']}');
-      return false;
-    }
-
-    return true;
-  }
-  @override
-  Future<String?> loginWithCode(String email, String code) async {
-
-    final mutation = gql(r'''
-    mutation customerAccessTokenCreateWithCode($email: String!, $code: String!) {
-      customerAccessTokenCreateWithCode(email: $email, code: $code) {
-        customerAccessToken {
-          accessToken
-          expiresAt
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-  ''');
-
-    final result = await client.mutate(MutationOptions(
-      document: mutation,
-      variables: {'email': email, 'code': code},
-    ));
-
-    if (result.hasException) {
-      print('Login error: ${result.exception}');
-      return null;
-    }
-
-    final data = result.data?['customerAccessTokenCreateWithCode'];
-    final errors = data['userErrors'];
-
-    if (errors != null && errors.isNotEmpty) {
-      print('User error: ${errors[0]['message']}');
-      return null;
-    }
-
-    final token = data['customerAccessToken']['accessToken'];
-    print('Access token: $token');
-
-    return token;
-  }
-
-
-
-
-
-
-  @override
-  Future<User?> login({username, password}) async {
-    try {
-      printLog('::::request login');
-
-      var accessToken =
-          await createAccessToken(username: username, password: password);
-      var userInfo = await getUserInfo(accessToken);
-
-      printLog('login $userInfo');
-
-      return userInfo;
-    } catch (e) {
-      printLog('::::login shopify error');
-      printLog(e.toString());
-      throw Exception(
-          'Please check your username or password and try again. If the problem persists, please contact support!');
     }
   }
 
   @override
   Future<Product> getProduct(id, {lang, cursor}) async {
-    /// Private id is id has been encrypted by Shopify, which is get via api
-    final isPrivateId = int.tryParse(id) == null;
-    if (isPrivateId) {
-      return getProductByPrivateId(id);
-    }
-    printLog('::::request getProduct $id');
-
-    /// Normal id is id the user can see on the admin site, which is not encrypt
-    const nRepositories = 50;
-    final options = QueryOptions(
+    if (int.tryParse(id) == null) return getProductByPrivateId(id);
+    final result = await client.query(QueryOptions(
       document: gql(ShopifyQuery.getProductById),
       variables: <String, dynamic>{
-        'nRepositories': nRepositories,
+        'nRepositories': 50,
         'id': id,
         'langCode': languageCode,
         'countryCode': countryCode,
       },
-    );
-
-    final result = await client.query(options);
-
-    if (result.hasException) {
-      printLog(result.exception.toString());
-    }
-    List? listData = result.data?['products']?['edges'];
+    ));
+    if (result.hasException) printLog(result.exception.toString());
+    final listData = result.data?['products']?['edges'] as List?;
     if (listData != null && listData.isNotEmpty) {
-      final productData = listData.first['node'];
-      return Product.fromShopify(productData);
+      return Product.fromShopify(listData.first['node']);
     }
-
     return Product();
   }
 
   Future<Product> getProductByPrivateId(id) async {
-    printLog('::::request getProductByPrivateId $id');
-
-    const nRepositories = 50;
-    final options = QueryOptions(
+    final result = await client.query(QueryOptions(
       document: gql(ShopifyQuery.getProductByPrivateId),
       fetchPolicy: FetchPolicy.networkOnly,
       variables: <String, dynamic>{
-        'nRepositories': nRepositories,
+        'nRepositories': 50,
         'id': id,
         'langCode': languageCode,
         'countryCode': countryCode,
       },
-    );
-    final result = await client.query(options);
-
-    if (result.hasException) {
-      printLog(result.exception.toString());
-    }
-    final product = Product.fromShopify(result.data!['node']);
-    return product;
+    ));
+    if (result.hasException) printLog(result.exception.toString());
+    return Product.fromShopify(result.data!['node']);
   }
 
-  Future<Map<String, dynamic>?> checkoutLinkUser(
-      String? checkoutId, String? token) async {
-    final options = MutationOptions(
-      document: gql(ShopifyQuery.checkoutLinkUser),
-      variables: {
-        'checkoutId': checkoutId,
-        'customerAccessToken': token,
+  @override
+  Future<Product?> getProductByPermalink(String productPermalink) async {
+    final handle =
+    productPermalink.substring(productPermalink.lastIndexOf('/') + 1);
+    final result = await client.query(QueryOptions(
+      document: gql(ShopifyQuery.getProductByHandle),
+      variables: <String, dynamic>{
+        'nRepositories': 50,
+        'handle': handle,
+        'langCode': languageCode,
       },
-    );
-
-    final result = await client.mutate(options);
-
-    if (result.hasException) {
-      printLog('Exception Link User ${result.exception}');
-      throw (result.exception.toString());
-    }
-
-    final checkoutData = result.data?['checkoutCustomerAssociateV2'];
-
-    if (List.from(checkoutData?['checkoutUserErrors'] ?? []).isNotEmpty) {
-      printLog('checkoutCustomerAssociateV2 ${result.data}');
-      // throw (result.data!['checkoutCustomerAssociateV2']['checkoutUserErrors']
-      //     .first['message']);
-    }
-    var checkout = checkoutData?['checkout'];
-
-    return checkout;
+    ));
+    if (result.hasException) printLog(result.exception.toString());
+    return Product.fromShopify(result.data?['product']);
   }
 
-  // Future addItemsToCart(CartModelShopify cartModel) async {
-  //   final cookie = cartModel.user?.cookie;
-  //
-  //   try {
-  //     if (cookie != null) {
-  //       var lineItems = [];
-  //
-  //       printLog('addItemsToCart productsInCart ${cartModel.productsInCart}');
-  //       printLog(
-  //           'addItemsToCart productVariationInCart ${cartModel.productVariationInCart}');
-  //
-  //       for (var productId in cartModel.productVariationInCart.keys) {
-  //         var variant = cartModel.productVariationInCart[productId]!;
-  //         var productCart = cartModel.productsInCart[productId];
-  //
-  //         printLog('addItemsToCart $variant');
-  //
-  //         lineItems.add({'variantId': variant.id, 'quantity': productCart});
-  //       }
-  //
-  //       printLog('addItemsToCart lineItems $lineItems');
-  //       final options = MutationOptions(
-  //         document: gql(ShopifyQuery.createCheckout),
-  //         variables: {
-  //           'input': {
-  //             'lineItems': lineItems,
-  //             //hokshcomment
-  //             // if (cartModel.address != null) ...{
-  //             //   'email': cartModel.address?.email,
-  //             // }
-  //           },
-  //           'langCode': cartModel.langCode?.toUpperCase(),
-  //           'countryCode': countryCode,
-  //         },
-  //       );
-  //
-  //       final result = await client.mutate(options);
-  //
-  //       if (result.hasException) {
-  //         printLog("{asdxcxzcxzc ${result.exception.toString()}");
-  //         throw Exception(result.exception.toString());
-  //       }
-  //
-  //       print("xxzxzxzxxz${ result.data}");
-  //       final checkout = result.data?['checkoutCreate']['checkout'];
-  //
-  //       printLog('addItemsToCart checkout $checkout');
-  //
-  //       // start link checkout with user
-  //       final newCheckout = await (checkoutLinkUser(checkout['id'], cookie));
-  //
-  //       return CheckoutCart.fromJsonShopify(newCheckout ?? {});
-  //     } else {
-  //       throw ('You need to login to checkout');
-  //     }
-  //   } catch (e) {
-  //     printLog('::::addItemsToCart shopify error');
-  //     printLog(e.toString());
-  //     rethrow;
-  //   }
-  // }
-  //
-  // Future updateItemsToCart(CartModelShopify cartModel, String? cookie) async {
-  //   try {
-  //     if (cookie != null) {
-  //       var lineItems = [];
-  //       var checkoutId = cartModel.checkout!.id;
-  //
-  //       printLog(
-  //           'updateItemsToCart productsInCart ${cartModel.productsInCart}');
-  //       printLog(
-  //           'updateItemsToCart productVariationInCart ${cartModel.productVariationInCart}');
-  //
-  //       for (var productId in cartModel.productVariationInCart.keys) {
-  //         var variant = cartModel.productVariationInCart[productId]!;
-  //         var productCart = cartModel.productsInCart[productId];
-  //
-  //         printLog('updateItemsToCart $variant');
-  //
-  //         lineItems.add({'variantId': variant.id, 'quantity': productCart});
-  //       }
-  //
-  //       printLog('updateItemsToCart lineItems $lineItems');
-  //
-  //       final options = MutationOptions(
-  //         document: gql(ShopifyQuery.updateCheckout),
-  //         variables: <String, dynamic>{
-  //           'lineItems': lineItems,
-  //           'checkoutId': checkoutId,
-  //           'countryCode': countryCode,
-  //         },
-  //       );
-  //
-  //       final result = await client.mutate(options);
-  //
-  //       if (result.hasException) {
-  //         printLog(result.exception.toString());
-  //         throw Exception(result.exception.toString());
-  //       }
-  //
-  //       var checkout = result.data!['checkoutLineItemsReplace']['checkout'];
-  //
-  //       /// That case happen when user close and open app again
-  //       if (checkout == null) {
-  //         return await addItemsToCart(cartModel);
-  //       }
-  //
-  //       final checkoutCart = CheckoutCart.fromJsonShopify(checkout);
-  //
-  //       if (checkoutCart.email == null) {
-  //         // start link checkout with user
-  //         final newCheckout = await (checkoutLinkUser(checkout['id'], cookie));
-  //
-  //         return CheckoutCart.fromJsonShopify(newCheckout ?? {});
-  //       }
-  //
-  //       return checkoutCart;
-  //     } else {
-  //       throw S.current.youNeedToLoginCheckout;
-  //     }
-  //   } catch (err) {
-  //     printLog('::::updateItemsToCart shopify error');
-  //     printLog(err.toString());
-  //     rethrow;
-  //   }
-  // }
+  @override
+  Future<List<ProductVariation>?> getProductVariations(Product product,
+      {String? lang = 'en'}) async {
+    try {
+      return product.variations;
+    } catch (e) {
+      rethrow;
+    }
+  }
 
-  Future<CheckoutCart> addItemsToCart(CartModelShopify cartModel) async {
+  @override
+  Future<ProductVariation?> getVariationProduct(
+      String productId, String? variationId,
+      {String? lang}) async {
+    if (variationId == null) return null;
+    try {
+      final result = await client.mutate(MutationOptions(
+        document: gql(ShopifyQuery.getProductVariant),
+        fetchPolicy: FetchPolicy.noCache,
+        variables: <String, dynamic>{
+          'id': variationId,
+          'langCode': languageCode,
+          'countryCode': countryCode,
+        },
+      ));
+      if (result.hasException) printLog(result.exception.toString());
+      return ProductVariation.fromShopifyJson(result.data!['node']);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ── Tags (Storefront API) ─────────────────────────────────────────────────
+
+  @override
+  Future<List<FilterTag>>? getFilterTags({String? lang}) async {
+    try {
+      final result = await client.query(QueryOptions(
+        document: gql(ShopifyQuery.getallTags),
+        variables: <String, dynamic>{
+          'nRepositories': 50,
+          'langCode': lang?.toString().toUpperCase() ?? 'AR',
+        },
+      ));
+      if (result.hasException) return [];
+      final edges = result.data?['productTags']?['edges'];
+      if (edges == null || edges is! List) return [];
+      return edges
+          .map<FilterTag?>((item) {
+        final node = item['node'];
+        if (node == null) return null;
+        return FilterTag.fromJson({'name': node});
+      })
+          .whereType<FilterTag>()
+          .toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // ── Cart / Checkout (Storefront API) ──────────────────────────────────────
+
+  /// Whether [token] is a Customer Account API token (shcat_)
+  /// vs a legacy Storefront customer access token.
+  bool _isCaToken(String? token) => token?.startsWith('shcat_') ?? false;
+
+  @override
+  Future<CheckoutCart> addItemsToCart(covariant CartModelShopify cartModel) async {
+    print('addItemsToCart: existingCartId=${cartModel.checkout?.id}');
+
     final cookie = cartModel.user?.cookie;
+    if (cookie == null) throw Exception('User not authenticated');
+
 
     try {
-      if (cookie == null) {
-        throw Exception('User not authenticated');
-      }
-
-      printLog('Products in cart: ${cartModel.productsInCart}');
-      printLog('Variants in cart: ${cartModel.productVariationInCart}');
-
-      // Prepare line items
-      final lineItems = cartModel.productVariationInCart.entries.map((entry) {
-        final productId = entry.key;
+      final lineItems = <Map<String, dynamic>>[];
+      for (final entry in cartModel.productVariationInCart.entries) {
         final variant = entry.value;
-        final quantity = cartModel.productsInCart[productId] ?? 1;
+        final quantity = cartModel.productsInCart[entry.key] ?? 1;
+        if (variant == null || (variant.id?.isEmpty ?? true)) continue;
+        final rawId = variant.id!;
+        final merchandiseId = rawId.startsWith('gid://shopify/ProductVariant/')
+            ? rawId
+            : 'gid://shopify/ProductVariant/$rawId';
+        lineItems.add({'merchandiseId': merchandiseId, 'quantity': quantity});
+      }
+      if (lineItems.isEmpty) throw Exception('No valid line items');
 
-        if (variant?.id == null || variant!.id!.isEmpty) {
-          throw Exception('Invalid variant ID for product $productId');
+      final existingCartId = cartModel.checkout?.id;
+      final isExistingCart = existingCartId != null &&
+          existingCartId.toString().startsWith('gid://shopify/Cart/');
+
+      Map<String, dynamic>? cartData;
+
+      if (isExistingCart) {
+        // ── Update existing cart ──────────────────────────────────────────
+        printLog('addItemsToCart: updating existing cart $existingCartId');
+
+        // Get current line items from cart to decide add vs update
+        final cartResult = await client.query(QueryOptions(
+          document: gql(ShopifyQuery.getCart),
+          fetchPolicy: FetchPolicy.noCache,
+          variables: {
+            'cartId': existingCartId,
+            'country': countryCode,
+            'language': languageCode,
+          },
+        ));
+
+        final existingLines =
+        (cartResult.data?['cart']?['lines']?['edges'] as List? ?? []);
+
+        // Build a map of merchandiseId → existing line node id + quantity
+        final existingLineMap = <String, Map<String, dynamic>>{};
+        for (final edge in existingLines) {
+          final node = edge['node'] as Map<String, dynamic>?;
+          if (node == null) continue;
+          final merchId =
+          node['merchandise']?['id'] as String?;
+          if (merchId != null) {
+            existingLineMap[merchId] = {
+              'id': node['id'],
+              'quantity': node['quantity'] ?? 0,
+            };
+          }
         }
 
-        // Ensure proper variant ID format
-        final merchandiseId = variant!.id!.startsWith('gid://shopify/ProductVariant/')
-            ? variant.id!
-            : 'gid://shopify/ProductVariant/${variant.id}';
+        // Split into lines to add vs lines to update
+        final linesToAdd = <Map<String, dynamic>>[];
+        final linesToUpdate = <Map<String, dynamic>>[];
 
-        return {
-          'merchandiseId': merchandiseId,
-          'quantity': quantity,
-        };
-      }).toList();
+        for (final line in lineItems) {
+          final merchId = line['merchandiseId'] as String;
+          final qty = line['quantity'] as int;
+          if (existingLineMap.containsKey(merchId)) {
+            linesToUpdate.add({
+              'id': existingLineMap[merchId]!['id'],
+              'quantity': qty,
+            });
+          } else {
+            linesToAdd.add(line);
+          }
+        }
 
-      printLog('Prepared line items: $lineItems');
+        // Apply updates
+        if (linesToUpdate.isNotEmpty) {
+          final updateResult = await client.mutate(MutationOptions(
+            document: gql(ShopifyQuery.cartLinesUpdate),
+            variables: {
+              'cartId': existingCartId,
+              'lines': linesToUpdate,
+              'country': countryCode,
+              'language': languageCode,
+            },
+          ));
+          if (!updateResult.hasException) {
+            cartData = Map<String, dynamic>.from(
+                updateResult.data?['cartLinesUpdate']?['cart'] ?? {});
+          }
+        }
 
-      // Always create a new cart (checkout) for each update
-      final options = MutationOptions(
-        document: gql('''
-        mutation createCart(\$lines: [CartLineInput!]!, \$country: CountryCode) 
-        @inContext(country: \$country) {
-          cartCreate(input: {lines: \$lines}) {
-            cart {
-              id
-              checkoutUrl
-              lines(first: 100) {
-                edges {
-                  node {
-                    id
-                    quantity
-                    merchandise {
-                      ... on ProductVariant {
-                        id
-                        title
-                      }
-                    }
+        // Apply additions
+        if (linesToAdd.isNotEmpty) {
+          final addResult = await client.mutate(MutationOptions(
+            document: gql(ShopifyQuery.cartLinesAdd),
+            variables: {
+              'cartId': existingCartId,
+              'lines': linesToAdd,
+              'country': countryCode,
+              'language': languageCode,
+            },
+          ));
+          if (!addResult.hasException) {
+            cartData = Map<String, dynamic>.from(
+                addResult.data?['cartLinesAdd']?['cart'] ?? {});
+          }
+        }
+
+        // If neither ran (no changes), fetch current cart state
+        cartData ??= Map<String, dynamic>.from(
+            cartResult.data?['cart'] as Map<String, dynamic>? ?? {});
+
+      } else {
+        // ── Create new cart ───────────────────────────────────────────────
+        printLog('addItemsToCart: creating new cart');
+
+        final createResult = await client.mutate(MutationOptions(
+          document: gql(ShopifyQuery.cartCreate),
+          variables: {
+            'lines': lineItems,
+            'country': countryCode,
+            'language': languageCode,
+            'buyerIdentity': null,
+          },
+        ));
+
+        if (createResult.hasException) {
+          throw Exception(createResult.exception.toString());
+        }
+        final userErrors =
+            createResult.data?['cartCreate']?['userErrors'] as List? ?? [];
+        if (userErrors.isNotEmpty) {
+          throw Exception(
+              userErrors.map((e) => '${e['code']}: ${e['message']}').join(', '));
+        }
+
+        cartData = Map<String, dynamic>.from(
+            createResult.data?['cartCreate']?['cart'] ?? {});
+
+        // Associate buyer for legacy Storefront tokens only
+        final cartId = cartData['id'] as String?;
+        if (cartId != null && !_isCaToken(cookie)) {
+          try {
+            final updated = await _cartBuyerIdentityUpdate(
+              cartId: cartId,
+              customerAccessToken: cookie,
+            );
+            if (updated != null) cartData = Map<String, dynamic>.from(updated);
+          } catch (e) {
+            printLog('cartBuyerIdentityUpdate (legacy) error (non-fatal): $e');
+          }
+        }
+      }
+
+      // Re-apply existing discount if present
+      final cartId = cartData?['id'] as String?;
+      final existingDiscount = cartModel.checkout?.coupon?.code;
+      if (cartId != null &&
+          existingDiscount != null &&
+          existingDiscount.isNotEmpty) {
+        try {
+          printLog('addItemsToCart: re-applying discount=$existingDiscount');
+          final discountResult = await client.mutate(MutationOptions(
+            document: gql(ShopifyQuery.cartDiscountCodesUpdate),
+            variables: {
+              'cartId': cartId,
+              'discountCodes': [existingDiscount],
+              'country': countryCode,
+              'language': languageCode,
+            },
+          ));
+          final updatedCart =
+          discountResult.data?['cartDiscountCodesUpdate']?['cart']
+          as Map<String, dynamic>?;
+          if (updatedCart != null) {
+            cartData = Map<String, dynamic>.from(updatedCart);
+            final rawUrl = cartData['checkoutUrl'] as String? ?? '';
+            if (rawUrl.isNotEmpty) {
+              final uri = Uri.parse(rawUrl);
+              cartData['checkoutUrl'] = uri.replace(queryParameters: {
+                ...uri.queryParameters,
+                'discount': existingDiscount,
+              }).toString();
+            }
+          }
+        } catch (e) {
+          printLog('addItemsToCart: re-apply discount error (non-fatal): $e');
+        }
+      }
+
+      if (cartData!.isNotEmpty) {
+        return CheckoutCart.fromCartJson(cartData!, langCode: languageCode);
+      }
+
+      // Fallback: legacy checkoutCreate
+      return await _addItemsViaLegacyCheckout(cartModel, cookie);
+    } catch (e, s) {
+      printLog('addItemsToCart error: $e\n$s');
+      rethrow;
+    }
+  }
+
+  /// Returns a map of merchandiseId → lineId for all lines in a cart.
+  @override
+  Future<Map<String, String>?> getCartLines(String cartId) async {
+    try {
+      final result = await client.query(QueryOptions(
+        document: gql(ShopifyQuery.getCart),
+        fetchPolicy: FetchPolicy.noCache,
+        variables: {
+          'cartId': cartId,
+          'country': countryCode,
+          'language': languageCode,
+        },
+      ));
+      if (result.hasException) return null;
+      final edges = result.data?['cart']?['lines']?['edges'] as List? ?? [];
+      final map = <String, String>{};
+      for (final edge in edges) {
+        final node = edge['node'] as Map<String, dynamic>?;
+        if (node == null) continue;
+        final merchId = node['merchandise']?['id'] as String?;
+        final lineId = node['id'] as String?;
+        if (merchId != null && lineId != null) {
+          map[merchId] = lineId;
+        }
+      }
+      return map;
+    } catch (e) {
+      printLog('getCartLines error: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<CheckoutCart> updateItemsToCart(
+      covariant CartModelShopify cartModel, String? cookie) async {
+
+    final existingCartId = cartModel.checkout?.id;
+
+    print('asdasdsa${existingCartId}');
+
+    // If no existing cart GID, fall back to addItemsToCart (creates new cart)
+    if (existingCartId == null ||
+        !existingCartId.toString().startsWith('gid://shopify/Cart/')) {
+      return addItemsToCart(cartModel);
+    }
+
+    try {
+      // Fetch current cart lines to get line item GIDs
+      final cartResult = await client.query(QueryOptions(
+        document: gql(ShopifyQuery.getCart),
+        fetchPolicy: FetchPolicy.noCache,
+        variables: {
+          'cartId': existingCartId,
+          'country': countryCode,
+          'language': languageCode,
+        },
+      ));
+
+      final existingLines =
+      (cartResult.data?['cart']?['lines']?['edges'] as List? ?? []);
+
+      // Map merchandiseId → line node id
+      final existingLineMap = <String, String>{};
+      for (final edge in existingLines) {
+        final node = edge['node'] as Map<String, dynamic>?;
+        if (node == null) continue;
+        final merchId = node['merchandise']?['id'] as String?;
+        final lineId = node['id'] as String?;
+        if (merchId != null && lineId != null) {
+          existingLineMap[merchId] = lineId;
+        }
+      }
+
+      // Build update lines using existing line GIDs
+      final linesToUpdate = <Map<String, dynamic>>[];
+      final linesToAdd = <Map<String, dynamic>>[];
+
+      for (final entry in cartModel.productVariationInCart.entries) {
+        final variant = entry.value;
+        final quantity = cartModel.productsInCart[entry.key] ?? 1;
+        if (variant == null || (variant.id?.isEmpty ?? true)) continue;
+
+        final rawId = variant.id!;
+        final merchandiseId = rawId.startsWith('gid://shopify/ProductVariant/')
+            ? rawId
+            : 'gid://shopify/ProductVariant/$rawId';
+
+        if (existingLineMap.containsKey(merchandiseId)) {
+          // ✅ Line exists → update quantity using its line GID
+          linesToUpdate.add({
+            'id': existingLineMap[merchandiseId]!,
+            'quantity': quantity,
+          });
+        } else {
+          // ➕ New item → add it
+          linesToAdd.add({'merchandiseId': merchandiseId, 'quantity': quantity});
+        }
+      }
+
+      Map<String, dynamic>? cartData;
+
+      // Update existing lines
+      if (linesToUpdate.isNotEmpty) {
+        printLog('updateItemsToCart: updating ${linesToUpdate.length} lines');
+        final updateResult = await client.mutate(MutationOptions(
+          document: gql(ShopifyQuery.cartLinesUpdate),
+          variables: {
+            'cartId': existingCartId,
+            'lines': linesToUpdate,
+            'country': countryCode,
+            'language': languageCode,
+          },
+        ));
+        if (updateResult.hasException) {
+          throw Exception(updateResult.exception.toString());
+        }
+        cartData = Map<String, dynamic>.from(
+            updateResult.data?['cartLinesUpdate']?['cart'] ?? {});
+      }
+
+      print('asdasdsa');
+      // Add new lines
+      if (linesToAdd.isNotEmpty) {
+        printLog('updateItemsToCart: adding ${linesToAdd.length} new lines');
+        final addResult = await client.mutate(MutationOptions(
+          document: gql(ShopifyQuery.cartLinesAdd),
+          variables: {
+            'cartId': existingCartId,
+            'lines': linesToAdd,
+            'country': countryCode,
+            'language': languageCode,
+          },
+        ));
+        if (!addResult.hasException) {
+          cartData = Map<String, dynamic>.from(
+              addResult.data?['cartLinesAdd']?['cart'] ?? {});
+        }
+      }
+      //
+
+      // Fallback: fetch current cart state if no mutation ran
+      cartData ??= Map<String, dynamic>.from(
+          cartResult.data?['cart'] as Map<String, dynamic>? ?? {});
+
+      if (cartData.isNotEmpty) {
+        return CheckoutCart.fromCartJson(cartData, langCode: languageCode);
+      }
+
+      return addItemsToCart(cartModel);
+    } catch (e, s) {
+      printLog('updateItemsToCart error: $e\n$s');
+      rethrow;
+    }
+  }
+  /// Associate a buyer with a cart using [cartBuyerIdentityUpdate].
+  /// Works for both shcat_ (CA API) tokens and legacy Storefront tokens.
+  Future<Map<String, dynamic>?> _cartBuyerIdentityUpdate({
+    required String cartId,
+    required String customerAccessToken,
+  }) async {
+    // shcat_ tokens are rejected by Storefront cartBuyerIdentityUpdate
+    if (_isCaToken(customerAccessToken)) {
+      printLog('_cartBuyerIdentityUpdate: skipping for shcat_ token');
+      return null;
+    }
+
+    final result = await client.mutate(MutationOptions(
+      document: gql(r'''
+      mutation cartBuyerIdentityUpdate(
+        $cartId: ID!
+        $buyerIdentity: CartBuyerIdentityInput!
+        $country: CountryCode
+        $language: LanguageCode
+      ) @inContext(country: $country, language: $language) {
+        cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
+          cart {
+            id
+            checkoutUrl
+            buyerIdentity {
+              email
+              phone
+              customer { id email }
+              countryCode
+            }
+          }
+          userErrors { field message code }
+        }
+      }
+    '''),
+      variables: {
+        'cartId': cartId,
+        'buyerIdentity': {
+          'customerAccessToken': customerAccessToken,
+          'countryCode': countryCode,
+        },
+        'country': countryCode,
+        'language': languageCode,
+      },
+    ));
+    if (result.hasException) throw Exception(result.exception.toString());
+    final errors =
+        result.data?['cartBuyerIdentityUpdate']?['userErrors'] as List? ?? [];
+    if (errors.isNotEmpty) {
+      printLog('cartBuyerIdentityUpdate userErrors: $errors');
+    }
+    return result.data?['cartBuyerIdentityUpdate']?['cart']
+    as Map<String, dynamic>?;
+  }
+
+
+  Future<CheckoutCart> _addItemsViaLegacyCheckout(
+      CartModelShopify cartModel, String cookie) async {
+    final lineItems = cartModel.productVariationInCart.entries
+        .where((e) => e.value?.id != null)
+        .map((e) => {
+      'variantId': e.value!.id,
+      'quantity': cartModel.productsInCart[e.key] ?? 1,
+    })
+        .toList();
+
+    printLog('addItemsToCart: existingCartId=${cartModel.checkout?.id}');
+
+//
+    final result = await client.mutate(MutationOptions(
+      document: gql(ShopifyQuery.createCheckout),
+      variables: {
+        'input': {'lineItems': lineItems},
+        'langCode': cartModel.langCode?.toUpperCase(),
+        'countryCode': countryCode,
+      },
+    ));
+    if (result.hasException) throw Exception(result.exception.toString());
+    final checkout = result.data?['checkoutCreate']?['checkout'];
+    if (checkout == null) throw Exception('Legacy checkout returned null');
+    try {
+      // For CA API (shcat_) tokens, skip checkoutLinkUser — it only accepts
+      // legacy Storefront customer access tokens.
+      if (_isCaToken(cookie)) {
+        return CheckoutCart.fromJsonShopify(checkout, langCode: languageCode);
+      }
+      final linked = await checkoutLinkUser(checkout['id'], cookie);
+      return CheckoutCart.fromJsonShopify(
+          linked ?? checkout, langCode: languageCode);
+    } catch (_) {
+      return CheckoutCart.fromJsonShopify(checkout, langCode: languageCode);
+    }
+  }
+
+  // ── Legacy checkout coupon methods (Storefront checkoutCreate flow) ─────────
+
+  Future<CheckoutCart> applyCoupon(
+      CartModel cartModel, String discountCode) async {
+    final checkoutId = cartModel.checkout?.id;
+    if (checkoutId == null) throw Exception('No checkout/cart ID');
+
+    final isCartGid = checkoutId.startsWith('gid://shopify/Cart/');
+    if (isCartGid || _isCaToken(cartModel.user?.cookie)) {
+      return applyCartCoupon(checkoutId, discountCode);
+    }
+
+    // Legacy Checkout API flow
+    final result = await client.mutate(MutationOptions(
+      document: gql(ShopifyQuery.applyCoupon),
+      variables: {
+        'discountCode': discountCode,
+        'checkoutId': checkoutId,
+      },
+    ));
+    if (result.hasException) {
+      printLog('applyCoupon exception: ${result.exception.toString()}');
+      throw Exception(result.exception.toString());
+    }
+    print('dataxxxx${result.data!['checkoutDiscountCodeApplyV2']['checkout']}');//
+    return CheckoutCart.fromJsonShopify(
+        result.data!['checkoutDiscountCodeApplyV2']['checkout']);
+  }
+
+  Future<CheckoutCart> removeCoupon(String? checkoutId) async {
+    if (checkoutId == null) throw Exception('No checkout/cart ID');
+
+    if (checkoutId.startsWith('gid://shopify/Cart/')) {
+      return removeCartCoupon(checkoutId);
+    }
+
+    final result = await client.mutate(MutationOptions(
+      document: gql(ShopifyQuery.removeCoupon),
+      variables: {'checkoutId': checkoutId},
+    ));
+    if (result.hasException) throw Exception(result.exception.toString());
+    return CheckoutCart.fromJsonShopify(
+        result.data!['checkoutDiscountCodeRemove']['checkout']);
+  }
+
+  @override
+  Future<List<ShippingMethod>> getShippingMethods({
+    CartModel? cartModel,
+    String? token,
+    String? checkoutId,
+    store_model.Store? store,
+    FormatAddress? formatAddress,
+    String? langCode,
+  }) async {
+    // Cart API flow: checkoutId is actually a cart GID for shcat_ users
+    final isCaFlow = _isCaToken(token) ||
+        (checkoutId?.startsWith('gid://shopify/Cart/') ?? false);
+
+    if (isCaFlow && checkoutId != null) {
+      return await _getCartShippingRates(
+        cartId: checkoutId,
+        cartModel: cartModel,
+        formatAddress: formatAddress,
+      );
+    }
+
+    // Legacy checkout flow
+    try {
+      final newAddress = cartModel!.address!
+          .toShopifyJson(formatAddress: formatAddress)['address'];
+      final result = await client.mutate(MutationOptions(
+        document: gql(ShopifyQuery.updateShippingAddress),
+        fetchPolicy: FetchPolicy.noCache,
+        variables: {
+          'shippingAddress': newAddress,
+          'checkoutId': checkoutId,
+        },
+      ));
+      if (result.hasException) {
+        throw 'So sorry, We do not support shipping to your address.';
+      }
+      final checkout = await getCheckout(checkoutId: checkoutId);
+      final availableShippingRates = checkout['availableShippingRates'];
+      final list = <ShippingMethod>[];
+      if (availableShippingRates != null && availableShippingRates['ready']) {
+        for (var item in availableShippingRates['shippingRates']) {
+          list.add(ShippingMethod.fromShopifyJson(item));
+        }
+      } else {
+        await Future.delayed(const Duration(milliseconds: 500));
+        final checkoutData = await getCheckout(checkoutId: checkoutId);
+        for (var item
+        in checkoutData['availableShippingRates']['shippingRates']) {
+          list.add(ShippingMethod.fromShopifyJson(item));
+        }
+      }
+      return list;
+    } catch (e) {
+      throw 'So sorry, We do not support shipping to your address.';
+    }
+  }
+
+  /// Fetch available delivery options from the Cart API.
+  /// Updates delivery address via cartBuyerIdentityUpdate first.
+  Future<List<ShippingMethod>> _getCartShippingRates({
+    required String cartId,
+    CartModel? cartModel,
+    FormatAddress? formatAddress,
+  }) async {
+    try {
+      if (cartModel?.address != null) {
+        final addr = cartModel!.address!;
+        await client.mutate(MutationOptions(
+          document: gql(r'''
+            mutation cartBuyerIdentityUpdateAddr(
+              $cartId: ID!
+              $buyerIdentity: CartBuyerIdentityInput!
+            ) {
+              cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
+                cart { id }
+                userErrors { field message }
+              }
+            }
+          '''),
+          variables: {
+            'cartId': cartId,
+            'buyerIdentity': {
+              'countryCode': countryCode,
+              'deliveryAddressPreferences': [
+                {
+                  'deliveryAddress': {
+                    'address1': addr.street ?? '',
+                    'address2': addr.apartment ?? '',
+                    'city': addr.city ?? '',
+                    'province': addr.state ?? '',
+                    'zip': addr.zipCode ?? '',
+                    'countryCode': addr.country ?? countryCode,
+                    'firstName': addr.firstName ?? '',
+                    'lastName': addr.lastName ?? '',
+                    'phone': addr.phoneNumber ?? '',
+                  }
+                }
+              ],
+            },
+          },
+        ));
+      }
+
+      final result = await client.query(QueryOptions(
+        document: gql(r'''
+          query cartDeliveryGroups($cartId: ID!) {
+            cart(id: $cartId) {
+              deliveryGroups(first: 10) {
+                nodes {
+                  id
+                  deliveryOptions {
+                    handle
+                    title
+                    estimatedCost { amount currencyCode }
+                    deliveryMethodType
                   }
                 }
               }
             }
-            userErrors {
-              field
-              message
+          }
+        '''),
+        fetchPolicy: FetchPolicy.noCache,
+        variables: {'cartId': cartId},
+      ));
+
+      if (result.hasException) {
+        throw 'So sorry, We do not support shipping to your address.';
+      }
+
+      final groups =
+          result.data?['cart']?['deliveryGroups']?['nodes'] as List? ?? [];
+      final list = <ShippingMethod>[];
+      for (final group in groups) {
+        final options = group['deliveryOptions'] as List? ?? [];
+        for (final opt in options) {
+          list.add(ShippingMethod.fromJson({
+            'id': opt['handle'] ?? '',
+            'title': opt['title'] ?? '',
+            'cost': opt['estimatedCost']?['amount'] ?? '0',
+            'description': opt['deliveryMethodType'] ?? '',
+          }));
+        }
+      }
+      return list;
+    } catch (e) {
+      throw 'So sorry, We do not support shipping to your address.';
+    }
+  }
+
+  /// Update selected delivery option on a cart (CA API flow).
+  Future<CheckoutCart?> updateCartDeliveryOption({
+    required String cartId,
+    required String deliveryGroupId,
+    required String deliveryOptionHandle,
+  }) async {
+    try {
+      final result = await client.mutate(MutationOptions(
+        document: gql(r'''
+          mutation cartSelectedDeliveryOptionsUpdate(
+            $cartId: ID!
+            $selectedDeliveryOptions: [CartSelectedDeliveryOptionInput!]!
+          ) {
+            cartSelectedDeliveryOptionsUpdate(
+              cartId: $cartId
+              selectedDeliveryOptions: $selectedDeliveryOptions
+            ) {
+              cart {
+                id
+                checkoutUrl
+                cost { totalAmount { amount currencyCode } }
+              }
+              userErrors { field message }
             }
+          }
+        '''),
+        variables: {
+          'cartId': cartId,
+          'selectedDeliveryOptions': [
+            {
+              'deliveryGroupId': deliveryGroupId,
+              'deliveryOptionHandle': deliveryOptionHandle,
+            }
+          ],
+        },
+      ));
+      if (result.hasException) return null;
+      final cart =
+      result.data?['cartSelectedDeliveryOptionsUpdate']?['cart'];
+      return cart != null
+          ? CheckoutCart.fromCartJson(cart, langCode: languageCode)
+          : null;
+    } catch (e) {
+      printLog('updateCartDeliveryOption error: $e');
+      return null;
+    }
+  }
+
+  /// Update quantities for existing line items in a cart.
+  Future<CheckoutCart?> updateCartLines({
+    required String cartId,
+    required List<Map<String, dynamic>> lines, // [{id, quantity}]
+  }) async {
+    try {
+      final result = await client.mutate(MutationOptions(
+        document: gql(ShopifyQuery.cartLinesUpdate),
+        variables: {
+          'cartId': cartId,
+          'lines': lines,
+          'country': countryCode,
+          'language': languageCode,
+        },
+      ));
+      if (result.hasException) throw Exception(result.exception.toString());
+      final cart = result.data?['cartLinesUpdate']?['cart'];
+      return cart != null
+          ? CheckoutCart.fromCartJson(cart, langCode: languageCode)
+          : null;
+    } catch (e) {
+      printLog('updateCartLines error: $e');
+      return null;
+    }
+  }
+
+  /// Remove line items from a cart by their line GIDs.
+  ///
+  @override
+  Future<CheckoutCart?> removeCartLines({
+    required String cartId,
+    required List<String> lineIds,
+    String? discountCode,
+  }) async {
+    try {
+      final result = await client.mutate(MutationOptions(
+        document: gql(ShopifyQuery.cartLinesRemove),
+        variables: {
+          'cartId': cartId,
+          'lineIds': lineIds,
+          'country': countryCode,
+          'language': languageCode,
+        },
+      ));
+      if (result.hasException) throw Exception(result.exception.toString());
+
+      var cartData = Map<String, dynamic>.from(
+          result.data?['cartLinesRemove']?['cart'] as Map<String, dynamic>? ?? {});
+
+      // Re-apply discount if one was active
+      if (discountCode != null && discountCode.isNotEmpty && cartData['id'] != null) {
+        try {
+          final discountResult = await client.mutate(MutationOptions(
+            document: gql(ShopifyQuery.cartDiscountCodesUpdate),
+            variables: {
+              'cartId': cartData['id'],
+              'discountCodes': [discountCode],
+              'country': countryCode,
+              'language': languageCode,
+            },
+          ));
+          final updatedCart = discountResult.data?['cartDiscountCodesUpdate']?['cart']
+          as Map<String, dynamic>?;
+          if (updatedCart != null) {
+            cartData = Map<String, dynamic>.from(updatedCart);
+            final rawUrl = cartData['checkoutUrl'] as String? ?? '';
+            if (rawUrl.isNotEmpty) {
+              final uri = Uri.parse(rawUrl);
+              cartData['checkoutUrl'] = uri.replace(queryParameters: {
+                ...uri.queryParameters,
+                'discount': discountCode,
+              }).toString();
+            }
+          }
+        } catch (e) {
+          printLog('removeCartLines: re-apply discount error (non-fatal): $e');
+        }
+      }
+
+      return cartData.isNotEmpty
+          ? CheckoutCart.fromCartJson(cartData, langCode: languageCode)
+          : null;
+    } catch (e) {
+      printLog('removeCartLines error: $e');
+      return null;
+    }
+  }
+  /// Apply a discount code to a cart (Cart API) or legacy checkout.
+
+  Future<CheckoutCart> applyCartCoupon(
+      String cartId, String discountCode)
+
+  async {
+    final result = await client.mutate(MutationOptions(
+      document: gql(ShopifyQuery.cartDiscountCodesUpdate),
+      variables: {
+        'cartId': cartId,
+        'discountCodes': [discountCode],
+        'country': countryCode,
+        'language': languageCode,
+      },
+    ));
+    if (result.hasException) throw Exception(result.exception.toString());
+
+    final rawCart = result.data?['cartDiscountCodesUpdate']?['cart']
+    as Map<String, dynamic>?;
+    if (rawCart == null) throw Exception('Cart data is null');
+
+    // Must deep-copy — GraphQL returns unmodifiable maps
+    final cartData = Map<String, dynamic>.from(rawCart);
+
+    final rawUrl = cartData['checkoutUrl'] as String? ?? '';
+    log('applyCartCoupondiscount: rawUrl=$cartData');
+    printLog('applyCartCoupon: rawUrl=$rawUrl');
+
+    if (rawUrl.isNotEmpty && discountCode.isNotEmpty) {
+      final uri = Uri.parse(rawUrl);
+      final newUrl = uri.replace(queryParameters: {
+        ...uri.queryParameters,
+        'discount': discountCode,
+      }).toString();
+      cartData['checkoutUrl'] = newUrl;
+      printLog('applyCartCoupon: updatedUrl=$newUrl');
+    }
+
+    return CheckoutCart.fromCartJson(cartData, langCode: languageCode);
+  }
+
+  @override
+  Future<Category?> getProductCategoryByPermalink(
+      String productCategoryPermalink) async {
+    try {
+      // Extract handle from URL
+      // e.g. https://fawaah.com/collections/honey → honey
+      final handle = productCategoryPermalink
+          .split('/')
+          .lastWhere((e) => e.isNotEmpty, orElse: () => '');
+
+      if (handle.isEmpty) return null;
+
+      final result = await client.query(QueryOptions(
+        document: gql(r'''
+        query getCollectionByHandle($handle: String!) {
+          collection(handle: $handle) {
+            id
+            title
+            handle
+            description
+            image {
+              url
+              altText
+            }
+            onlineStoreUrl
           }
         }
       '''),
-        variables: {
-          'lines': lineItems,
-          'country': countryCode,
-        },
-      );
+        variables: {'handle': handle},
+        fetchPolicy: FetchPolicy.networkOnly,
+      ));
 
-      final result = await client.mutate(options);
-
-      if (result.hasException) {
-        final errors = result.exception?.graphqlErrors ?? [];
-        if (errors.isNotEmpty) {
-          final errorMessages = errors.map((e) => e.message).join(', ');
-          throw Exception('GraphQL errors: $errorMessages');
-        }
-        throw Exception('Failed to create cart: ${result.exception}');
+      if (result.hasException || result.data?['collection'] == null) {
+        printLog('getProductCategoryByPermalink: not found for handle=$handle');
+        return null;
       }
 
-      final cartData = result.data?['cartCreate']?['cart'];
-      if (cartData == null) {
-        throw Exception('No cart data received');
-      }
-      print("cartxxxx${cartData}");
-
-      return CheckoutCart.fromJsonShopify(cartData,langCode: languageCode);
-
-    } catch (e, stack) {
-      printLog('Error in addItemsToCart: $e');
-      printLog('Stack trace: $stack');
-      rethrow;
-    }
-  }
-
-  Future<CheckoutCart> updateItemsToCart(CartModelShopify cartModel, String? cookie) async {
-    try {
-      if (cookie == null) {
-        throw Exception('User not authenticated');
-      }
-
-      // For updates, we'll simply create a new cart with all current items
-      // This ensures we always have a clean state
-      return await addItemsToCart(cartModel);
-
+      return Category.fromJsonShopify(result.data!['collection']);
     } catch (e) {
-      printLog('updateItemsToCart error: $e');
-      rethrow;
+      printLog('getProductCategoryByPermalink error: $e');
+      return null;
     }
   }
 
-  Future<CheckoutCart> applyCoupon(
-    CartModel cartModel,
-    String discountCode,
-  ) async {
-    try {
-      var lineItems = [];
+  Future<CheckoutCart> removeCartCoupon(String cartId) async {
+    final result = await client.mutate(MutationOptions(
+      document: gql(ShopifyQuery.cartDiscountCodesUpdate),
+      variables: {
+        'cartId': cartId,
+        'discountCodes': <String>[],
+        'country': countryCode,
+        'language': languageCode,
+      },
+    ));
+    if (result.hasException) throw Exception(result.exception.toString());
+    return CheckoutCart.fromCartJson(
+        result.data?['cartDiscountCodesUpdate']?['cart'],
+        langCode: languageCode);
+  }
 
-      printLog('applyCoupon ${cartModel.productsInCart}');
+  Future<Map<String, dynamic>> getCheckout({String? checkoutId}) async {
 
-      printLog('applyCoupon $lineItems');
+    final result = await client.query(QueryOptions(
+      document: gql(ShopifyQuery.getCheckout),
+      fetchPolicy: FetchPolicy.noCache,
+      variables: {'checkoutId': checkoutId},
+    ));
+    if (result.hasException) throw Exception(result.exception.toString());
+    return result.data?['node'];
+  }
 
-      final options = MutationOptions(
-        document: gql(ShopifyQuery.applyCoupon),
-        variables: {
-          'discountCode': discountCode,
-          'checkoutId': cartModel.checkout!.id
+  @override
+  Future<List<PaymentMethod>> getPaymentMethods({
+    CartModel? cartModel,
+    ShippingMethod? shippingMethod,
+    String? token,
+    String? langCode,
+  }) async {
+    final list = <PaymentMethod>[];
+    list.add(PaymentMethod.fromJson({
+      'id': '0',
+      'title': 'Checkout Free',
+      'description': '',
+      'enabled': true,
+    }));
+    if (kShopifyPaymentConfig.paymentCardConfig.enable) {
+      list.add(PaymentMethod.fromJson({
+        'id': PaymentMethod.stripeCard,
+        'title': 'Checkout Credit card',
+        'description': '',
+        'enabled': true,
+      }));
+    }
+    if (kShopifyPaymentConfig.applePayConfig.enable && isIos) {
+      list.add(PaymentMethod.fromJson({
+        'id': PaymentMethod.stripeApplePay,
+        'title': 'Checkout with ApplePay',
+        'description': '',
+        'enabled': true,
+      }));
+    }
+    if (kShopifyPaymentConfig.googlePayConfig.enable && isAndroid) {
+      list.add(PaymentMethod.fromJson({
+        'id': PaymentMethod.stripeGooglePay,
+        'title': 'Checkout with GooglePay',
+        'description': '',
+        'enabled': true,
+      }));
+    }
+    return list;
+  }
+
+  @override
+  Future<PaymentSettings> getPaymentSettings() async {
+    final result = await client.query(QueryOptions(
+      document: gql(ShopifyQuery.getPaymentSettings),
+      variables: const <String, dynamic>{'nRepositories': 50},
+    ));
+    if (result.hasException) throw Exception(result.exception.toString());
+    return PaymentSettings.fromShopifyJson(
+        result.data!['shop']['paymentSettings']);
+  }
+
+  @override
+  Future checkoutWithCreditCard(
+      String? vaultId,
+      CartModel cartModel,
+      Address address,
+      PaymentSettingsModel paymentSettingsModel,
+      ) async {
+    final result = await client.mutate(MutationOptions(
+      document: gql(ShopifyQuery.checkoutWithCreditCard),
+      variables: {
+        'checkoutId': cartModel.checkout!.id,
+        'payment': {
+          'paymentAmount': {
+            'amount': cartModel.getTotal(),
+            'currencyCode': cartModel.getCurrency(),
+          },
+          'idempotencyKey': const Uuid().v1(),
+          'billingAddress': address.toShopifyJson()['address'],
+          'vaultId': vaultId,
+          'test': true,
         },
-      );
-
-      final result = await client.mutate(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-        throw Exception(result.exception.toString());
-      }
-
-      var checkout = result.data!['checkoutDiscountCodeApplyV2']['checkout'];
-
-      return CheckoutCart.fromJsonShopify(checkout);
-    } catch (e) {
-      printLog('::::applyCoupon shopify error');
-      printLog(e.toString());
-      rethrow;
-    }
+      },
+    ));
+    if (result.hasException) throw Exception(result.exception.toString());
+    return CheckoutCart.fromJsonShopify(
+        result.data!['checkoutCompleteWithCreditCardV2']['checkout']);
   }
 
-  Future<CheckoutCart> removeCoupon(String? checkoutId) async {
+  Future<PaymentShopify?> checkoutCompleteWithTokenizedPayment({
+    required String checkoutId,
+    required Map paymentData,
+  }) async {
     try {
-      final options = MutationOptions(
-        document: gql(ShopifyQuery.removeCoupon),
-        variables: {
+      final result = await client.mutate(MutationOptions(
+        document: gql(ShopifyQuery.checkoutCompleteWithTokenizedPayment),
+        variables: <String, dynamic>{
           'checkoutId': checkoutId,
+          'payment': paymentData,
         },
-      );
-
-      final result = await client.mutate(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-        throw Exception(result.exception.toString());
-      }
-
-      var checkout = result.data!['checkoutDiscountCodeRemove']['checkout'];
-
-      return CheckoutCart.fromJsonShopify(checkout);
+      ));
+      if (result.hasException) throw result.exception.toString();
+      return PaymentShopify.fromJson(
+          result.data!['checkoutCompleteWithTokenizedPaymentV3']['payment']);
     } catch (e) {
-      printLog('::::removeCoupon shopify error');
-      printLog(e.toString());
-      rethrow;
+      return null;
+    }
+  }
+
+  Future<PaymentShopify?> fetchPayment({required String paymentId}) async {
+    try {
+      final result = await client.mutate(MutationOptions(
+        document: gql(ShopifyQuery.fetchPayment),
+        variables: <String, dynamic>{'paymentId': paymentId},
+      ));
+      if (result.hasException) throw result.exception.toString();
+      return PaymentShopify.fromJson(result.data?['node']);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<CheckoutCart?> updateShippingRate({
+    required String checkoutId,
+    required String shippingRateHandle,
+  }) async {
+    try {
+      final result = await client.mutate(MutationOptions(
+        document: gql(ShopifyQuery.updateShippingRate),
+        variables: <String, dynamic>{
+          'checkoutId': checkoutId,
+          'shippingRateHandle': shippingRateHandle,
+        },
+      ));
+      if (result.hasException) printLog(result.exception.toString());
+      return CheckoutCart.fromJsonShopify(
+          result.data!['checkoutShippingLineUpdate']['checkout']);
+    } catch (e) {
+      return null;
     }
   }
 
@@ -1661,25 +2797,12 @@ User user=User();
       final dayFormat = DateFormat(DateTimeFormatConstants.weekday);
       final timeFormat = DateFormat(DateTimeFormatConstants.timeHHmmFormatEN);
       deliveryInfo = [
-        {
-          'key': 'Delivery Date',
-          'value': dateFormat.format(deliveryDate),
-        },
-        {
-          'key': 'Delivery Day',
-          'value': dayFormat.format(deliveryDate),
-        },
-        {
-          'key': 'Delivery Time',
-          'value': timeFormat.format(deliveryDate),
-        },
-        // {
-        //   'key': 'Date create',
-        //   'value': timeFormat.format(DateTime.now()),
-        // },
+        {'key': 'Delivery Date', 'value': dateFormat.format(deliveryDate)},
+        {'key': 'Delivery Day', 'value': dayFormat.format(deliveryDate)},
+        {'key': 'Delivery Time', 'value': timeFormat.format(deliveryDate)},
       ];
     }
-    final options = MutationOptions(
+    final result = await client.mutate(MutationOptions(
       document: gql(ShopifyQuery.updateCheckoutAttribute),
       variables: <String, dynamic>{
         'checkoutId': checkoutId,
@@ -1688,14 +2811,8 @@ User user=User();
           if (deliveryDate != null) 'customAttributes': deliveryInfo,
         },
       },
-    );
-
-    final result = await client.mutate(options);
-
-    if (result.hasException) {
-      printLog(result.exception.toString());
-      throw Exception(result.exception.toString());
-    }
+    ));
+    if (result.hasException) throw Exception(result.exception.toString());
   }
 
   @override
@@ -1703,988 +2820,83 @@ User user=User();
     required String checkoutId,
     required String email,
   }) async {
-    final options = MutationOptions(
+    final result = await client.mutate(MutationOptions(
       document: gql(ShopifyQuery.updateCheckoutEmail),
       variables: <String, dynamic>{
         'checkoutId': checkoutId,
         'email': email,
       },
-    );
-
-    final result = await client.mutate(options);
-
-    if (result.hasException) {
-      printLog(result.exception.toString());
-      throw (result.exception.toString());
-    }
+    ));
+    if (result.hasException) throw result.exception.toString();
   }
 
-  // Shopify does not support social login
-  // @override
-  // Future<User> loginGoogle({String? token}) async {
-  //   try {
-  //     var response = await httpPost(
-  //         '$domain/index.php?route=extension/mstore/account/socialLogin'
-  //             .toUri()!,
-  //         body: convert.jsonEncode({'token': token, 'type': 'google'}),
-  //         headers: {'content-type': 'application/json', 'cookie': cookie!});
-  //     final body = convert.jsonDecode(response.body);
-  //     if (response.statusCode == 200) {
-  //       return User.fromOpencartJson(body['data'], '');
-  //     } else {
-  //       List? error = body['error'];
-  //       if (error != null && error.isNotEmpty) {
-  //         throw Exception(error[0]);
-  //       } else {
-  //         throw Exception('Login fail');
-  //       }
-  //     }
-  //   } catch (err) {
-  //     rethrow;
-  //   }
-  // }
-
-  // payment settings from shop
-  @override
-  Future<PaymentSettings> getPaymentSettings() async {
-    try {
-      printLog('::::request paymentSettings');
-
-      const nRepositories = 50;
-      final options = QueryOptions(
-          document: gql(ShopifyQuery.getPaymentSettings),
-          variables: const <String, dynamic>{
-            'nRepositories': nRepositories,
-          });
-
-      final result = await client.query(options);
-
-      printLog('result ${result.data}');
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-        throw Exception(result.exception.toString());
-      }
-      var json = result.data!['shop']['paymentSettings'];
-
-      printLog('paymentSettings $json');
-
-      return PaymentSettings.fromShopifyJson(json);
-    } catch (e) {
-      printLog('::::paymentSettings shopify error');
-      printLog(e.toString());
-      rethrow;
-    }
+  Future<Map<String, dynamic>?> checkoutLinkUser(
+      String? checkoutId, String? token) async {
+    final result = await client.mutate(MutationOptions(
+      document: gql(ShopifyQuery.checkoutLinkUser),
+      variables: {
+        'checkoutId': checkoutId,
+        'customerAccessToken': token,
+      },
+    ));
+    if (result.hasException) throw result.exception.toString();
+    return result.data?['checkoutCustomerAssociateV2']?['checkout'];
   }
 
-  @override
-  Future checkoutWithCreditCard(String? vaultId, CartModel cartModel,
-      Address address, PaymentSettingsModel paymentSettingsModel) async {
-    try {
-      try {
-        var uuid = const Uuid();
-        var paymentAmount = {
-          'amount': cartModel.getTotal(),
-          'currencyCode': cartModel.getCurrency()
-        };
-
-        final options = MutationOptions(
-          document: gql(ShopifyQuery.checkoutWithCreditCard),
-          variables: {
-            'checkoutId': cartModel.checkout!.id,
-            'payment': {
-              'paymentAmount': paymentAmount,
-              'idempotencyKey': uuid.v1(),
-              'billingAddress': address.toShopifyJson()['address'],
-              'vaultId': vaultId,
-              'test': true
-            }
-          },
-        );
-
-        final result = await client.mutate(options);
-
-        if (result.hasException) {
-          printLog(result.exception.toString());
-          throw Exception(result.exception.toString());
-        }
-
-        var checkout =
-            result.data!['checkoutCompleteWithCreditCardV2']['checkout'];
-
-        return CheckoutCart.fromJsonShopify(checkout);
-      } catch (e) {
-        printLog('::::applyCoupon shopify error');
-        printLog(e.toString());
-        rethrow;
-      }
-    } catch (e) {
-      printLog('::::checkoutWithCreditCard shopify error');
-      printLog(e.toString());
-      rethrow;
-    }
-  }
-
-  @override
-  Future<List<ProductVariation>?> getProductVariations(Product product,
-      {String? lang = 'en'}) async {
-    try {
-      return product.variations;
-    } catch (e) {
-      printLog('::::getProductVariations shopify error');
-      rethrow;
-    }
-  }
+  // ── Blogs (Storefront API) ────────────────────────────────────────────────
 
   @override
   Future<PagingResponse<Blog>>? getBlogs(dynamic cursor) async {
-    /// That means override blog from WordPress
     if (super.blogApi.url != domain) {
       return (await super.getBlogs(cursor)) ?? const PagingResponse();
     }
     try {
-      printLog('::::request blogs');
-
-      const nRepositories = 50;
-      final options = QueryOptions(
+      final response = await client.query(QueryOptions(
         document: gql(ShopifyQuery.getArticle),
         fetchPolicy: FetchPolicy.networkOnly,
         variables: {
-          'nRepositories': nRepositories,
+          'nRepositories': 50,
           'pageSize': 12,
           'langCode': languageCode,
           if (cursor != null && cursor is! num) 'cursor': cursor,
         },
-      );
-      final response = await client.query(options);
-
-      if (response.hasException) {
-        printLog(response.exception.toString());
-      }
-
+      ));
+      if (response.hasException) return const PagingResponse();
+      final edges = response.data?['articles']?['edges'];
+      if (edges == null || edges is! List) return const PagingResponse();
       final data = <Blog>[];
       String? lastCursor;
-      for (var item in response.data!['articles']['edges']) {
-        final blog = item['node'];
-        lastCursor = item['cursor'];
-        data.add(Blog.fromShopifyJson(blog));
+      for (var item in edges) {
+        final node = item['node'];
+        if (node == null) continue;
+        lastCursor = item['cursor'] as String?;
+        data.add(Blog.fromShopifyJson(node));
       }
-
-      return PagingResponse(
-        data: data,
-        cursor: lastCursor,
-      );
-
-      // printLog(list);
+      return PagingResponse(data: data, cursor: lastCursor);
     } catch (e) {
-      printLog('::::fetchBlogLayout shopify error');
-      printLog(e.toString());
       return const PagingResponse();
     }
-  }
-
-  @override
-  // Future<PagingResponse<Order>> getMyOrders({
-  //   User? user,
-  //   dynamic cursor,
-  //   String? cartId,
-  // })
-  // async {
-  //   try {
-  //     const nRepositories = 50;
-  //     final options = QueryOptions(
-  //       document: gql(ShopifyQuery.getOrder),
-  //       fetchPolicy: FetchPolicy.noCache,
-  //       variables: <String, dynamic>{
-  //         'nRepositories': nRepositories,
-  //         'customerAccessToken': user!.cookie,
-  //         if (cursor != null) 'cursor': cursor,
-  //         'pageSize': 50
-  //       },
-  //     );
-  //     final result = await client.query(options);
-  //
-  //     if (result.hasException) {
-  //       printLog(result.exception.toString());
-  //     }
-  //
-  //     var list = <Order>[];
-  //     String? lastCursor;
-  //
-  //     for (var item in result.data!['customer']['orders']['edges']) {
-  //       lastCursor = item['cursor'];
-  //       var order = item['node'];
-  //       list.add(Order.fromJson(order));
-  //     }
-  //     return PagingResponse(
-  //       cursor: lastCursor,
-  //       data: list,
-  //     );
-  //   } catch (e) {
-  //     printLog('::::getMyOrders shopify error');
-  //     printLog(e.toString());
-  //     return const PagingResponse();
-  //   }
-  // }
-
-  Future<String?> exchangeForCustomerAccessToken(String accessToken) async {
-    try {
-      // This is a hypothetical endpoint - you'd need to check Fawaah's documentation
-      final response = await http.post(
-        Uri.parse('https://60989374644.myshopify.com/customer/api/token/exchange'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': ' $accessToken',
-        },
-        body: json.encode({
-          'tokenType': 'customerAccessToken',
-        }),
-      );
-
-      print('asdsadsadsd ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['customerAccessToken'];
-      }
-
-      return null;
-    } catch (e) {
-      print('Token exchange failed: $e');
-      return null;
-    }
-  }
-
-  Map<String, dynamic> convertCustomerAccountAPIToStorefront(Map<String, dynamic> newApiOrder) {
-    try {
-      // Convert line items from new format to old format
-      List<Map<String, dynamic>> convertedLineItems = [];
-
-      var lineItemContainers = newApiOrder['lineItems'] as List<dynamic>? ?? [];
-      for (var container in lineItemContainers) {
-        if (container['__typename'] == 'RemainingLineItemContainer') {
-          var items = container['lineItems']['nodes'] as List<dynamic>? ?? [];
-
-          for (var item in items) {
-            var lineItemData = item['lineItem'];
-
-            // Convert to old format structure
-            convertedLineItems.add({
-              'node': {
-                'id': lineItemData['id'],
-                'title': lineItemData['name'],
-                'quantity': lineItemData['quantity'],
-                'variant': {
-                  'id': lineItemData['id'], // Use lineItem id as variant id
-                  'title': lineItemData['name'],
-                  'image': lineItemData['image'],
-                  'price': {
-                    'amount': '0.00', // Price not available in new API
-                    'currencyCode': newApiOrder['totalPrice']['currencyCode']
-                  }
-                }
-              }
-            });
-          }
-        }
-      }
-
-      // Map customerFulfillmentStatus to financialStatus
-      String convertedStatus = convertFulfillmentStatus(newApiOrder['customerFulfillmentStatus']);
-
-      // Create the converted order in old format
-      return {
-        'id': newApiOrder['id'],
-        'orderNumber': extractOrderNumber(newApiOrder['name']), // Extract number from "#59392"
-        'financialStatus': convertedStatus,
-        'currencyCode': newApiOrder['totalPrice']['currencyCode'],
-        'processedAt': newApiOrder['processedAt'],
-        'totalPrice': {
-          'amount': newApiOrder['totalPrice']['amount'].toString()
-        },
-        'totalShippingPrice': {
-          'amount': '0.00' // Not available in new API
-        },
-        'totalTax': {
-          'amount': '0.00' // Not available in new API
-        },
-        'subtotalPrice': {
-          'amount': newApiOrder['totalPrice']['amount'].toString() // Use total as subtotal
-        },
-        'lineItems': {
-          'edges': convertedLineItems
-        },
-        'shippingAddress': null, // Not available in current response
-        'statusUrl': '', // Not available in new API
-      };
-
-    } catch (e) {
-      print('Error converting API response: $e');
-      return {};
-    }
-  }
-
-// Extract order number from name field (e.g., "#59392" -> "59392")
-  String extractOrderNumber(String? name) {
-    if (name == null) return '';
-    return name.replaceAll('#', '');
-  }
-
-// Convert customerFulfillmentStatus to financialStatus
-  String convertFulfillmentStatus(String? status) {
-    switch (status?.toUpperCase()) {
-      case 'FULFILLED':
-        return 'PAID';
-      case 'PARTIALLY_FULFILLED':
-        return 'PARTIALLY_PAID';
-      case 'UNFULFILLED':
-        return 'PENDING';
-      case 'CANCELLED':
-        return 'VOIDED';
-      case 'RESTOCKED':
-        return 'REFUNDED';
-      default:
-        return 'PENDING';
-    }
-  }
-
-
-  Future<PagingResponse<Order>> getMyOrders({
-    User? user,
-    dynamic cursor,
-    String? cartId,
-  }) async {
-    try {
-      // Exchange cookie for customer access token
-      var customerAccessToken = user?.cookie ;
-
-      print("asdasdsad$customerAccessToken");
-      // Configure GraphQL client for Customer Account API with correct URL
-      final httpLink = HttpLink('https://account.fawaah.com/customer/api/unstable/graphql?operation=Orders');
-
-      final authLink = AuthLink(
-        headerKey: 'authorization', // lowercase as seen in the request
-        getToken: () async => customerAccessToken, // Use token directly (already has 'shcat_' prefix)
-      );
-
-      final client = GraphQLClient(
-        cache: GraphQLCache(),
-        link: authLink.concat(httpLink),
-      );
-
-      // Exact GraphQL query from the API request
-      const String getOrdersQuery = '''
-      query Orders(\$isBusinessCustomer: Boolean!, \$before: String, \$after: String, \$first: Int, \$last: Int, \$query: String, \$personalAccountSortKey: OrderSortKeys, \$reverse: Boolean!) {
-        customer @skip(if: \$isBusinessCustomer) {
-          id
-          orders(
-            first: \$first
-            last: \$last
-            before: \$before
-            after: \$after
-            sortKey: \$personalAccountSortKey
-            reverse: \$reverse
-            query: \$query
-          ) {
-            nodes {
-              id
-              name
-              confirmationNumber
-              customerFulfillmentStatus
-              totalPrice {
-                amount
-                currencyCode
-              }
-              processedAt
-              cancelledAt
-              lineItems: lineItemContainers {
-                ... on RemainingLineItemContainer {
-                  id
-                  lineItems(first: 4) {
-                    nodes {
-                      id
-                      lineItem {
-                        id
-                        name
-                        quantity
-                        image {
-                          id
-                          altText
-                          url
-                        }
-                      }
-                    }
-                    pageInfo {
-                      hasNextPage
-                      endCursor
-                    }
-                  }
-                }
-              }
-            }
-            pageInfo {
-              hasNextPage
-              hasPreviousPage
-              startCursor
-              endCursor
-            }
-          }
-        }
-      }
-    ''';
-
-      final options = QueryOptions(
-        document: gql(getOrdersQuery),
-        fetchPolicy: FetchPolicy.noCache,
-        variables: <String, dynamic>{
-          'isBusinessCustomer': false,
-          'first': 50,
-          'businessAccountSortKey': 'PROCESSED_AT',
-          'personalAccountSortKey': 'PROCESSED_AT',
-          'reverse': true,
-          'companyId': 'gid://shopify/Company/0',
-          'query': '(purchasing_entity:Customer)',
-          if (cursor != null) 'after': cursor,
-        },
-      );
-
-      final result = await client.query(options);
-
-      print("Query result: ${result.data}");
-
-      if (result.hasException) {
-        print('GraphQL Exception: ${result.exception}');
-        if (result.exception?.graphqlErrors != null) {
-          for (var error in result.exception!.graphqlErrors) {
-            print('GraphQL Error: ${error.message}');
-            print('Error location: ${error.locations}');
-            print('Error path: ${error.path}');
-          }
-        }
-        return const PagingResponse();
-      }
-
-      var list = <Order>[];
-      String? lastCursor;
-      bool hasNextPage = false;
-
-      // Parse orders from Customer Account API response
-      if (result.data != null && result.data!['customer'] != null) {
-        final ordersData = result.data!['customer']['orders'];
-
-        for (var orderNode in ordersData['nodes']) {
-          // Convert new API format to old format
-          var convertedOrderData = convertCustomerAccountAPIToStorefront(orderNode);
-
-          // Use your existing parsing method
-          list.add( Order.fromJson(convertedOrderData));
-        }
-
-        hasNextPage = ordersData['pageInfo']['hasNextPage'] ?? false;
-        lastCursor = ordersData['pageInfo']['endCursor'];
-      }
-
-      return PagingResponse(
-        cursor: lastCursor,
-        data: list,
-      );
-
-    }
-    catch (e) {
-      print('getMyOrders error: $e');
-      return const PagingResponse();
-    }
-  }
-
-
-
-//   Future<PagingResponse<Order>> getMyOrders({
-//     User? user,
-//     dynamic cursor,
-//     String? cartId,
-//   })
-//   async {
-//     try {
-//
-//       var ddddd=await exchangeForCustomerAccessToken(user?.cookie??'');
-//
-//       print('asdsadsadsad${ user!.cookie}');
-//       const nRepositories = 50;
-//       final options = QueryOptions(
-//         document: gql(ShopifyQuery.getOrder),
-//         fetchPolicy: FetchPolicy.noCache,
-//         variables: <String, dynamic>{
-//           'nRepositories': nRepositories,
-//           'customerAccessToken': user!.cookie,
-//           if (cursor != null) 'cursor': cursor,
-//           'pageSize': 50
-//         },
-//       );
-//       //
-//       final result = await client.query(options);
-// //
-//       print("asdsadssda${result}");
-//       if (result.hasException) {
-//         printLog(result.exception.toString());
-//       }
-//
-//       var list = <Order>[];
-//       String? lastCursor;
-//
-//       for (var item in result.data!['customer']['orders']['edges']) {
-//         lastCursor = item['cursor'];
-//         var order = item['node'];
-//         list.add(Order.fromJson(order));
-//       }
-//       return PagingResponse(
-//         cursor: lastCursor,
-//         data: list,
-//       );
-//     } catch (e) {
-//       printLog('::::getMyOrders shopify error');
-//       printLog(e.toString());
-//       return const PagingResponse();
-//     }
-//   }
-  @override
-  Future<String> submitForgotPassword({
-    String? forgotPwLink,
-    Map<String, dynamic>? data,
-  }) async {
-    final options = MutationOptions(
-      document: gql(ShopifyQuery.resetPassword),
-      variables: {
-        'email': data!['email'],
-      },
-    );
-
-    final result = await client.mutate(options);
-
-    if (result.hasException) {
-      printLog(result.exception.toString());
-      throw (result.exception?.graphqlErrors.firstOrNull?.message ??
-          S.current.somethingWrong);
-    }
-
-    final List? errors = result.data!['customerRecover']['customerUserErrors'];
-    const errorCode = 'UNIDENTIFIED_CUSTOMER';
-    if (errors?.isNotEmpty ?? false) {
-      if (errors!.any((element) => element['code'] == errorCode)) {
-        throw Exception(errorCode);
-      }
-    }
-
-    return '';
-  }
-
-  @override
-  Future<Product?> getProductByPermalink(String productPermalink) async {
-    final handle =
-        productPermalink.substring(productPermalink.lastIndexOf('/') + 1);
-
-    // final getlang= productPermalink.substring(productPermalink.indexOf('/') + 1);
-    // final getlang= productPermalink.substring(productPermalink.indexOf('/') + 1,productPermalink.indexOf('/pro'));
-
-    // final getlang=productPermalink.contains("/ar/")?"AR":"EN";
-    // printLog('::::request getProduct $getlang');
-
-    const nRepositories = 50;
-    final options = QueryOptions(
-      document: gql(ShopifyQuery.getProductByHandle),
-      variables: <String, dynamic>{
-        'nRepositories': nRepositories,
-        'handle': handle,
-        'langCode':languageCode
-      },
-    );
-    final result = await client.query(options);
-
-    if (result.hasException) {
-      printLog(result.exception.toString());
-    }
-
-    final productData = result.data?['productByHandle'];
-    return Product.fromShopify(productData);
   }
 
   @override
   Future<Blog?> getBlogByPermalink(String blogPermaLink) async {
     final uri = Uri.parse(blogPermaLink);
-    printLog('::::getArticle shopify link: $blogPermaLink');
     final articleHandle = uri.pathSegments.last;
     final blogHandle = uri.pathSegments[uri.pathSegments.length - 2];
     try {
-      const nRepositories = 50;
-      final options = QueryOptions(
+      final result = await client.query(QueryOptions(
         document: gql(ShopifyQuery.getArticleByHandle),
         variables: <String, dynamic>{
-          'nRepositories': nRepositories,
           'blogHandle': blogHandle,
           'articleHandle': articleHandle,
         },
-      );
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-      }
-
-      final blogData = result.data?['blog']?['articleByHandle'];
-      final blog = Blog.fromShopifyJson(blogData);
-      return blog;
+      ));
+      if (result.hasException) return null;
+      final article =
+      result.data?['blog']?['articleByHandle'] as Map<String, dynamic>?;
+      if (article == null) return null;
+      return Blog.fromShopifyJson(article);
     } catch (e) {
-      printLog('::::getArticle shopify error');
-      printLog(e.toString());
-      return null;
-    }
-  }
-
-  @override
-  Future<Category?> getProductCategoryByPermalink(
-      String productCategoryPermalink) async {
-    final uri = Uri.parse(productCategoryPermalink);
-    printLog('::::getCollection shopify link: $productCategoryPermalink');
-    final collectionHandle = uri.pathSegments.last;
-    try {
-      const nRepositories = 50;
-      final options = QueryOptions(
-        document: gql(ShopifyQuery.getCollectionByHandle),
-        variables: <String, dynamic>{
-          'nRepositories': nRepositories,
-          'handle': collectionHandle,
-          'langCode': languageCode,
-        },
-      );
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-      }
-
-      final collectionData = result.data?['collection'];
-      final collection = Category.fromJsonShopify(collectionData);
-      return collection;
-    } catch (e) {
-      printLog('::::getCollection shopify error');
-      printLog(e.toString());
-      return null;
-    }
-  }
-
-  @override
-  Future<Category?> getProductCategoryById({
-    required String categoryId,
-  }) async {
-    printLog('::::getCollection shopify id: $categoryId');
-    try {
-      const nRepositories = 50;
-      final options = QueryOptions(
-        document: gql(ShopifyQuery.getCollectionById),
-        variables: <String, dynamic>{
-           'nRepositories': nRepositories,
-           // 'langCode': 'en',
-          'id': categoryId,
-        },
-      );
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-      }
-
-
-      final collectionData = result.data?['collection'];
-
-      print("ksasasasccx${result}");
-      final collection = Category.fromJsonShopify(collectionData);
-      return collection;
-    } catch (e) {
-      printLog('::::getCollection shopify error');
-      printLog( e.toString());
-      return null;
-    }
-  }
-
-
-  @override
-  Future<List<FilterTag>>? getFilterTags({String? lang}) async {
-    printLog('::::getalltags shopify id');
-    try {
-      var list = <FilterTag>[];
-
-      const nRepositories = 50;
-      final options = QueryOptions(
-        document: gql(ShopifyQuery.getallTags),
-        variables: <String, dynamic>{
-            'nRepositories': nRepositories,
-            'langCode': 'AR',
-          // 'id': categoryId,
-        },
-      );
-      final result = await client.query(options);
-      print("tagsdsdsds${result}");
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-      }
-
-
-      for (var item in result.data?['productTags']['edges']) {
-        list.add(FilterTag.fromJson({"name":item['node']}));
-      }
-       // final collectionData = result.data?['productTags']['edges'];
-
-      // final collection = Category.fromJsonShopify(collectionData);
-       return list;
-    } catch (e) {
-      printLog('gettags shopify error');
-      printLog( e.toString());
-      return [];
-    }
-  }
-
-  @override
-  Future<Order?> getLatestOrder({required String cookie}) async {
-    try {
-      const nRepositories = 50;
-      final options = QueryOptions(
-        document: gql(ShopifyQuery.getOrder),
-        variables: <String, dynamic>{
-          'nRepositories': nRepositories,
-          'customerAccessToken': cookie,
-          'pageSize': 1
-        },
-      );
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-      }
-
-      for (var item in result.data!['customer']['orders']['edges']) {
-        var order = item['node'];
-        return Order.fromJson(order);
-      }
-    } catch (e) {
-      printLog('::::getLatestOrder shopify error');
-      printLog(e.toString());
-      return null;
-    }
-    return null;
-  }
-
-  @override
-  Future<CheckoutCart?> updateShippingRate({
-    required String checkoutId,
-    required String shippingRateHandle,
-  }) async {
-    try {
-      final options = MutationOptions(
-        document: gql(ShopifyQuery.updateShippingRate),
-        variables: <String, dynamic>{
-          'checkoutId': checkoutId,
-          'shippingRateHandle': shippingRateHandle,
-        },
-      );
-      final result = await client.mutate(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-      }
-
-      final data = result.data!['checkoutShippingLineUpdate']['checkout'];
-      return CheckoutCart.fromJsonShopify(data);
-    } catch (e) {
-      printLog('::::updateShippingRate shopify error');
-      printLog(e.toString());
-      return null;
-    }
-  }
-
-  Future<PaymentShopify?> checkoutCompleteWithTokenizedPayment({
-    required String checkoutId,
-    required Map paymentData,
-  }) async {
-    printLog(
-        '::::checkoutCompleteWithTokenizedPayment CheckoutId: $checkoutId PaymentData: $paymentData');
-    try {
-      final options = MutationOptions(
-        document: gql(ShopifyQuery.checkoutCompleteWithTokenizedPayment),
-        variables: <String, dynamic>{
-          'checkoutId': checkoutId,
-          'payment': paymentData,
-        },
-      );
-      final result = await client.mutate(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-        throw (result.exception.toString());
-      }
-
-      final data =
-          result.data!['checkoutCompleteWithTokenizedPaymentV3']['payment'];
-      return PaymentShopify.fromJson(data);
-    } catch (e) {
-      printLog('::::checkoutCompleteWithTokenizedPayment shopify error $e');
-      return null;
-    }
-  }
-
-  Future<PaymentShopify?> fetchPayment({
-    required String paymentId,
-  }) async {
-    printLog('::::request fetchPayment $paymentId');
-    try {
-      final options = MutationOptions(
-        document: gql(ShopifyQuery.fetchPayment),
-        variables: <String, dynamic>{
-          'paymentId': paymentId,
-        },
-      );
-      final result = await client.mutate(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-        throw (result.exception.toString());
-      }
-
-      final data = result.data?['node'];
-      return PaymentShopify.fromJson(data);
-    } catch (e) {
-      printLog('::::fetchPayment shopify error $e');
-      return null;
-    }
-  }
-
-  @override
-  Future<List<Product>> getVideoProducts(
-      {required int page, int perPage = 10, String lang = ''}) async {
-    try {
-      var list = <Product>[];
-      final options = QueryOptions(
-        document: gql(ShopifyQuery.getProductsByTag),
-        fetchPolicy: FetchPolicy.networkOnly,
-        variables: <String, dynamic>{
-          'pageSize': perPage,
-          'query': 'tag:video',
-          'cursor': null,
-          'langCode': languageCode,
-          'countryCode': countryCode,
-        },
-      );
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        throw (result.exception.toString());
-      }
-      for (var item in result.data?['products']['edges']) {
-        list.add(Product.fromShopify(item['node']));
-      }
-      return list;
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  @override
-  Future<PagingResponse<Review>> getReviews(String productId,
-          {int page = 1, int perPage = 10}) =>
-      reviewService.getReviews(
-        productId,
-        page: page,
-        perPage: perPage,
-      );
-
-  @override
-  Future<RatingCount?>? getProductRatingCount(String productId) async {
-    return reviewService.getProductRatingCount(productId);
-  }
-
-  @override
-  Future? createReview(ReviewPayload payload) {
-    return reviewService.createReview(payload);
-  }
-
-  @override
-  Future<List<Currency>?> getAvailableCurrencies() async {
-    try {
-      var list = <Currency>[];
-      final options = QueryOptions(
-        document: gql(ShopifyQuery.getAvailableCurrency),
-        fetchPolicy: FetchPolicy.networkOnly,
-      );
-      final result = await client.query(options);
-
-      if (result.hasException) {
-        throw (result.exception.toString());
-      }
-
-      final availableCountries =
-          List.from(result.data?['localization']?['availableCountries'] ?? []);
-      if (availableCountries.isEmpty) return null;
-
-      for (var item in availableCountries) {
-        list.add(Currency.fromShopify(item));
-      }
-      return list;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Future logout(String? token) async {
-    // printLog('::::deleteToken shopify');
-    // try {
-    //   const nRepositories = 50;
-    //   final options = QueryOptions(
-    //     document: gql(ShopifyQuery.deleteToken),
-    //     variables: <String, dynamic>{
-    //       'nRepositories': nRepositories,
-    //       'customerAccessToken': token,
-    //     },
-    //   );
-    //   final result = await client.query(options);
-    //
-    //   if (result.hasException) {
-    //     throw Exception(result.exception.toString());
-    //   }
-    // } catch (e) {
-    //   printLog('::::deleteToken shopify error');
-    //   printLog(e.toString());
-    //   return null;
-    // }
-    // return null;
-  }
-
-  @override
-  Future<ProductVariation?> getVariationProduct(
-      String productId, String? variationId,
-      {String? lang}) async {
-    if (variationId == null) return null;
-
-    try {
-      final options = MutationOptions(
-        document: gql(ShopifyQuery.getProductVariant),
-        fetchPolicy: FetchPolicy.noCache,
-        variables: <String, dynamic>{
-          'id': variationId,
-          'langCode': languageCode,
-          'countryCode': countryCode,
-        },
-      );
-      final result = await client.mutate(options);
-
-      if (result.hasException) {
-        printLog(result.exception.toString());
-      }
-
-      final data = result.data!['node'];
-      return ProductVariation.fromShopifyJson(data);
-    } catch (e) {
-      printLog('::::getVariationProduct shopify error');
-      printLog(e.toString());
       return null;
     }
   }

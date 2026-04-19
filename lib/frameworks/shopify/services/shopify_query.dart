@@ -6,7 +6,28 @@ const _imageHeight = 1000;
 
 const _scale = 1;
 
+/// Shopify Storefront API 2026-01
+/// Breaking changes from 2025-01:
+/// - No Storefront API breaking changes affecting these queries in 2026-01.
+/// - Customer Account API endpoint is now resolved via discovery document:
+///   GET {shopDomain}/.well-known/customer-account-api → { graphql_api, mcp_api }
+/// - Logout for CA tokens should use end_session_endpoint from OpenID config
+///   rather than a GraphQL mutation.
+/// - `processedAt` field now returns UTC format — update date parsing if needed.
+///
+/// Prior breaking changes (still relevant):
+/// - `presentmentCurrencyCode` removed → use `currencyCode` on MoneyV2
+/// - `compareAtPriceV2` / `priceV2` removed → use `compareAtPrice` / `price`
+/// - `productByHandle` removed → use `product(handle:)` query
+/// - `images` / `media` node `transformedSrc` removed → use `url(transform:)`
+/// - `originalTotalPrice` on lineItems → use `cost.totalAmount`
+/// - Cart API is the recommended checkout path
+
 class ShopifyQuery {
+  // ─────────────────────────────────────────────
+  // Collections
+  // ─────────────────────────────────────────────
+
   static String getCollections = '''
     query(\$cursor: String, \$pageSize: Int, \$langCode: LanguageCode, \$countryCode: CountryCode)
      @inContext(language: \$langCode, country: \$countryCode)  {
@@ -26,24 +47,31 @@ class ShopifyQuery {
     $fragmentCollection
     ''';
 
-
-  static String getallTags = '''
-query {
-  productTags(first: 250) {
-    edges {
-      cursor
-      node 
-      
+  static String getCollectionByHandle = '''
+    query(
+    \$handle: String,
+    \$langCode: LanguageCode
+    ) @inContext(language: \$langCode) {
+        collection(handle: \$handle) {
+          ...collectionInformation
+        }
     }
-    pageInfo {
-      hasNextPage
-      hasPreviousPage
-    }
-  }
-}
-
-   
+    $fragmentCollection
     ''';
+
+  /// `collection(id:)` – langCode variable must be declared in the query
+  static String getCollectionById = '''
+    query(\$id: ID!, \$langCode: LanguageCode) @inContext(language: \$langCode) {
+        collection(id: \$id) {
+          ...collectionInformation
+        }
+    }
+    $fragmentCollection
+    ''';
+
+  // ─────────────────────────────────────────────
+  // Products
+  // ─────────────────────────────────────────────
 
   static String getProducts = '''
     query(
@@ -70,7 +98,7 @@ query {
     $fragmentProduct
   ''';
 
-  static String getProductsByTag = ''' 
+  static String getProductsByTag = '''
     query(
       \$pageSize: Int
       \$query: String
@@ -152,25 +180,15 @@ query {
    $fragmentProduct
   ''';
 
-  // static String getRelativeProducts = '''
-  //   query(\$query: String, \$pageSize: Int) {
-  //     shop {
-  //       products(first: \$pageSize, query: \$query, sortKey: PRODUCT_TYPE) {
-  //         pageInfo {
-  //           hasNextPage
-  //           hasPreviousPage
-  //         }
-  //         edges {
-  //           cursor
-  //           node {
-  //             ...productInformation
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  //   $fragmentProduct
-  // ''';
+  /// `productByHandle` was REMOVED in 2025-01 — uses `product(handle: $handle)`
+  static String getProductByHandle = '''
+   query (\$handle: String!, \$langCode: LanguageCode) @inContext(language: \$langCode) {
+      product(handle: \$handle) {
+        ...productInformation
+      }
+   }
+   $fragmentProduct
+  ''';
 
   static String getProductByCollection = '''
     query(
@@ -204,9 +222,182 @@ query {
     $fragmentProduct
   ''';
 
+  // ─────────────────────────────────────────────
+  // Tags
+  // ─────────────────────────────────────────────
+
+  static String getallTags = '''
+    query {
+      productTags(first: 250) {
+        edges {
+          cursor
+          node
+        }
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+        }
+      }
+    }
+  ''';
+
+  // ─────────────────────────────────────────────
+  // Cart API (recommended checkout path)
+  // cartCreate / cartLinesAdd / cartLinesUpdate / cartLinesRemove
+  // cartDiscountCodesUpdate for coupon codes
+  // ─────────────────────────────────────────────
+
+  static String cartCreate = '''
+    mutation cartCreate(
+      \$lines: [CartLineInput!]!
+      \$country: CountryCode
+      \$language: LanguageCode
+      \$buyerIdentity: CartBuyerIdentityInput
+    ) @inContext(country: \$country, language: \$language) {
+      cartCreate(input: {
+        lines: \$lines
+        buyerIdentity: \$buyerIdentity
+      }) {
+        cart {
+          ...cartInformation
+        }
+        userErrors {
+          field
+          message
+          code
+        }
+      }
+    }
+    $fragmentCart
+  ''';
+
+  static String cartLinesAdd = '''
+    mutation cartLinesAdd(
+      \$cartId: ID!
+      \$lines: [CartLineInput!]!
+      \$country: CountryCode
+      \$language: LanguageCode
+    ) @inContext(country: \$country, language: \$language) {
+      cartLinesAdd(cartId: \$cartId, lines: \$lines) {
+        cart {
+          ...cartInformation
+        }
+        userErrors {
+          field
+          message
+          code
+        }
+      }
+    }
+    $fragmentCart
+  ''';
+
+  static String cartLinesUpdate = '''
+    mutation cartLinesUpdate(
+      \$cartId: ID!
+      \$lines: [CartLineUpdateInput!]!
+      \$country: CountryCode
+      \$language: LanguageCode
+    ) @inContext(country: \$country, language: \$language) {
+      cartLinesUpdate(cartId: \$cartId, lines: \$lines) {
+        cart {
+          ...cartInformation
+        }
+        userErrors {
+          field
+          message
+          code
+        }
+      }
+    }
+    $fragmentCart
+  ''';
+
+  static String cartLinesRemove = '''
+    mutation cartLinesRemove(
+      \$cartId: ID!
+      \$lineIds: [ID!]!
+      \$country: CountryCode
+      \$language: LanguageCode
+    ) @inContext(country: \$country, language: \$language) {
+      cartLinesRemove(cartId: \$cartId, lineIds: \$lineIds) {
+        cart {
+          ...cartInformation
+        }
+        userErrors {
+          field
+          message
+          code
+        }
+      }
+    }
+    $fragmentCart
+  ''';
+
+  /// Cart discount codes — replaces checkout-based discount flow
+  static String cartDiscountCodesUpdate = '''
+    mutation cartDiscountCodesUpdate(
+      \$cartId: ID!
+      \$discountCodes: [String!]!
+      \$country: CountryCode
+      \$language: LanguageCode
+    ) @inContext(country: \$country, language: \$language) {
+      cartDiscountCodesUpdate(cartId: \$cartId, discountCodes: \$discountCodes) {
+        cart {
+          ...cartInformation
+        }
+        userErrors {
+          field
+          message
+          code
+        }
+      }
+    }
+    $fragmentCart
+  ''';
+
+  /// Associate a logged-in customer with the cart
+  static String cartBuyerIdentityUpdate = '''
+    mutation cartBuyerIdentityUpdate(
+      \$cartId: ID!
+      \$buyerIdentity: CartBuyerIdentityInput!
+      \$country: CountryCode
+      \$language: LanguageCode
+    ) @inContext(country: \$country, language: \$language) {
+      cartBuyerIdentityUpdate(cartId: \$cartId, buyerIdentity: \$buyerIdentity) {
+        cart {
+          ...cartInformation
+        }
+        userErrors {
+          field
+          message
+          code
+        }
+      }
+    }
+    $fragmentCart
+  ''';
+
+  static String getCart = '''
+    query getCart(
+      \$cartId: ID!
+      \$country: CountryCode
+      \$language: LanguageCode
+    ) @inContext(country: \$country, language: \$language) {
+      cart(id: \$cartId) {
+        ...cartInformation
+      }
+    }
+    $fragmentCart
+  ''';
+
+  // ─────────────────────────────────────────────
+  // Legacy Checkout (kept for shipping-rate & credit-card payment flows)
+  // ─────────────────────────────────────────────
+
   static String createCheckout = '''
     mutation checkoutCreate(
-      \$input: CheckoutCreateInput! 
+      \$input: CheckoutCreateInput!
       \$langCode: LanguageCode
       \$countryCode: CountryCode
     ) @inContext(language: \$langCode, country: \$countryCode) {
@@ -246,11 +437,9 @@ query {
 
   static String updateCheckoutAttribute = '''
     mutation checkoutAttributesUpdateV2(
-    \$checkoutId: ID! 
+    \$checkoutId: ID!
     \$input: CheckoutAttributesUpdateV2Input!
-    \$langCode: LanguageCode
-    \$countryCode: CountryCode
-    ) @inContext(language: \$langCode, country: \$countryCode) {
+    ) {
     checkoutAttributesUpdateV2(checkoutId: \$checkoutId, input: \$input) {
         checkout {
           id
@@ -265,12 +454,10 @@ query {
   ''';
 
   static String updateCheckoutEmail = '''
-    mutation checkoutAttributesUpdateV2(
-    \$checkoutId: ID! 
+    mutation checkoutEmailUpdateV2(
+    \$checkoutId: ID!
     \$email: String!
-    \$langCode: LanguageCode
-    \$countryCode: CountryCode
-    ) @inContext(language: \$langCode, country: \$countryCode) {
+    ) {
     checkoutEmailUpdateV2(checkoutId: \$checkoutId, email: \$email) {
         checkout {
           id
@@ -301,6 +488,7 @@ query {
     $fragmentCheckout
   ''';
 
+  /// `checkoutDiscountCodeApplyV2` — still valid in Storefront API 2026-01
   static String applyCoupon = '''
     mutation checkoutDiscountCodeApplyV2(
     \$discountCode: String!
@@ -353,6 +541,135 @@ query {
   }
   $fragmentCheckoutPrice
   ''';
+
+  static String getCheckout = '''
+    query(\$checkoutId: ID!) {
+        node(id: \$checkoutId) {
+            ... on Checkout {
+                ...checkoutInformation
+            }
+        }
+    }
+    $fragmentCheckout
+  ''';
+
+  static const updateShippingRate = '''
+    mutation checkoutShippingLineUpdate(\$checkoutId: ID!, \$shippingRateHandle: String!) {
+      checkoutShippingLineUpdate(checkoutId: \$checkoutId, shippingRateHandle: \$shippingRateHandle) {
+        checkout {
+          ...checkoutInformation
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+    $fragmentCheckout
+  ''';
+
+  static String checkoutWithCreditCard = '''
+    mutation checkoutCompleteWithCreditCardV2(\$checkoutId: ID!, \$payment: CreditCardPaymentInputV2!) {
+      checkoutCompleteWithCreditCardV2(checkoutId: \$checkoutId, payment: \$payment) {
+        userErrors {
+          field
+          message
+        }
+        checkout {
+          id
+        }
+        payment {
+          id
+          amountV2 {
+            amount
+          }
+        }
+      }
+    }
+  ''';
+
+  static String checkoutCompleteWithTokenizedPayment = '''
+    mutation checkoutCompleteWithTokenizedPaymentV3(\$checkoutId: ID!, \$payment: TokenizedPaymentInputV3!) {
+      checkoutCompleteWithTokenizedPaymentV3(checkoutId: \$checkoutId, payment: \$payment) {
+        checkout {
+          id
+          webUrl
+        }
+        checkoutUserErrors {
+          code
+          field
+          message
+        }
+        payment {
+          id
+          amount {
+            amount
+            currencyCode
+          }
+          checkout {
+            order {
+              id
+              processedAt
+              orderNumber
+              totalPrice {
+                amount
+              }
+            }
+          }
+          idempotencyKey
+          nextActionUrl
+          errorMessage
+          ready
+          test
+          transaction {
+            amount {
+              amount
+              currencyCode
+            }
+            statusV2
+            test
+          }
+        }
+      }
+    }
+  ''';
+
+  static String fetchPayment = '''
+    query(\$paymentId: ID!) {
+        node(id: \$paymentId) {
+            ... on Payment {
+                id
+                idempotencyKey
+                nextActionUrl
+                errorMessage
+                ready
+                test
+                amount {
+                    amount
+                }
+                checkout {
+                  order {
+                     ...orderInformation
+                  }
+                }
+                transaction {
+                    amount {
+                        amount
+                        currencyCode
+                    }
+                    statusV2
+                    test
+                }
+                errorMessage
+            }
+        }
+    }
+    $fragmentOrder
+  ''';
+
+  // ─────────────────────────────────────────────
+  // Customer (Storefront API — password-based auth)
+  // ─────────────────────────────────────────────
 
   static String createCustomer = '''
     mutation customerCreate(\$input: CustomerCreateInput!) {
@@ -476,6 +793,65 @@ query {
     }
   ''';
 
+  static String resetPassword = '''
+    mutation customerRecover(\$email: String!) {
+    customerRecover(email: \$email) {
+      customerUserErrors {
+        code
+        field
+        message
+      }
+    }
+  }
+  ''';
+
+  static String deleteToken = '''
+    mutation customerAccessTokenDelete(\$customerAccessToken: String!) {
+      customerAccessTokenDelete(customerAccessToken: \$customerAccessToken) {
+        deletedAccessToken
+        deletedCustomerAccessTokenId
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  ''';
+
+  // ─────────────────────────────────────────────
+  // Storefront OTP / passwordless login
+  // ─────────────────────────────────────────────
+
+  static String sendEmailVerificationCode = '''
+    mutation customerSendEmailVerificationCode(\$email: String!) {
+      customerSendEmailVerificationCode(email: \$email) {
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  ''';
+
+  static String loginWithCode = '''
+  mutation customerAccessTokenCreateWithCode(\$email: String!, \$verificationCode: String!) {
+    customerAccessTokenCreateWithCode(email: \$email, verificationCode: \$verificationCode) {
+        customerAccessToken {
+          accessToken
+          expiresAt
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  ''';
+
+  // ─────────────────────────────────────────────
+  // Payment settings
+  // ─────────────────────────────────────────────
+
   static String getPaymentSettings = '''
     query {
       shop {
@@ -491,42 +867,10 @@ query {
     }
   ''';
 
-  static String checkoutWithCreditCard = '''
-    mutation checkoutCompleteWithCreditCardV2(\$checkoutId: ID!, \$payment: CreditCardPaymentInputV2!) {
-      checkoutCompleteWithCreditCardV2(checkoutId: \$checkoutId, payment: \$payment) {
-        userErrors {
-          field
-          message
-        }
-        checkout {
-          id
-        }
-        payment {
-          id
-          amountV2 {
-            amount
-          }
-        }
-      }
-    }
-  ''';
-
-  static String checkoutWithFree = '''
-    mutation checkoutCompleteFree(\$checkoutId: ID!) {
-      checkoutCompleteFree(checkoutId: \$checkoutId) {
-        userErrors {
-          field
-          message
-        }
-        checkout {
-          id
-        }
-        payment {
-          id
-        }
-      }
-    }
-  ''';
+  // ─────────────────────────────────────────────
+  // Orders (Storefront API — legacy, kept for compatibility)
+  // Prefer Customer Account API getMyOrders for new implementations.
+  // ─────────────────────────────────────────────
 
   static String getOrder = '''
     query(\$cursor: String, \$pageSize: Int, \$customerAccessToken: String!) {
@@ -548,6 +892,10 @@ query {
     $fragmentOrder
   ''';
 
+  // ─────────────────────────────────────────────
+  // Blogs
+  // ─────────────────────────────────────────────
+
   static String getArticle = '''
     query(
     \$cursor: String
@@ -555,9 +903,9 @@ query {
     \$langCode: LanguageCode
     ) @inContext(language: \$langCode) {
         articles(
-          first: \$pageSize 
+          first: \$pageSize
           after: \$cursor
-          sortKey: PUBLISHED_AT 
+          sortKey: PUBLISHED_AT
           reverse: true
           ) {
             pageInfo {
@@ -587,43 +935,6 @@ query {
     $fragmentImage
   ''';
 
-  static String resetPassword = '''
-    mutation customerRecover(\$email: String!) {
-    customerRecover(email: \$email) {
-      customerUserErrors {
-        code
-        field
-        message
-      }
-    }
-}
-  ''';
-
-  static String getProductByHandle = '''
-   query (\$handle: String!,
-     \$langCode: LanguageCode
-    ) @inContext(language: \$langCode) {
-   
-      productByHandle(handle: \$handle ) {
-        ...productInformation
-      }
-   }
-   $fragmentProduct
-''';
-
-  static String deleteToken = '''
-    mutation customerAccessTokenDelete(\$customerAccessToken: String!) {
-      customerAccessTokenDelete(customerAccessToken: \$customerAccessToken) {
-        deletedAccessToken
-        deletedCustomerAccessTokenId
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-  ''';
-
   static String getArticleByHandle = '''
     query(\$blogHandle: String!, \$articleHandle: String!) {
       blog(handle: \$blogHandle) {
@@ -647,131 +958,9 @@ query {
     $fragmentImage
   ''';
 
-  static String getCheckout = '''
-    query(\$checkoutId: ID!) {
-        node(id: \$checkoutId) {
-            ... on Checkout {
-                ...checkoutInformation
-            }
-        }
-    } 
-    $fragmentCheckout   
-  ''';
-
-  static String checkoutCompleteWithTokenizedPayment = '''
-    mutation checkoutCompleteWithTokenizedPaymentV3(\$checkoutId: ID!, \$payment: TokenizedPaymentInputV3!) {
-      checkoutCompleteWithTokenizedPaymentV3(checkoutId: \$checkoutId, payment: \$payment) {
-        checkout {
-          id
-          webUrl
-        }
-        checkoutUserErrors {
-          code
-          field
-          message
-        }
-        payment {
-          id
-          amount {
-            amount
-            currencyCode
-          }
-          checkout {
-            order {
-              id
-              processedAt
-              orderNumber
-              totalPrice {
-                amount
-              }
-            }
-          }
-          idempotencyKey
-          nextActionUrl
-          errorMessage
-          ready
-          test
-          transaction {
-            amount {
-              amount
-              currencyCode
-            }
-            statusV2
-            test
-          }
-        }
-      }
-    }
-  ''';
-
-  static String fetchPayment = '''
-    query(\$paymentId: ID!) {
-        node(id: \$paymentId) {
-            ... on Payment {
-                id
-                idempotencyKey
-                nextActionUrl
-                errorMessage
-                ready
-                test
-                amount {
-                    amount
-                }
-                checkout {
-                  order {
-                     ...orderInformation
-                  }
-                }
-                transaction {
-                    amount {
-                        amount
-                        currencyCode
-                    }
-                    statusV2
-                    test
-                }
-                errorMessage
-            }
-        }
-    }
-    $fragmentOrder
-  ''';
-
-  static const updateShippingRate = '''
-    mutation checkoutShippingLineUpdate(\$checkoutId: ID!, \$shippingRateHandle: String!) {
-      checkoutShippingLineUpdate(checkoutId: \$checkoutId, shippingRateHandle: \$shippingRateHandle) {
-        checkout {
-          ...checkoutInformation
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-    $fragmentCheckout
-  ''';
-
-  static String getCollectionByHandle = '''
-    query(
-    \$handle: String,
-    \$langCode: LanguageCode
-    ) @inContext(language: \$langCode) {
-        collection(handle: \$handle) {
-          ...collectionInformation
-        }
-    }
-    $fragmentCollection
-    ''';
-
-  static String getCollectionById = '''
-    query(\$id: ID) @inContext(language: \$langCode) {
-        collection(id: \$id) {
-          ...collectionInformation
-        }
-    }
-    $fragmentCollection
-    ''';
+  // ─────────────────────────────────────────────
+  // Localisation / Currency
+  // ─────────────────────────────────────────────
 
   static String getAvailableCurrency = '''
     query {
@@ -800,11 +989,15 @@ query {
     }
   ''';
 
+  // ─────────────────────────────────────────────
+  // Product variant
+  // ─────────────────────────────────────────────
+
   static const getProductVariant = '''
     query getProductVariant(
     \$id: ID!
     \$langCode: LanguageCode
-    \$countryCode: CountryCode) 
+    \$countryCode: CountryCode)
     @inContext(language: \$langCode, country: \$countryCode) {
       node(id: \$id) {
           ... on ProductVariant {
@@ -814,6 +1007,10 @@ query {
     }
     $fragmentProductVariant
   ''';
+
+  // ─────────────────────────────────────────────
+  // Fragments
+  // ─────────────────────────────────────────────
 
   static const fragmentUser = '''
       fragment userInformation on Customer {
@@ -933,6 +1130,7 @@ query {
         $fragmentProductVariant
   ''';
 
+  /// `priceV2` / `compareAtPriceV2` removed in 2025-01 → use `price` / `compareAtPrice` (MoneyV2)
   static const fragmentProductVariant = '''
     fragment productVariantInformation on ProductVariant {
       id
@@ -964,6 +1162,88 @@ query {
       width
       height
     }
+  ''';
+
+  /// Cart fragment — used by all cart mutations/queries
+  static const fragmentCart = '''
+    fragment cartInformation on Cart {
+      id
+      checkoutUrl
+      note
+      totalQuantity
+      discountCodes {
+        applicable
+        code
+      }
+      discountAllocations {
+        discountedAmount {
+          amount
+          currencyCode
+        }
+      }
+      cost {
+        subtotalAmount {
+          amount
+          currencyCode
+        }
+        totalAmount {
+          amount
+          currencyCode
+        }
+        totalTaxAmount {
+          amount
+          currencyCode
+        }
+        totalDutyAmount {
+          amount
+          currencyCode
+        }
+      }
+      lines(first: 100) {
+        edges {
+          node {
+            id
+            quantity
+            cost {
+              totalAmount {
+                amount
+                currencyCode
+              }
+            }
+            merchandise {
+              ... on ProductVariant {
+                id
+                title
+                availableForSale
+                quantityAvailable
+                price {
+                  amount
+                  currencyCode
+                }
+                compareAtPrice {
+                  amount
+                  currencyCode
+                }
+                image {
+                  ...imageInformation
+                }
+                selectedOptions {
+                  name
+                  value
+                }
+                product {
+                  id
+                  title
+                  handle
+                  onlineStoreUrl
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    $fragmentImage
   ''';
 
   static const fragmentCheckoutPrice = '''
@@ -1012,7 +1292,7 @@ query {
         amount
         currencyCode
       }
-    } 
+    }
   ''';
 
   static const fragmentCheckout = '''
@@ -1067,8 +1347,10 @@ query {
       }
     }
     $fragmentCheckoutPrice
-''';
+  ''';
 
+  /// `originalTotalPrice` removed from lineItems → use `cost.totalAmount`
+  /// Note: `processedAt` now returns UTC format in 2026-01
   static const fragmentOrder = '''
   fragment orderInformation on Order {
     id
@@ -1116,8 +1398,11 @@ query {
         node {
           quantity
           title
-          originalTotalPrice{
-            amount
+          cost {
+            totalAmount {
+              amount
+              currencyCode
+            }
           }
           variant {
             title

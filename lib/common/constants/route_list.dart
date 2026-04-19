@@ -9,6 +9,7 @@ class RouteList {
   static const String homeSearch = 'home-search';
   static const String notificationRequest = 'notification-request';
   static const String privacyTerms = 'privacy-terms';
+  static const String arabicbrands = 'arabic-brands';
 
   // User
   static const String profile = 'profile';

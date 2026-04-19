@@ -139,6 +139,7 @@ class CartItemStyle01Widget extends StatelessWidget {
                                       ),
                                     ),
                                     if (stateUI.onRemove != null)
+                                      //
                                       GestureDetector(
                                         onTap: stateUI.onRemove,
                                         behavior: HitTestBehavior.translucent,

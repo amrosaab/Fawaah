@@ -50,7 +50,7 @@ class Order {
   String? number;
   OrderStatus? status;
   String?
-      orderStatus; //in opencart, order_status will be responsed based on language. so I use this property to show on the UI instead of status property if status is unknown
+  orderStatus; //in opencart, order_status will be responsed based on language. so I use this property to show on the UI instead of status property if status is unknown
   DateTime? createdAt;
   DateTime? dateModified;
   double? total;
@@ -137,7 +137,7 @@ class Order {
         return OrderStatus.voided;
       default:
         return OrderStatus.values.firstWhere(
-          (element) => describeEnum(element) == newStatus,
+              (element) => describeEnum(element) == newStatus,
           orElse: () => OrderStatus.unknown,
         );
     }
@@ -146,7 +146,7 @@ class Order {
   DeliveryStatus parseDeliveryStatus(String? status) {
     final newStatus = status?.toLowerCase();
     return DeliveryStatus.values.firstWhere(
-      (element) => describeEnum(element) == newStatus,
+          (element) => describeEnum(element) == newStatus,
       orElse: () => DeliveryStatus.unknown,
     );
   }
@@ -165,7 +165,7 @@ class Order {
           ? DateTime.parse(parsedJson['date_modified'])
           : DateTime.now();
       total =
-          parsedJson['total'] != null ? double.parse(parsedJson['total']) : 0.0;
+      parsedJson['total'] != null ? double.parse(parsedJson['total']) : 0.0;
       totalTax = parsedJson['total_tax'] != null
           ? double.parse(parsedJson['total_tax'])
           : 0.0;
@@ -193,7 +193,7 @@ class Order {
       billing = Address.fromJson(parsedJson['billing']);
       shipping = Address.fromJson(parsedJson['shipping']);
       shippingMethodTitle = parsedJson['shipping_lines'] != null &&
-              parsedJson['shipping_lines'].length > 0
+          parsedJson['shipping_lines'].length > 0
           ? parsedJson['shipping_lines'][0]['method_title']
           : null;
       deliveryStatus = parseDeliveryStatus(parsedJson['delivery_status']);
@@ -267,7 +267,7 @@ class Order {
           ? NotionDataTools.fromDate(properties['CreatedAt'])
           : DateTime.now().toString();
       createdAt =
-          dateCreated != null ? DateTime.parse(dateCreated) : DateTime.now();
+      dateCreated != null ? DateTime.parse(dateCreated) : DateTime.now();
       dateModified = DateTime.now();
       total = double.parse(
           '${NotionDataTools.fromNumber(properties['TotalPrice']) ?? 0.0}');
@@ -276,7 +276,7 @@ class Order {
       totalShipping = double.parse(
           '${NotionDataTools.fromNumber(properties['ShippingTotal']) ?? 0.0}');
       paymentMethodTitle = NotionDataTools.fromRichTextToText(
-              properties['PaymentMethodTitle']) ??
+          properties['PaymentMethodTitle']) ??
           '';
 
       /// load data product
@@ -292,7 +292,7 @@ class Order {
       if (dataItems?.isNotEmpty ?? false) {
         final dataTextItemProduct = dataItems!.join('');
         final dataRawListItem =
-            dataTextItemProduct.split(NotionDataTools.newlineListData);
+        dataTextItemProduct.split(NotionDataTools.newlineListData);
         if (dataRawListItem.isNotEmpty) {
           for (var itemProduct in dataRawListItem) {
             if (itemProduct.isNotEmpty) {
@@ -351,7 +351,7 @@ class Order {
 
       final dataShippingLines = [];
       final dataRawShippingLines =
-          NotionDataTools.fromRichText(properties['ShippingLines']);
+      NotionDataTools.fromRichText(properties['ShippingLines']);
       if (dataRawShippingLines?.isNotEmpty ?? false) {
         for (var itemRawShippingLine in dataRawShippingLines!) {
           final dataRawLine = itemRawShippingLine.split('\n');
@@ -395,7 +395,7 @@ class Order {
           ? DateTime.parse(parsedJson['date_modified'])
           : DateTime.now();
       total =
-          parsedJson['total'] != null ? double.parse(parsedJson['total']) : 0.0;
+      parsedJson['total'] != null ? double.parse(parsedJson['total']) : 0.0;
       totalTax = 0.0;
       paymentMethodTitle = parsedJson['payment_method'];
       shippingMethodTitle = parsedJson['shipping_method'];
@@ -443,8 +443,7 @@ class Order {
     }
   }
 
-
-
+  // ── Shopify (Storefront API + Customer Account API) ───────────────────────
   Order.fromShopify(Map parsedJson) {
     try {
       id = parsedJson['id'];
@@ -456,21 +455,28 @@ class Order {
       total = double.parse(parsedJson['totalPrice']['amount']);
       paymentMethodTitle = '';
       shippingMethodTitle = '';
-      totalShipping = double.parse(parsedJson['totalShippingPrice']['amount']);
-      // statusUrl = parsedJson['statusUrl'];
 
-      var totalTaxV2 = parsedJson['totalTax']['amount'] ?? '0';
-      totalTax = double.parse(totalTaxV2);
-      var subtotalTaxV2 = parsedJson['subtotalPrice']['amount'] ?? '0';
-      subtotal = double.parse(subtotalTaxV2);
+      // These fields may be absent in Customer Account API responses
+      totalShipping =
+          double.tryParse(parsedJson['totalShippingPrice']?['amount'] ?? '0') ??
+              0.0;
+      totalTax =
+          double.tryParse(parsedJson['totalTax']?['amount'] ?? '0') ?? 0.0;
+      subtotal =
+          double.tryParse(parsedJson['subtotalPrice']?['amount'] ?? '0') ?? 0.0;
 
-      var items = parsedJson['lineItems']['edges'];
-      items.forEach((item) {
+      final items = parsedJson['lineItems']?['edges'] as List? ?? [];
+      for (final item in items) {
         final productItem = ProductItem.fromShopifyJson(item['node']);
         quantity += productItem.quantity ?? 0;
         lineItems.add(productItem);
-      });
-      billing = Address.fromShopifyJson(parsedJson['shippingAddress']);
+      }
+
+      // shippingAddress is null for Customer Account API orders — guard it
+      if (parsedJson['shippingAddress'] != null) {
+        billing = Address.fromShopifyJson(
+            parsedJson['shippingAddress'] as Map<String, dynamic>);
+      }
     } catch (e, trace) {
       printLog(e.toString());
       printLog(trace.toString());
@@ -543,13 +549,6 @@ class Order {
       paymentMethodTitle = model.payment!.title;
       shippingMethodTitle = model.shipping!.title;
       customerNote = '';
-
-      /// this funciton should be move to framework
-      // List<dynamic> itemList = model.products!;
-      // itemList.forEach((item) {
-      //   lineItems
-      //       .add(ProductItem.fromStrapiJson(item, Strapi().strapiAPI.apiLink));
-      // });
       totalTax = 0.0;
       subtotal = 0.0;
     } on Exception catch (e, trace) {
@@ -566,7 +565,7 @@ class Order {
         ? DateTime.parse(parsedJson['date_created'])
         : DateTime.now();
     total =
-        parsedJson['total'] != null ? double.parse(parsedJson['total']) : 0.0;
+    parsedJson['total'] != null ? double.parse(parsedJson['total']) : 0.0;
     totalTax = parsedJson['totalTax'] != null
         ? double.parse(parsedJson['totalTax'])
         : 0.0;
@@ -580,7 +579,7 @@ class Order {
     billing = Address.fromLocalJson(parsedJson['billing']);
     shipping = Address.fromLocalJson(parsedJson['shipping']);
     shippingMethodTitle = parsedJson['shipping_lines'] != null &&
-            parsedJson['shipping_lines'].length > 0
+        parsedJson['shipping_lines'].length > 0
         ? parsedJson['shipping_lines'][0]['method_title']
         : null;
   }
@@ -639,7 +638,7 @@ class Order {
           {
             'key': '_wwp_wholesale_priced',
             'value':
-                (product?.wholesalePrice?.isNotEmpty ?? false) ? 'yes' : 'no'
+            (product?.wholesalePrice?.isNotEmpty ?? false) ? 'yes' : 'no'
           },
           {'key': '_wwp_wholesale_role', 'value': loggedInUser?.role ?? ''}
         ];
@@ -669,7 +668,7 @@ class Order {
                 if (option.isNotEmpty) {
                   metaData.add({
                     'key':
-                        'attribute_${element.slug ?? option['taxonomy'] ?? element.name}',
+                    'attribute_${element.slug ?? option['taxonomy'] ?? element.name}',
                     'value': option['slug'] ?? option['name']
                   });
                 }
@@ -697,7 +696,6 @@ class Order {
         var addons = {};
 
         for (var option in options) {
-          //save options to addons to show on the webview
           final fieldName = 'addon-${option.fieldName}';
           var fieldLabel = (option.label ?? '').toLowerCase();
           if (option.type == 'multiple_choice' && option.display == 'select') {
@@ -716,7 +714,7 @@ class Order {
               currency: cartModel.currencyCode);
           metaData.add({
             'key':
-                "${option.parent}${(option.price?.isNotEmpty ?? false) ? ' ($price)' : ''}",
+            "${option.parent}${(option.price?.isNotEmpty ?? false) ? ' ($price)' : ''}",
             'value': option.label,
           });
           itemPrice += (double.tryParse(option.price ?? '0.0') ?? 0) *
@@ -910,13 +908,6 @@ class Order {
     try {
       id = parsedJson['id']?.toString();
       customerId = parsedJson['customer_id']?.toString();
-      // TODO: parse date time RFC-2822.
-      // createdAt = parsedJson['date_created'] != null
-      //     ? DateTime.parse(parsedJson['date_created'])
-      //     : DateTime.now();
-      // dateModified = parsedJson['date_modified'] != null
-      //     ? DateTime.parse(parsedJson['date_modified'])
-      //     : DateTime.now();
       createdAt = DateTime.now();
       dateModified = DateTime.now();
       totalTax = parsedJson['total_tax'] != null
@@ -929,7 +920,6 @@ class Order {
       customerId = parsedJson['customer_id']?.toString();
       paymentMethodTitle = parsedJson['payment_status'];
       paymentMethod = parsedJson['payment_method'];
-      // TODO: parse status.
       quantity = int.tryParse('${parsedJson['items_total']}') ?? 0;
       status = parseOrderStatus(parsedJson['status']);
       total = parsedJson['total_inc_tax'] != null
@@ -1051,12 +1041,12 @@ class Order {
 
     return {
       'Name':
-          NotionDataTools.toTitle('$nameUser($userId)-OrderNo.#$idNotionOrder'),
+      NotionDataTools.toTitle('$nameUser($userId)-OrderNo.#$idNotionOrder'),
       'Customer': NotionDataTools.toRelation([userId]),
       'PaymentMethod': NotionDataTools.toRichText(params['payment_method']),
       ...deliveryDate,
       'PaymentMethodTitle':
-          NotionDataTools.toRichText(params['payment_method_title']),
+      NotionDataTools.toRichText(params['payment_method_title']),
       'ShippingLines': NotionDataTools.listStringToRichText(shippingLine),
       'Items': NotionDataTools.listStringToRichText(dataItems),
       'Products': NotionDataTools.toRelation(productRelationId),
@@ -1068,7 +1058,7 @@ class Order {
       'DiscountTotal': NotionDataTools.toNumber(discountTotal),
       'Currency': NotionDataTools.toRichText('${cartModel.currencyCode}'),
       'ShippingTotal':
-          NotionDataTools.toNumber(cartModel.shippingMethod?.cost ?? 0),
+      NotionDataTools.toNumber(cartModel.shippingMethod?.cost ?? 0),
       'CreatedAt': NotionDataTools.toDate(DateTime.now()),
       'Status': NotionDataTools.toRichText(statusOrder),
       if (noteOrder.isNotEmpty)
@@ -1091,9 +1081,6 @@ class Order {
       final item = <String, dynamic>{
         'product_id': Helper.formatInt(productId),
         'quantity': cartModel.productsInCart[key],
-        // TODO: support modifier.
-        // https://developer.bigcommerce.com/api-reference/b3A6MzU5MDQxOTM-create-a-cart
-        // 'option_selections': [],
       };
       if (cartModel.productVariationInCart[key] != null &&
           productVariantId != null) {
@@ -1134,9 +1121,9 @@ class Order {
 
 extension OrderStatusExtension on OrderStatus {
   bool get isCancelled => [
-        OrderStatus.cancelled,
-        // OrderStatus.canceled,
-      ].contains(this);
+    OrderStatus.cancelled,
+    // OrderStatus.canceled,
+  ].contains(this);
 
   String get content => describeEnum(this);
 

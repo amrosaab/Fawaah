@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:flux_firebase/index.dart';
 import 'package:provider/provider.dart';
@@ -62,6 +63,7 @@ void main() {
 
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+
 
     /// Call the setup for the application.
     _setupApplication();
@@ -152,4 +154,9 @@ void main() {
         const ScreenBreakpoints(desktop: 900, tablet: 600, watch: 100));
     runApp(App(languageCode: languageCode));
   }, printError);
+
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    print('FlutterError: ${details.stack}');
+  };
 }

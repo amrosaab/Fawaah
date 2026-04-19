@@ -231,6 +231,7 @@ class _StateProductVariant extends State<ProductVariant> {
     if (mapAttribute == null && ServerConfig().type != ConfigType.opencart) {
       return [];
     }
+    print('objectsss${mapAttribute}');
     return services.widget.getProductAttributeWidget(
         lang, product, mapAttribute, onSelectProductVariant, variations!);
   }

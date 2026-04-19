@@ -17,7 +17,7 @@ Map<String, dynamic> environment = {
     /// 🔑 Also, make sure to update the envatoPurchaseCode from configs/env.properties
     'url': 'https://www.fawaah.com',
     'accessToken': 'ebab9b75c5a987ecba21bf239c5f0450',
-
+     //
     /// Wordpress blog, it could be removed if using the same above url
     // 'blog': 'https://mstore.io',
   },

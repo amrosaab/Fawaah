@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:inspireui/widgets/smart_engagement_banner/index.dart';
 import 'package:provider/provider.dart';
 
 import '../../app.dart';
 import '../../common/config.dart';
 import '../../common/constants.dart';
+import '../../common/flux_ui/src/widgets/smart_engagement_banner/widgets/smart_engagement_banner.dart';
 import '../../data/boxes.dart';
 import '../../models/app_model.dart';
 import '../../modules/dynamic_layout/index.dart';

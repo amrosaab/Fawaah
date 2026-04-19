@@ -148,8 +148,8 @@ class _ScannerIndexState extends State<ScannerIndex> {
           default:
             break;
         }
-        //
-        //         print("xczxcxzid${scanData.code}");
+//
+                print("xczxcxzid${scanData.code}");
         model.getDataFromScanner(id).then(_navigate);
       }
     });
@@ -202,7 +202,7 @@ class _ScannerIndexState extends State<ScannerIndex> {
               onPressed: () => Navigator.of(context).pop(),
               icon: Icon(
                 isIos ? Icons.arrow_back_ios : Icons.arrow_back,
-                color: Theme.of(context).iconTheme.color,
+                color: Theme.of(context).primaryColor,
               ),
             ),
           ),
@@ -211,4 +211,5 @@ class _ScannerIndexState extends State<ScannerIndex> {
     );
   }
 }
+
 

@@ -169,11 +169,12 @@ class _ShoppingCartSummaryState extends State<ShoppingCartSummary> {
         couponMsg = S.of(context).couponMsgSuccess;
         if (cartModel.couponObj!.discountType == 'percent') {
           couponMsg += ' ${cartModel.couponObj!.amount}%';
+
         } else {
           couponMsg += ' - ${formatter.format(cartModel.couponObj!.amount)}';
         }
       } else {
-        //couponController.clear();
+        // couponController.clear();
       }
       if (cartModel.productsInCart.isEmpty) {
         return const SizedBox();
@@ -206,6 +207,7 @@ class _ShoppingCartSummaryState extends State<ShoppingCartSummary> {
                   ),
                 ),
               if (enablePointReward) const PointReward(),
+              //
               if (widget.showPrice)
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -318,7 +320,8 @@ class _ShoppingCartSummaryState extends State<ShoppingCartSummary> {
               padding: const EdgeInsets.symmetric(vertical: 2),
               decoration: !isApplyCouponSuccess
                   ? BoxDecoration(color: Theme.of(context).cardColor)
-                  : BoxDecoration(color: Theme.of(context).primaryColorLight),
+                  // : BoxDecoration(color: Theme.of(context).primaryColorLight),
+                  : BoxDecoration(color: Theme.of(context).cardColor),
               child: GestureDetector(
                 onTap: _showCouponList
                     ? () {

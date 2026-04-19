@@ -103,6 +103,14 @@ class LocalWidgetsLocalizations implements WidgetsLocalizations {
   @override
   // TODO: implement shareButtonLabel
   String get shareButtonLabel => throw UnimplementedError();
+
+  @override
+  // TODO: implement noResultsFound
+  String get noResultsFound => throw UnimplementedError();
+
+  @override
+  // TODO: implement searchResultsFound
+  String get searchResultsFound => throw UnimplementedError();
 }
 
 class WidgetsLocalizationsDelegate

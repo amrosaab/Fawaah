@@ -110,7 +110,7 @@ class OrderListItem extends StatelessWidget {
                                 top: 0,
                                 child: Hero(
                                   tag:
-                                      'image-${order.id!}${order.lineItems[0].productId!}',
+                                      'image-${order.id!}${order.lineItems[0].productId??''}',
                                   child: Container(
                                     width: 85,
                                     height: 80,

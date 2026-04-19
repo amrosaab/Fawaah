@@ -157,7 +157,7 @@ class _StateProductOrderItem extends BaseScreen<ProductOrderItem> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Hero(
-                tag: 'image-${widget.orderId}${widget.product.productId!}',
+                tag: 'image-${widget.orderId}${widget.product.productId??''}',
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10.0),
                   child: Container(

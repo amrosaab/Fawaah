@@ -55,7 +55,8 @@ class ShopifyWidget extends BaseFrameworks
     String? code,
     Function? success,
     Function? error,
-  }) async {
+  })
+  async {
     final cartModel =
         Provider.of<CartModel>(context, listen: false) as CartModelShopify;
     try {
@@ -76,16 +77,20 @@ class ShopifyWidget extends BaseFrameworks
         var checkoutCoupon =
             await shopifyService.applyCoupon(cartModel, code!.toUpperCase());
 
+
         cartModel.setCheckout(checkoutCoupon);
+        // print("objectsasd${cartModel.couponObj}");
 
         if (checkoutCoupon.coupon?.code == null) {
           final checkout =
               await shopifyService.removeCoupon(cartModel.checkout!.id);
 
           cartModel.setCheckout(checkout);
+          print("objectsasd${cartModel.checkout?.toJson()}");
           error!(S.of(context).couponInvalid);
           return;
         }
+
 
         success!(Discount(coupon: checkoutCoupon.coupon));
 

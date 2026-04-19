@@ -32,6 +32,7 @@ class CategoryImageItem extends StatelessWidget {
     final screenSize = MediaQuery.of(context).size;
     final itemWidth = width ?? screenSize.width / 3;
     final categoryList = Provider.of<CategoryModel>(context).categoryList;
+    print('asdsadsaxx${categoryList}');
 
     final id = config.category.toString();
     final name = categoryList[id] != null ? categoryList[id]!.name : '';
@@ -118,6 +119,7 @@ class CategoryImageItem extends StatelessWidget {
                 ),
               ),
               Align(
+                //
                 alignment: commonConfig.alignment,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 5),

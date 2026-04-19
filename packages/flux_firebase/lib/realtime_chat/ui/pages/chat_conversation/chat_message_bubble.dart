@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fstore/common/tools/gravatar.dart';
 import 'package:fstore/models/index.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -62,8 +61,7 @@ class ChatMessageBubble extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    DateFormat('dd MMMM yyyy')
-                        .format(chatMessage.createdAt.toLocal()),
+                    timeago  .format(chatMessage.createdAt.toLocal()),
                     style: Theme.of(context).textTheme.bodySmall,
                     textAlign: TextAlign.center,
                   ),
@@ -107,7 +105,7 @@ class ChatMessageBubble extends StatelessWidget {
                       ),
                     const SizedBox(height: 4.0),
                     Tooltip(
-                      message: DateFormat().format(
+                      message: timeago.format(
                         chatMessage.createdAt.toLocal(),
                       ),
                       waitDuration: const Duration(milliseconds: 500),

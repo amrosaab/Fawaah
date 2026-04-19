@@ -35,6 +35,7 @@ class _BrandLayoutState extends State<BrandLayout> {
 
   @override
   Widget build(BuildContext context) {
+    print("asdsad${widget.config}");
     return Consumer<BrandLayoutModel>(
       builder: (_, model, __) {
         if (model.state == FSLoadState.loading) {

@@ -13,6 +13,7 @@
 		<string>applinks:${websiteDomain}</string>
 		<string>applinks:${firebaseDynamicUrl}</string>
 		<string>webcredentials:example.com</string>
+		<string>applinks:fawaah.com</string>
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>

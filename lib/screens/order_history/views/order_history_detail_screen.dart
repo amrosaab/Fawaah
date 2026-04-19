@@ -312,7 +312,7 @@ class _OrderHistoryDetailScreenState
                               order.lineItems.fold(
                                   0,
                                   (dynamic sum, e) =>
-                                      sum + double.parse(e.total!)),
+                                      sum + double.parse(e.total??"0"!)),
                               currencyRate,
                               currency: currencyCode)!,
                           style:

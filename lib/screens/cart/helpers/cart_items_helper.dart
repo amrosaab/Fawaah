@@ -123,9 +123,11 @@ Widget renderCartItemByKey(
               data: [productList[key]],
               price: double.tryParse(product.price ?? ''),
             );
+
         model.removeItemFromCart(key);
       },
       onChangeQuantity: (val) {
+        print('hokshmaxx');
         var message = model.updateQuantity(product, key, val);
         if (message.isNotEmpty) {
           final snackBar = SnackBar(

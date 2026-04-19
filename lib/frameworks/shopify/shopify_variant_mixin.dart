@@ -157,8 +157,9 @@ mixin ShopifyVariantMixin on ProductVariantMixin {
               ),
             );
             listWidget.add(
-              const SizedBox(height: 20.0),
+              const SizedBox(height: 4.0),
             );
+            //hokshmaxxxxx
           }
         }
       }

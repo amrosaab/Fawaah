@@ -154,8 +154,6 @@ class Category {
   }
 
   Category.fromJsonShopify(Map parsedJson) {
-    // printLog('fromJsonShopify id $parsedJson');
-
     if (parsedJson['slug'] == 'uncategorized') {
       return;
     }
@@ -164,6 +162,7 @@ class Category {
       id = parsedJson['id'];
       sku = parsedJson['id'];
       name = parsedJson['title'];
+      slug = parsedJson['handle'] ?? ''; // ← add this
       parent = '0';
       onlineStoreUrl = parsedJson['onlineStoreUrl'];
       final image = parsedJson['image'];

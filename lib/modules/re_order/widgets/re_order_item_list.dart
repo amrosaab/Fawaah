@@ -6,9 +6,11 @@ import 'package:provider/provider.dart';
 
 import '../../../common/constants.dart';
 import '../../../common/tools.dart';
+import '../../../frameworks/shopify/services/shopify_service.dart';
 import '../../../generated/l10n.dart';
 import '../../../models/booking/booking_model.dart';
 import '../../../models/cart/cart_model.dart';
+import '../../../models/cart/cart_model_shopify.dart';
 import '../../../models/entities/index.dart';
 import '../../../services/services.dart';
 
@@ -397,6 +399,76 @@ class _ReOrderItemListState extends State<ReOrderItemList> {
     return productItem;
   }
 
+  // Future<void> _addToCart() async {
+  //   final cartModel = Provider.of<CartModel>(context, listen: false);
+  //   var hasError = false;
+  //   for (var id in _products.keys) {
+  //     if (_errorMessages[id] == 'added') {
+  //       continue;
+  //     }
+  //     final productItem = _addSelectedAddOnOptions(_products[id]!);
+  //     final product = productItem.product!;
+  //     if (product.isTopUpProduct()) {
+  //       product.price = productItem.total;
+  //     }
+  //     ProductVariation? variation;
+  //     var options = <String, dynamic>{};
+  //     if (product.isVariableProduct) {
+  //       final addonsOptions =
+  //           _products[id]?.addonsOptions.values.map((e) => e.trim()).toList() ??
+  //               [];
+  //
+  //       variation = await Services().api.getVariationProduct(
+  //           productItem.product!.id, productItem.variationId);
+  //
+  //       for (var item in product.attributes ?? <ProductAttribute>[]) {
+  //         for (var option in item.options ?? []) {
+  //           if (addonsOptions.firstWhereOrNull((e) =>
+  //                   e.toLowerCase() == option['name'].toLowerCase().trim()) !=
+  //               null) {
+  //             if (item.name == null) continue;
+  //             options[item.name!] = option['name'];
+  //             variation!.attributes.add(Attribute(
+  //                 id: int.parse(
+  //                   item.id.toString(),
+  //                 ),
+  //                 name: item.slug,
+  //                 option: option['slug']));
+  //             break;
+  //           }
+  //         }
+  //       }
+  //     }
+  //
+  //     if (product.type == 'appointment' && _bookingProducts[id] == null) {
+  //       _errorMessages[id] = S.of(context).pleaseSelectADate;
+  //       hasError = true;
+  //       continue;
+  //     }
+  //
+  //     final message = cartModel.addProductToCart(
+  //       context: context,
+  //       product: product,
+  //       quantity: productItem.quantity,
+  //       variation: variation,
+  //       options: options,
+  //     );
+  //
+  //     if (message.isNotEmpty) {
+  //       _errorMessages[id] = message;
+  //       hasError = true;
+  //       continue;
+  //     }
+  //     _errorMessages[id] = 'added';
+  //   }
+  //   if (!hasError) {
+  //     Navigator.of(context).pop(true);
+  //     return;
+  //   }
+  //
+  //   setState(() {});
+  // }
+
   Future<void> _addToCart() async {
     final cartModel = Provider.of<CartModel>(context, listen: false);
     var hasError = false;
@@ -422,7 +494,7 @@ class _ReOrderItemListState extends State<ReOrderItemList> {
         for (var item in product.attributes ?? <ProductAttribute>[]) {
           for (var option in item.options ?? []) {
             if (addonsOptions.firstWhereOrNull((e) =>
-                    e.toLowerCase() == option['name'].toLowerCase().trim()) !=
+            e.toLowerCase() == option['name'].toLowerCase().trim()) !=
                 null) {
               if (item.name == null) continue;
               options[item.name!] = option['name'];
@@ -459,7 +531,43 @@ class _ReOrderItemListState extends State<ReOrderItemList> {
       }
       _errorMessages[id] = 'added';
     }
+
     if (!hasError) {
+      //// ── Sync cart with Shopify to get updated prices ──────────────────
+      try {
+        if (cartModel is CartModelShopify) {
+          // Update cart on Shopify
+          final updatedCheckout = cartModel.checkout != null &&
+              cartModel.checkout!.id != null
+              ? await Services().api.updateItemsToCart(
+              cartModel, cartModel.user?.cookie)
+              : await Services().api.addItemsToCart(cartModel);
+
+          cartModel.setCheckout(updatedCheckout);
+
+          // Re-apply coupon if one was active
+          final couponCode = updatedCheckout?.coupon?.code;
+          if (updatedCheckout != null &&
+              couponCode != null &&
+              couponCode.isNotEmpty) {
+            try {
+              final cartId = updatedCheckout.id;
+              if (cartId != null &&
+                  cartId.startsWith('gid://shopify/Cart/')) {
+                final discountedCheckout = await (Services().api as ShopifyService)
+                    .applyCartCoupon(cartId, couponCode);
+                cartModel.setCheckout(discountedCheckout);
+              }
+            } catch (e) {
+              debugPrint('_addToCart: re-apply coupon error (non-fatal): $e');
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('_addToCart: cart sync error (non-fatal): $e');
+      }
+      // ─────────────────────────────────────────────────────────────────
+
       Navigator.of(context).pop(true);
       return;
     }

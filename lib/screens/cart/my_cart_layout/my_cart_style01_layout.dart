@@ -67,11 +67,16 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
             borderRadius: BorderRadius.circular(cartBannerConfig.borderRadius),
             onTap: () async {
               final url = cartBannerConfig.destination;
+              print("url${url}");
               if (url != null) {
-                await FirebaseServices().dynamicLinks?.handleDynamicLink(
-                      Uri.parse(url),
-                      App.fluxStoreNavigatorKey.currentContext!,
-                    );
+                try{
+                  await FirebaseServices().dynamicLinks?.handleDynamicLink(
+                    Uri.parse(url),
+                    App.fluxStoreNavigatorKey.currentContext!,
+                  );
+                }catch(e){
+                }
+
               }
             },
             child: CachedNetworkImage(
@@ -241,6 +246,7 @@ class _MyCartStyle01LayoutState extends State<MyCartStyle01Layout>
                                       children: <Widget>[
                                         const SizedBox(height: 16.0),
                                         if (totalCartQuantity > 0)
+                                          //
                                           Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.stretch,
@@ -328,6 +334,7 @@ class RenderTotalPrice extends StatelessWidget {
       fontSize: 20,
     );
 
+
     return Container(
       decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
@@ -369,24 +376,35 @@ class RenderTotalPrice extends StatelessWidget {
                   ),
                 ],
               ),
-            if (modelCart.rewardTotal > 0) ...[
-              const SizedBox(height: 10),
+            if (modelCart.couponObj!=null)
+              ...[
+              const SizedBox(height: 0),
               Row(
                 children: [
-                  Expanded(
-                    child: Text(S.of(context).cartDiscount,
-                        style: smallAmountStyle),
-                  ),
+
                   Text(
-                    PriceTools.getCurrencyFormatted(
-                        modelCart.rewardTotal, currencyRate,
-                        currency: currency)!,
-                    style: smallAmountStyle,
+    PriceTools.getCurrencyFormatted(
+    modelCart.getSubTotal()! -
+    num.parse( modelCart.getShippingCost().toString())!,
+    currencyRate,
+    currency: modelCart.isWalletCart()
+    ? defaultCurrency?.currencyCode
+        : currency)!,
+                    // PriceTools.getCurrencyFormatted(
+                    //     modelCart.couponObj!.amount, currencyRate,
+                    //     currency: currency)!,
+                    style: smallAmountStyle.copyWith(
+                      fontSize: 15,
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: smallAmountStyle.color,
+                      color: smallAmountStyle.color?.withOpacity(0.5),
+                    ),
                   ),
                 ],
               ),
             ],
-            const SizedBox(height: 10),
+            //
+            const SizedBox(height: 0),
             Row(
               children: [
                 Expanded(
@@ -404,7 +422,7 @@ class RenderTotalPrice extends StatelessWidget {
                       : Text(
                           PriceTools.getCurrencyFormatted(
                               modelCart.getTotal()! -
-                                  modelCart.getShippingCost()!,
+                                  modelCart.getShippingCost()!-(modelCart!.couponObj != null?num.parse( modelCart!.couponObj!.amount.toString()??'0'):0),
                               currencyRate,
                               currency: modelCart.isWalletCart()
                                   ? defaultCurrency?.currencyCode

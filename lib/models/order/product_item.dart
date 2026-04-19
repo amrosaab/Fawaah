@@ -241,15 +241,17 @@ class ProductItem {
       id = parsedJson['id'];
       name = parsedJson['title'];
       quantity = parsedJson['quantity'];
-      // total = parsedJson['variant']?['price']?['amount'];
-      total = parsedJson['originalTotalPrice']?['amount'];
+      // Cart API uses cost.totalAmount, legacy uses originalTotalPrice
+      final costAmount = parsedJson['cost']?['totalAmount']?['amount'];
+      final variantPrice = parsedJson['variant']?['price']?['amount'];
+      final legacyTotal = parsedJson['originalTotalPrice']?['amount'];
+      total = (costAmount ?? variantPrice ?? legacyTotal)?.toString();
       featuredImage = ((parsedJson['variant'] ?? {})['image'] ?? {})['url'];
     } catch (e, trace) {
       printLog(e.toString());
       printLog(trace.toString());
     }
   }
-
 
 
 
@@ -321,4 +323,48 @@ class ProductItem {
       printLog(trace.toString());
     }
   }
+  // ─────────────────────────────────────────────────────────────────────────────
+// ADD this factory to your existing ProductItem class.
+//
+// Cart API 2025-01 line node shape:
+// {
+//   id,
+//   quantity,
+//   cost: { totalAmount: { amount, currencyCode } },
+//   merchandise: {
+//     id, title, availableForSale, quantityAvailable,
+//     price: { amount, currencyCode },
+//     compareAtPrice: { amount, currencyCode },
+//     image: { url, width, height },
+//     selectedOptions: [{ name, value }],
+//     product: { id, title, handle, onlineStoreUrl }
+//   }
+// }
+// ─────────────────────────────────────────────────────────────────────────────
+
+  factory ProductItem.fromCartLineJson(Map<String, dynamic> node) {
+    final merchandise =
+        node['merchandise'] as Map<String, dynamic>? ?? {};
+    final product =
+        merchandise['product'] as Map<String, dynamic>? ?? {};
+    final image = merchandise['image'] as Map<String, dynamic>?;
+
+    return ProductItem.fromShopifyJson({
+      'id': node['id'],
+      'title': product['title'] ?? merchandise['title'] ?? '',
+      'quantity': node['quantity'] ?? 1,
+      // Pass cost so fromShopifyJson can read totalAmount
+      'cost': node['cost'],
+      'variant': {
+        'id': merchandise['id'],
+        'title': merchandise['title'] ?? '',
+        'price': merchandise['price'],
+        'compareAtPrice': merchandise['compareAtPrice'],
+        'image': image,
+        'selectedOptions': merchandise['selectedOptions'] ?? [],
+        'product': product,
+      },
+    });
+  }
+
 }

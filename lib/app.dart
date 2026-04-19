@@ -340,7 +340,7 @@ class AppState extends State<App>
     if (Services().firebase.isEnabled) {
       try {
         if (user?.cookie?.isNotEmpty ?? false) {
-          await Services()
+           Services()
               .api
               .updateUserInfo({'deviceToken': ''}, user!.cookie);
         }
@@ -509,6 +509,7 @@ class AppState extends State<App>
   @override
   void onMessageOpenedApp(FStoreNotificationItem notification) async {
     final url = notification.dynamicLink;
+    print("object${url}");
     // Fluttertoast.showToast(msg: url!,textColor: Colors.red);
 
     // print("contexxx${ModalRoute.of(App.fluxStoreNavigatorKey.currentContext!)!.settings.name}");

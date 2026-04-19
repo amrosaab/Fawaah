@@ -29,6 +29,7 @@ class ProductTag extends StatelessWidget {
               final tag = product!.tags[index];
               return TextButton(
                 onPressed: () {
+                  print('asdsadsadsa${tag.id}');
                   ProductModel.showList(
                     tag: '${tag.id}',
                   );

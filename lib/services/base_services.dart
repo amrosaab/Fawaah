@@ -514,6 +514,13 @@ abstract class BaseServices {
     }
   }
 
+  Future<CheckoutCart?> addItemsToCart(dynamic cartModel) async => null;
+
+  Future<CheckoutCart?> updateItemsToCart(dynamic cartModel, String? cookie) async => null;
+
+  Future<CheckoutCart?> applyCartCoupon(String cartId, String discountCode) async => null;
+
+
   Future<void> updateOrderIdForRazorpay(paymentId, orderId) async {
     try {
       final token = base64.encode(latin1.encode(
@@ -951,6 +958,24 @@ abstract class BaseServices {
   Future<List<Currency>?> getAvailableCurrencies() async {
     return <Currency>[];
   }
+  Future<Map<String, String>?> getCartLines(String cartId) async => null;
+
+  Future<CheckoutCart?> removeCartLines({
+    required String cartId,
+    required List<String> lineIds,
+    String? discountCode,
+  }) async => null;
+
+  Future<CheckoutCart?> updateCartLines({
+    required String cartId,
+    required List<Map<String, dynamic>> lines,
+  }) async => null;
+
+  Future<Order?> getOrderById({
+    required String id,
+    String? cookie,
+  }) async => null;
+
 
   Future<Order?> getOrderByOrderId({required String orderId}) async {
     return null;

@@ -95,16 +95,16 @@ class _BrandsScreenState extends State<BrandsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-       backgroundColor:Theme.of(context).brightness == Brightness.dark?darkBackgroundColor:Colors.white ,
+      backgroundColor:Theme.of(context).brightness == Brightness.dark?darkBackgroundColor:Colors.white ,
       appBar: AppBar(
         backgroundColor: Theme.of(context).brightness == Brightness.dark?Theme.of(context).primaryColor:Theme.of(context).primaryColor,
         title: Center(
           child: Text(
             S.of(context).allBrands,
-           style: Theme.of(context)
-              .textTheme
-              .headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         bottom: PreferredSize(
@@ -135,7 +135,7 @@ class _BrandsScreenState extends State<BrandsScreen> {
 
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero
-,
+                    ,
                     prefixIcon: Icon(
                       Icons.search,
                       color:  Color(0xff282D39),
@@ -145,15 +145,15 @@ class _BrandsScreenState extends State<BrandsScreen> {
 
                     IconButton(
                       alignment: Alignment.center,
-                     icon:Center(child:  Icon(
-                        Icons.close,
-                        color:  Color(0xff282D39)
-                    )), onPressed: () {
+                      icon:Center(child:  Icon(
+                          Icons.close,
+                          color:  Color(0xff282D39)
+                      )), onPressed: () {
                       filterController.clear();
-setState(() {
-  getAllBrands();
+                      setState(() {
+                        getAllBrands();
 
-});
+                      });
                     },
 
                     ):null,
@@ -177,7 +177,7 @@ setState(() {
             itemBuilder: (context, index) {
               var letter = firstLetters[index];
               var letterBrandsList =
-                  brandsList.where((element) => element[0] == letter).toList();
+              brandsList.where((element) => element[0] == letter).toList();
               return StickyHeader(
                 header: Container(
                   height: 50.0,
@@ -219,7 +219,7 @@ setState(() {
                   },
                   itemCount: letterBrandsList.length, separatorBuilder: (BuildContext context, int index) {
 
-                    return Divider(height: 1,color: Theme.of(context).brightness == Brightness.dark? Color(0xff292d39):Color(0xf292d39),);
+                  return Divider(height: 1,color: Theme.of(context).brightness == Brightness.dark? Color(0xff292d39):Color(0xf292d39),);
                 },
                 ),
               );

@@ -151,8 +151,8 @@ class MainTabsState extends CustomOverlayState<MainTabs>
       );
     }
 
-    await Services().chatServices.init();
-
+    // await Services().chatServices.init();
+    //
     if (!kIsWeb) {
       Services().firebase.initDynamicLinkService(context);
     }

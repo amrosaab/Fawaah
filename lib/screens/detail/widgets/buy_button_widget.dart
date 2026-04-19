@@ -59,7 +59,7 @@ class BuyButtonWidget extends StatelessWidget {
     return limitSelectQuantity;
   }
 
-  /// Add to Cart & Buy Now function
+  ///// Add to Cart & Buy Now function
   void _addToCart(BuildContext context,
       [bool buyNow = false, bool inStock = false]) {
     var model = Provider.of<ProductVariantModel>(context, listen: false);
@@ -83,5 +83,7 @@ class BuyButtonWidget extends StatelessWidget {
       Services().widget.addToCart(context, product, quantity, productVariation,
           mapAttribute ?? {}, buyNow, inStock);
     }
+
+    print('asdsad');
   }
 }

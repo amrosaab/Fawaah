@@ -140,7 +140,7 @@ class ProductsScreenState extends State<ProductsScreen>
 
     /// only request to server if there is empty config params
     // / If there is config, load the products one
-    getproductCatName();
+    // getproductCatName();
   }
 
   void _initFilter() {

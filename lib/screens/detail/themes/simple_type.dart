@@ -222,8 +222,8 @@ class _SimpleLayoutState extends State<SimpleLayout>
                                           }),
                                     Padding(
                                       padding: const EdgeInsets.only(
-                                        top: 8.0,
-                                        bottom: 4.0,
+                                        top: 0.0,
+                                        bottom: 0.0,
                                         left: 15,
                                         right: 15,
                                       ),//
@@ -236,21 +236,17 @@ class _SimpleLayoutState extends State<SimpleLayout>
                               ),
                               if (Services().widget.enableShoppingCart(
                                   product.copyWith(isRestricted: false)))
-                                SliverToBoxAdapter(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 15.0),
-                                    child: AnimatedSize(
-                                      duration:
-                                          const Duration(milliseconds: 300),
-                                      child: ProductCommonInfo(
-                                        product: widget.product,
-                                        isLoading: widget.isLoading,
-                                        wrapSliver: false,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                // SliverToBoxAdapter(
+                                //   child: Padding(
+                                //     padding: const EdgeInsets.symmetric(
+                                //         horizontal: 15.0),
+                                //     child: AnimatedSize(
+                                //       duration:
+                                //           const Duration(milliseconds: 300),
+                                //       child:,
+                                //     ),
+                                //   ),
+                                // ),
                               // if (!Services().widget.enableShoppingCart(
                               //         product.copyWith(isRestricted: false)) &&
                               //     product.shortDescription != null &&
@@ -282,12 +278,19 @@ class _SimpleLayoutState extends State<SimpleLayout>
                                             // Services()
                                             //     .widget
                                             //     .renderVendorInfo(product),
+
+                                            ProductCommonInfo(
+                                              product: widget.product,
+                                              isLoading: widget.isLoading,
+                                              wrapSliver: false,
+                                            ),
                                             ProductDescription(product),
                                             if (kProductDetail
                                                 .showProductCategories)
                                               ProductDetailCategories(product),
                                             if (kProductDetail.showProductTags)
                                               ProductTag(product),
+                                            //
                                             Services()
                                                 .widget
                                                 .productReviewWidget(product),

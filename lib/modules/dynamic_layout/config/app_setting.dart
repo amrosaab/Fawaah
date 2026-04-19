@@ -1,6 +1,6 @@
-import 'package:inspireui/widgets/smart_engagement_banner/index.dart';
 
 import '../../../common/config/models/age_restriction_config.dart';
+import '../../../common/flux_ui/src/widgets/smart_engagement_banner/models/smart_engagement_banner_config.dart';
 import 'tab_bar_config.dart';
 import 'tab_bar_floating_config.dart';
 import 'tab_bar_indicator_config.dart';

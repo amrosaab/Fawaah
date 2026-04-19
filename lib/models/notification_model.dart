@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flux_firebase/index.dart';
 
 import '../data/boxes.dart';
 import '../services/dependency_injection.dart';
@@ -81,7 +82,11 @@ class NotificationModel extends ChangeNotifier {
   }
 
   Future<void> enableNotification() async {
+
     if (!(await _service.isGranted())) {
+
+  final moti=await    FirebaseMessaging.instance.requestPermission();
+  print(  moti.authorizationStatus);
       final granted = await _service.requestPermission();
       if (!granted) {
         return;

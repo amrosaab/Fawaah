@@ -8,15 +8,9 @@ import '../common/constants.dart';
 import '../common/tools.dart';
 import '../menu/maintab.dart';
 import '../models/brand_model.dart';
+import '../models/category/category_model.dart';
 import '../models/index.dart'
-    show
-        AppModel,
-        BackDropArguments,
-        BlogModel,
-        Product,
-        ProductModel,
-        User,
-        UserModel;
+    show AppModel, BackDropArguments, BlogModel, Product, ProductModel, User, UserModel, SearchModel;
 import '../modules/dynamic_layout/geo_search/geo_search_screen.dart';
 import '../modules/dynamic_layout/helper/helper.dart';
 import '../modules/dynamic_layout/index.dart';
@@ -24,6 +18,7 @@ import '../modules/product_reviews/models/product_reviews_model.dart';
 import '../modules/product_reviews/product_review_screen.dart';
 import '../modules/sms_login/sms_login.dart';
 import '../screens/brand/brand_backdrop.dart';
+import '../screens/brands/arabic_brands_screen.dart';
 import '../screens/brands/brands_screen.dart';
 import '../screens/dynamic/dynamic_scrollable_screen.dart';
 import '../screens/dynamic/dynamic_tabmenu_screen.dart';
@@ -73,6 +68,7 @@ class Routes {
     RouteList.language: (context) => LanguageScreen(),
     RouteList.currencies: (context) => CurrenciesScreen(),
     RouteList.brands: (context) => const BrandsScreen(),
+    RouteList.arabicbrands: (context) => const ArabicBrandsScreen(),
     RouteList.biometrics: (context) => BiometricsScreen(),
     RouteList.category: (context) => const CategoriesScreen(),
     RouteList.flutterflow: (context) => const FlutterFlowScreen(),
@@ -84,13 +80,14 @@ class Routes {
   static Route getRouteGenerate(RouteSettings settings) {
     var routingData = settings.name!.getRoutingData;
 
-    printLog('[🧬Builder RouteGenerate] ${routingData.route}');
+    printLog('[🧬Builder RouteGeneratexxx] ${routingData.route}');
 
     switch (routingData.route) {
       case RouteList.backdrop:
         final arguments = settings.arguments;
         if (arguments is BackDropArguments) {
           final config = arguments.config;
+          print('asdsadshoksh${arguments.brandId??''}');
 
           var isWordpressBlog;
 
@@ -104,6 +101,7 @@ class Routes {
               final brandName = arguments.brandName;
               final brandImg = arguments.brandImg;
               final config = arguments.config;
+              final tag = arguments.tag;
               final brandModel =
                   Provider.of<BrandModel>(context, listen: false);
 
@@ -114,6 +112,7 @@ class Routes {
                   brandImg: brandImg,
                 );
               }
+
 
               brandModel.setProductList(<Product>[]); //clear old products
               brandModel.getProductList(
@@ -181,9 +180,13 @@ class Routes {
           final routeSetting = RouteSettings(
               name: RouteList.products, arguments: settings.arguments);
 
+          print('adasdsad');
+
+
           var firstBuild = true;
 
           return _buildRoute(routeSetting, (context) {
+
             final cateId = arguments.cateId;
             final cateName = arguments.cateName;
             final tag = arguments.tag;
@@ -248,6 +251,9 @@ class Routes {
               if (products != null && products.isNotEmpty) {
                 productModel.setProductsList(products, notify: false);
 
+                productModel.getProductsList(tagId: tag, page: 1);
+
+//
                 return ProductsScreen(
                   vendorname:arguments.vendor ,
                   products: products,

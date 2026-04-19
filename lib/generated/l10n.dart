@@ -6704,14 +6704,14 @@ class S {
     );
   }
 
-  /// `Title: A to Z`
+  /// `A to Z`
   String get titleAToZ {
-    return Intl.message('Title: A to Z', name: 'titleAToZ', desc: '', args: []);
+    return Intl.message('A to Z', name: 'titleAToZ', desc: '', args: []);
   }
 
-  /// `Title: Z to A`
+  /// `Z to A`
   String get titleZToA {
-    return Intl.message('Title: Z to A', name: 'titleZToA', desc: '', args: []);
+    return Intl.message('Z to A', name: 'titleZToA', desc: '', args: []);
   }
 
   /// `Popularity`

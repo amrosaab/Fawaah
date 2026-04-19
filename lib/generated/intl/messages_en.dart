@@ -1438,8 +1438,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "tickets": MessageLookupByLibrary.simpleMessage("Tickets"),
     "time": MessageLookupByLibrary.simpleMessage("Time"),
     "title": MessageLookupByLibrary.simpleMessage("Title"),
-    "titleAToZ": MessageLookupByLibrary.simpleMessage("Title: A to Z"),
-    "titleZToA": MessageLookupByLibrary.simpleMessage("Title: Z to A"),
+    "titleAToZ": MessageLookupByLibrary.simpleMessage("A to Z"),
+    "titleZToA": MessageLookupByLibrary.simpleMessage("Z to A"),
     "tooManyFaildedLogin": MessageLookupByLibrary.simpleMessage(
       "Too many failed login attempts. Please try again later.",
     ),

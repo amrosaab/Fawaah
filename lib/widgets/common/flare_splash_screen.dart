@@ -148,22 +148,23 @@ class SplashScreen extends StatelessWidget {
         left: paddingLeft,
         right: paddingRight,
       ),
-      child: FlareLoading(
-        endAnimation: endAnimation,
-        startAnimation: startAnimation,
-        loopAnimation: loopAnimation,
-        width: width,
-        height: height,
-        fit: boxFit,
-        onSuccess: (data) {
-          _goToNext(context, data);
-        },
-        onError: onError!,
-        name: name!,
-        alignment: alignment,
-        until: until,
-        isLoading: isLoading,
-      ),
+      child:CircularProgressIndicator(),
+      // child: FlareLoading(
+      //   endAnimation: endAnimation,
+      //   startAnimation: startAnimation,
+      //   loopAnimation: loopAnimation,
+      //   width: width,
+      //   height: height,
+      //   fit: boxFit,
+      //   onSuccess: (data) {
+      //     _goToNext(context, data);
+      //   },
+      //   onError: onError!,
+      //   name: name!,
+      //   alignment: alignment,
+      //   until: until,
+      //   isLoading: isLoading,
+      // ),
     );
   }
 
